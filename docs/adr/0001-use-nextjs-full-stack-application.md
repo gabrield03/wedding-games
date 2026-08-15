@@ -12,12 +12,12 @@ Accepted
 
 Wedding Games requires a mobile-first web interface and server-side functionality for capabilities such as:
 
-* Player session management
-* Puzzle retrieval
-* Game action validation
-* Score calculation
-* Leaderboard queries
-* Database access
+- Player session management
+- Puzzle retrieval
+- Game action validation
+- Score calculation
+- Leaderboard queries
+- Database access
 
 The application is expected to serve a relatively small number of users and will initially be developed and maintained by a single developer.
 
@@ -31,11 +31,11 @@ Use Next.js with TypeScript as the initial full-stack application framework.
 
 The application will use:
 
-* React for the user interface
-* Next.js App Router for routing and application structure
-* Next.js server-side capabilities for backend application logic
-* Route Handlers or other appropriate server-side Next.js mechanisms for HTTP APIs
-* TypeScript across both client and server code
+- React for the user interface
+- Next.js App Router for routing and application structure
+- Next.js server-side capabilities for backend application logic
+- Route Handlers or other appropriate server-side Next.js mechanisms for HTTP APIs
+- TypeScript across both client and server code
 
 The frontend and backend will initially be deployed as a single application.
 
@@ -45,13 +45,13 @@ Game-specific domain logic should remain separated from framework-specific reque
 
 This approach provides:
 
-* A single language across the initial application
-* A unified development environment
-* Server-side capabilities without requiring a separate backend deployment
-* Straightforward integration with managed hosting platforms
-* Support for mobile-first React development
-* Reduced operational complexity for a single-developer project
-* The ability to introduce a separate backend later if requirements justify it
+- A single language across the initial application
+- A unified development environment
+- Server-side capabilities without requiring a separate backend deployment
+- Straightforward integration with managed hosting platforms
+- Support for mobile-first React development
+- Reduced operational complexity for a single-developer project
+- The ability to introduce a separate backend later if requirements justify it
 
 Using a full-stack framework also allows the project to include meaningful backend concepts such as sessions, API design, validation, persistence, and server-authoritative gameplay without prematurely introducing additional services.
 
@@ -61,9 +61,9 @@ Using a full-stack framework also allows the project to include meaningful backe
 
 Examples include:
 
-* React with an Express backend
-* React with a Spring Boot backend
-* React with a FastAPI backend
+- React with an Express backend
+- React with a Spring Boot backend
+- React with a FastAPI backend
 
 This would provide a stronger physical separation between frontend and backend responsibilities.
 
@@ -87,19 +87,19 @@ The product requirements favor a web application accessible directly through a b
 
 ### Positive
 
-* Frontend and backend development can occur in one repository.
-* TypeScript can be used throughout the application.
-* Local development is simpler than maintaining multiple services.
-* Deployment can initially remain simple.
-* Shared types may be reused across client and server boundaries where appropriate.
-* The architecture remains sufficient for the expected application scale.
+- Frontend and backend development can occur in one repository.
+- TypeScript can be used throughout the application.
+- Local development is simpler than maintaining multiple services.
+- Deployment can initially remain simple.
+- Shared types may be reused across client and server boundaries where appropriate.
+- The architecture remains sufficient for the expected application scale.
 
 ### Negative
 
-* Frontend and backend concerns may become too tightly coupled if boundaries are not maintained intentionally.
-* Framework-specific code could spread into domain logic.
-* A future requirement may justify extracting backend functionality into an independent service.
-* The project will provide less immediate experience operating separately deployed frontend and backend services.
+- Frontend and backend concerns may become too tightly coupled if boundaries are not maintained intentionally.
+- Framework-specific code could spread into domain logic.
+- A future requirement may justify extracting backend functionality into an independent service.
+- The project will provide less immediate experience operating separately deployed frontend and backend services.
 
 ## Implementation Guidance
 
@@ -138,11 +138,11 @@ Keeping these boundaries clear should make the code easier to test and make futu
 
 This decision should be reconsidered if:
 
-* Backend complexity grows substantially
-* Independent frontend and backend deployments become useful
-* Multiple clients require the same backend APIs
-* Background processing becomes a significant application requirement
-* Scaling characteristics differ substantially between frontend and backend workloads
-* A different backend technology provides a meaningful product or engineering benefit
+- Backend complexity grows substantially
+- Independent frontend and backend deployments become useful
+- Multiple clients require the same backend APIs
+- Background processing becomes a significant application requirement
+- Scaling characteristics differ substantially between frontend and backend workloads
+- A different backend technology provides a meaningful product or engineering benefit
 
 If this decision changes, a new ADR should supersede this record rather than modifying the historical decision.

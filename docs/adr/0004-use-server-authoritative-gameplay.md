@@ -12,22 +12,22 @@ Accepted
 
 Wedding Games will include competitive features such as:
 
-* Puzzle completion
-* Attempt tracking
-* Mistake counts
-* Score calculation
-* Leaderboards
+- Puzzle completion
+- Attempt tracking
+- Mistake counts
+- Score calculation
+- Leaderboards
 
 The browser is controlled by the user and therefore cannot be treated as a trusted source for competitive state.
 
 A purely client-side implementation could allow a user to modify values such as:
 
-* Final score
-* Number of mistakes
-* Completion status
-* Attempt duration
-* Puzzle answers
-* Submitted results
+- Final score
+- Number of mistakes
+- Completion status
+- Attempt duration
+- Puzzle answers
+- Submitted results
 
 through browser developer tools or modified network requests.
 
@@ -110,12 +110,7 @@ For a Connections-style game, the client may submit:
 
 ```json
 {
-  "selectedWords": [
-    "Kyoto",
-    "Tokyo",
-    "Seattle",
-    "San Jose"
-  ]
+  "selectedWords": ["Kyoto", "Tokyo", "Seattle", "San Jose"]
 }
 ```
 
@@ -139,13 +134,13 @@ The server should:
 
 Server-authoritative gameplay provides:
 
-* More reliable leaderboard integrity
-* A clear trust boundary
-* Centralized game-rule enforcement
-* Consistent score calculation
-* Better control of persistent attempt state
-* Reduced exposure of unpublished puzzle solutions
-* Useful experience designing secure client-server interactions
+- More reliable leaderboard integrity
+- A clear trust boundary
+- Centralized game-rule enforcement
+- Consistent score calculation
+- Better control of persistent attempt state
+- Reduced exposure of unpublished puzzle solutions
+- Useful experience designing secure client-server interactions
 
 This architecture also prevents game rules from being duplicated independently in the browser and server as authoritative implementations.
 
@@ -159,11 +154,11 @@ This would be simple and responsive.
 
 It was not selected because:
 
-* Puzzle answers would be directly available to the browser
-* Scores could be modified before submission
-* Attempt state would be difficult to trust
-* Leaderboard integrity would depend on client behavior
-* Validation logic could become inconsistent across clients
+- Puzzle answers would be directly available to the browser
+- Scores could be modified before submission
+- Attempt state would be difficult to trust
+- Leaderboard integrity would depend on client behavior
+- Validation logic could become inconsistent across clients
 
 Client-side logic may still be used for non-authoritative presentation behavior.
 
@@ -185,13 +180,13 @@ This was not selected because basic server validation adds meaningful architectu
 
 The client remains responsible for presentation-oriented behavior such as:
 
-* Rendering game state
-* Tracking tile selection before submission
-* Animations
-* Loading indicators
-* Temporary UI state
-* Input handling
-* Accessibility interactions
+- Rendering game state
+- Tracking tile selection before submission
+- Animations
+- Loading indicators
+- Temporary UI state
+- Input handling
+- Accessibility interactions
 
 The client may optimistically update non-critical presentation state where appropriate.
 
@@ -201,16 +196,16 @@ Authoritative state must ultimately come from the server.
 
 The server is responsible for competitive application state including:
 
-* Player and session validation
-* Attempt ownership
-* Puzzle availability
-* Valid game actions
-* Attempt progression
-* Mistake counts
-* Completion status
-* Score calculation
-* Persistent results
-* Leaderboard eligibility
+- Player and session validation
+- Attempt ownership
+- Puzzle availability
+- Valid game actions
+- Attempt progression
+- Mistake counts
+- Completion status
+- Score calculation
+- Persistent results
+- Leaderboard eligibility
 
 Game-specific validation should be delegated to game-domain logic rather than implemented directly inside HTTP route handlers.
 
@@ -288,13 +283,13 @@ Shared leaderboard code should consume completed game results rather than reimpl
 
 Server endpoints should validate:
 
-* Request structure
-* Session validity
-* Attempt ownership
-* Puzzle identity
-* Submitted game data
-* Current attempt state
-* Whether the requested transition is allowed
+- Request structure
+- Session validity
+- Attempt ownership
+- Puzzle identity
+- Submitted game data
+- Current attempt state
+- Whether the requested transition is allowed
 
 Invalid requests should fail safely without modifying authoritative state.
 
@@ -340,10 +335,10 @@ This decision does not attempt to prevent all forms of cheating.
 
 A sufficiently motivated user may still:
 
-* Automate requests
-* Share puzzle answers
-* Inspect previously revealed information
-* Create multiple anonymous players
+- Automate requests
+- Share puzzle answers
+- Inspect previously revealed information
+- Create multiple anonymous players
 
 These risks are acceptable for the expected wedding use case.
 
@@ -353,31 +348,31 @@ The goal is to prevent trivial manipulation of authoritative scores and state, n
 
 ### Positive
 
-* Leaderboard scores are based on server-controlled state.
-* Game rules have a clear authoritative execution location.
-* Puzzle solutions can remain less exposed.
-* Client manipulation is less likely to corrupt persistent results.
-* Game behavior is more consistent across users.
-* The architecture provides useful client-server validation experience.
+- Leaderboard scores are based on server-controlled state.
+- Game rules have a clear authoritative execution location.
+- Puzzle solutions can remain less exposed.
+- Client manipulation is less likely to corrupt persistent results.
+- Game behavior is more consistent across users.
+- The architecture provides useful client-server validation experience.
 
 ### Negative
 
-* Gameplay requires additional server requests.
-* Server-side game logic becomes more complex.
-* Temporary connectivity problems may affect some gameplay actions.
-* Integration testing becomes more important.
-* Game engines must support server-side execution.
-* Development requires careful separation between presentation state and authoritative state.
+- Gameplay requires additional server requests.
+- Server-side game logic becomes more complex.
+- Temporary connectivity problems may affect some gameplay actions.
+- Integration testing becomes more important.
+- Game engines must support server-side execution.
+- Development requires careful separation between presentation state and authoritative state.
 
 ## Revisit Conditions
 
 This decision should be reconsidered if:
 
-* Offline gameplay becomes a major product requirement
-* Latency materially harms the game experience
-* A future game requires a fundamentally different synchronization model
-* Real-time multiplayer gameplay is introduced
-* The application no longer contains competitive or persistent scoring
-* The platform expands enough to justify a dedicated game-state service
+- Offline gameplay becomes a major product requirement
+- Latency materially harms the game experience
+- A future game requires a fundamentally different synchronization model
+- Real-time multiplayer gameplay is introduced
+- The application no longer contains competitive or persistent scoring
+- The platform expands enough to justify a dedicated game-state service
 
 Any major change to the trust model should be documented in a new ADR that supersedes this decision.

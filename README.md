@@ -10,21 +10,21 @@ The project is currently in the architecture and initial implementation phase. F
 
 ## Goals
 
-* Build personalized games inspired by games we enjoy playing together
-* Support multiple game types through an extensible architecture
-* Provide persistent player identity, scoring, and leaderboards
-* Create a simple mobile-first experience for wedding guests
-* Apply production-oriented software engineering practices without overengineering for the expected scale
+- Build personalized games inspired by games we enjoy playing together
+- Support multiple game types through an extensible architecture
+- Provide persistent player identity, scoring, and leaderboards
+- Create a simple mobile-first experience for wedding guests
+- Apply production-oriented software engineering practices without overengineering for the expected scale
 
 ## Planned Features
 
-* Personalized puzzle games
-* Anonymous player sessions
-* Persistent game attempts and scores
-* Server-authoritative score validation
-* Overall and game-specific leaderboards
-* Mobile-first responsive design
-* Additional game types over time
+- Personalized puzzle games
+- Anonymous player sessions
+- Persistent game attempts and scores
+- Server-authoritative score validation
+- Overall and game-specific leaderboards
+- Mobile-first responsive design
+- Additional game types over time
 
 ## Tech Stack
 
@@ -32,14 +32,14 @@ The project is currently in the architecture and initial implementation phase. F
 
 Current direction:
 
-* **Language:** TypeScript
-* **Frontend:** React / Next.js
-* **Backend:** Next.js server APIs
-* **Database:** PostgreSQL
-* **Database Platform:** Supabase
-* **Hosting:** Vercel
-* **CI/CD:** GitHub Actions
-* **Testing:** Vitest, Playwright
+- **Language:** TypeScript
+- **Frontend:** React / Next.js
+- **Backend:** Next.js server APIs
+- **Database:** PostgreSQL
+- **Database Platform:** Supabase
+- **Hosting:** Vercel
+- **CI/CD:** GitHub Actions
+- **Testing:** Vitest, Playwright
 
 ## Architecture
 
@@ -51,12 +51,12 @@ Major technical decisions will be documented in [`docs/adr/`](docs/adr/) using A
 
 Planned project documentation:
 
-* `docs/requirements.md` — functional and non-functional requirements
-* `docs/architecture.md` — system architecture and component responsibilities
-* `docs/data-model.md` — database and domain model
-* `docs/security.md` — security considerations and threat model
-* `docs/testing.md` — testing strategy
-* `docs/adr/` — architecture decision records
+- `docs/requirements.md` — functional and non-functional requirements
+- `docs/architecture.md` — system architecture and component responsibilities
+- `docs/data-model.md` — database and domain model
+- `docs/security.md` — security considerations and threat model
+- `docs/testing.md` — testing strategy
+- `docs/adr/` — architecture decision records
 
 ## Development
 

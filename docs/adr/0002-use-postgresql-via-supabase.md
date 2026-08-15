@@ -12,13 +12,13 @@ Accepted
 
 Wedding Games requires persistent storage for application data including:
 
-* Players
-* Games
-* Puzzles
-* Attempts
-* Moves
-* Scores
-* Leaderboard data
+- Players
+- Games
+- Puzzles
+- Attempts
+- Moves
+- Scores
+- Leaderboard data
 
 The expected relationships among these entities are naturally relational.
 
@@ -52,20 +52,20 @@ Supabase should be treated primarily as infrastructure providing managed Postgre
 
 PostgreSQL was selected because:
 
-* The application domain contains clear relationships among players, puzzles, attempts, and scores
-* Relational constraints can help maintain data integrity
-* SQL provides flexible querying for leaderboards and reporting
-* PostgreSQL is widely used and well documented
-* Schema migrations provide a structured approach to evolving the data model
-* The technology provides useful experience with relational database design and SQL
+- The application domain contains clear relationships among players, puzzles, attempts, and scores
+- Relational constraints can help maintain data integrity
+- SQL provides flexible querying for leaderboards and reporting
+- PostgreSQL is widely used and well documented
+- Schema migrations provide a structured approach to evolving the data model
+- The technology provides useful experience with relational database design and SQL
 
 Supabase was selected as the initial PostgreSQL provider because:
 
-* It reduces database provisioning and operational overhead
-* It provides managed PostgreSQL without requiring the application to operate its own database infrastructure
-* It supports normal PostgreSQL concepts and tooling
-* It allows the project to begin with a simple deployment architecture
-* The underlying relational model is less tightly coupled to the provider than a proprietary database model would be
+- It reduces database provisioning and operational overhead
+- It provides managed PostgreSQL without requiring the application to operate its own database infrastructure
+- It supports normal PostgreSQL concepts and tooling
+- It allows the project to begin with a simple deployment architecture
+- The underlying relational model is less tightly coupled to the provider than a proprietary database model would be
 
 ## Alternatives Considered
 
@@ -109,20 +109,20 @@ SQLite may still be useful in isolated tests or local tooling if appropriate.
 
 ### Positive
 
-* The project gains a relational data model with foreign keys and constraints.
-* SQL can be used for leaderboard and reporting queries.
-* Database schema evolution can be tracked through migrations.
-* Managed hosting reduces operational overhead.
-* PostgreSQL knowledge remains transferable if the database provider changes.
-* The persistence layer can support future relationships such as guest identities, teams, or scheduled puzzle releases.
+- The project gains a relational data model with foreign keys and constraints.
+- SQL can be used for leaderboard and reporting queries.
+- Database schema evolution can be tracked through migrations.
+- Managed hosting reduces operational overhead.
+- PostgreSQL knowledge remains transferable if the database provider changes.
+- The persistence layer can support future relationships such as guest identities, teams, or scheduled puzzle releases.
 
 ### Negative
 
-* The application depends initially on an external managed database provider.
-* Database migrations must be maintained carefully.
-* Local and production database environments require configuration.
-* Provider-specific features could create unnecessary coupling if used throughout the application.
-* Relational schema changes may require migration planning as requirements evolve.
+- The application depends initially on an external managed database provider.
+- Database migrations must be maintained carefully.
+- Local and production database environments require configuration.
+- Provider-specific features could create unnecessary coupling if used throughout the application.
+- Relational schema changes may require migration planning as requirements evolve.
 
 ## Data Access Boundary
 
@@ -190,12 +190,12 @@ PostgreSQL and Supabase security capabilities may be used where appropriate, but
 
 This decision should be reconsidered if:
 
-* Supabase introduces limitations that materially affect development or deployment
-* The application moves to a broader AWS infrastructure strategy
-* Operational requirements justify using another managed PostgreSQL provider
-* The persistence model changes substantially enough that a relational database is no longer appropriate
-* Provider-specific dependencies make migration unnecessarily difficult
-* Cost, reliability, or availability requirements change significantly
+- Supabase introduces limitations that materially affect development or deployment
+- The application moves to a broader AWS infrastructure strategy
+- Operational requirements justify using another managed PostgreSQL provider
+- The persistence model changes substantially enough that a relational database is no longer appropriate
+- Provider-specific dependencies make migration unnecessarily difficult
+- Cost, reliability, or availability requirements change significantly
 
 Changing database providers would not necessarily require changing the decision to use PostgreSQL.
 

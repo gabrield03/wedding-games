@@ -42,15 +42,15 @@ These technology choices are architectural decisions rather than permanent requi
 
 The architecture should:
 
-* Provide a simple mobile-first user experience
-* Support multiple independent game types
-* Keep competitive game state authoritative on the server
-* Separate puzzle content from game implementation
-* Support persistent players, attempts, and scores
-* Remain maintainable by a single developer
-* Avoid unnecessary infrastructure for the expected scale
-* Allow technologies and components to be replaced as requirements evolve
-* Provide clear boundaries that make automated testing practical
+- Provide a simple mobile-first user experience
+- Support multiple independent game types
+- Keep competitive game state authoritative on the server
+- Separate puzzle content from game implementation
+- Support persistent players, attempts, and scores
+- Remain maintainable by a single developer
+- Avoid unnecessary infrastructure for the expected scale
+- Allow technologies and components to be replaced as requirements evolve
+- Provide clear boundaries that make automated testing practical
 
 ## High-Level Components
 
@@ -58,12 +58,12 @@ The architecture should:
 
 The web client is responsible for:
 
-* Rendering the user interface
-* Displaying available games and puzzles
-* Handling player input
-* Maintaining temporary presentation state
-* Sending gameplay actions to the server
-* Displaying results, scores, and leaderboard data
+- Rendering the user interface
+- Displaying available games and puzzles
+- Handling player input
+- Maintaining temporary presentation state
+- Sending gameplay actions to the server
+- Displaying results, scores, and leaderboard data
 
 The client must not be treated as authoritative for competitive game state or final score calculations.
 
@@ -71,15 +71,15 @@ The client must not be treated as authoritative for competitive game state or fi
 
 The application server is responsible for:
 
-* Handling HTTP requests
-* Managing player sessions
-* Retrieving puzzle information
-* Validating gameplay actions
-* Managing attempt state
-* Calculating scores
-* Persisting game results
-* Returning leaderboard information
-* Enforcing application-level authorization and validation
+- Handling HTTP requests
+- Managing player sessions
+- Retrieving puzzle information
+- Validating gameplay actions
+- Managing attempt state
+- Calculating scores
+- Persisting game results
+- Returning leaderboard information
+- Enforcing application-level authorization and validation
 
 The initial implementation will colocate these responsibilities within the Next.js application.
 
@@ -105,10 +105,10 @@ Game Engine
 
 A game engine may be responsible for:
 
-* Validating game-specific actions
-* Determining whether an attempt is complete
-* Applying game-specific scoring rules
-* Interpreting game-specific puzzle data
+- Validating game-specific actions
+- Determining whether an attempt is complete
+- Applying game-specific scoring rules
+- Interpreting game-specific puzzle data
 
 Shared platform concerns such as player sessions, persistence, and leaderboards should remain outside individual game engines where practical.
 
@@ -327,12 +327,12 @@ The primary initial trust boundary is between the user's browser and the applica
 
 The server should validate:
 
-* Player identity and session state
-* Game actions
-* Attempt ownership
-* Puzzle availability
-* Completion state
-* Score calculations
+- Player identity and session state
+- Game actions
+- Attempt ownership
+- Puzzle availability
+- Completion state
+- Score calculations
 
 User-controlled values such as display names must not be assumed safe.
 
@@ -346,19 +346,19 @@ The architecture should support testing at multiple levels.
 
 Used for isolated domain logic such as:
 
-* Game rules
-* Guess validation
-* Score calculations
-* Completion conditions
+- Game rules
+- Guess validation
+- Score calculations
+- Completion conditions
 
 ### Integration Tests
 
 Used for interactions among components such as:
 
-* API handlers
-* Session logic
-* Application services
-* Database persistence
+- API handlers
+- Session logic
+- Application services
+- Database persistence
 
 ### End-to-End Tests
 
@@ -384,15 +384,15 @@ The detailed testing strategy will be maintained in `docs/testing.md`.
 
 The following decisions are intentionally unresolved:
 
-* Exact player session implementation
-* Whether player identity should eventually connect to the wedding guest list
-* Exact database schema
-* Whether puzzle scheduling belongs in the application or database layer
-* Whether an administrative puzzle editor is worthwhile
-* Whether leaderboard updates should ever require real-time communication
-* Whether the backend should remain colocated with Next.js
-* Whether Supabase remains the preferred database platform
-* How cocktail-hour game modes may differ from normal gameplay
+- Exact player session implementation
+- Whether player identity should eventually connect to the wedding guest list
+- Exact database schema
+- Whether puzzle scheduling belongs in the application or database layer
+- Whether an administrative puzzle editor is worthwhile
+- Whether leaderboard updates should ever require real-time communication
+- Whether the backend should remain colocated with Next.js
+- Whether Supabase remains the preferred database platform
+- How cocktail-hour game modes may differ from normal gameplay
 
 These should be resolved only when requirements or implementation experience justify doing so.
 

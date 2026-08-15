@@ -114,24 +114,24 @@ Private wedding information and unpublished production puzzle answers should not
 
 ## Current Product Guardrails
 
-* Games are intended primarily as a pre-wedding experience.
-* Games should not be designed to encourage phone use during the dinner or reception.
-* Cocktail-hour gameplay may be explored later if it encourages social interaction rather than replacing it.
-* The project should use production-oriented engineering practices without adding technology solely for portfolio complexity.
-* Requirements and architectural decisions may be revised as the project evolves.
+- Games are intended primarily as a pre-wedding experience.
+- Games should not be designed to encourage phone use during the dinner or reception.
+- Cocktail-hour gameplay may be explored later if it encourages social interaction rather than replacing it.
+- The project should use production-oriented engineering practices without adding technology solely for portfolio complexity.
+- Requirements and architectural decisions may be revised as the project evolves.
 
 ## Out of Scope for Initial Development
 
 The following are not required for the initial version:
 
-* Traditional username/password authentication
-* Native iOS or Android applications
-* Wedding guest list integration
-* Table-based competition
-* Reception gameplay
-* Administrative puzzle editor
-* Real-time multiplayer gameplay
-* Real-time WebSocket infrastructure
-* Offline-first support
-* Advanced analytics
-* Large-scale distributed infrastructure
+- Traditional username/password authentication
+- Native iOS or Android applications
+- Wedding guest list integration
+- Table-based competition
+- Reception gameplay
+- Administrative puzzle editor
+- Real-time multiplayer gameplay
+- Real-time WebSocket infrastructure
+- Offline-first support
+- Advanced analytics
+- Large-scale distributed infrastructure
