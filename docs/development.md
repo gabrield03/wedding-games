@@ -181,12 +181,42 @@ code .
 
 ## Application Setup
 
-Application installation and startup commands will be added after the Next.js application is bootstrapped.
+Install project dependencies:
 
-## Version Management
+```bash
+npm install
+```
 
-Exact application runtime and package requirements will be defined as part of the application bootstrap.
+Start the local development server:
 
-Where practical, runtime requirements should be enforced through project configuration rather than relying only on documentation.
+```bash
+npm run dev
+```
 
-This document should be updated when required tooling or development workflows change.
+The application is available by default at:
+
+```text
+http://localhost:3000
+```
+
+Stop the development server with:
+
+```text
+Ctrl+C
+```
+
+## Application Validation
+
+Run ESLint:
+
+```bash
+npm run lint
+```
+
+Create a production build:
+
+```bash
+npm run build
+```
+
+Both commands should complete successfully before changes are merged.
