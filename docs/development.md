@@ -207,11 +207,43 @@ Ctrl+C
 
 ## Application Validation
 
+## Code Quality
+
+The project uses ESLint for static code-quality checks, Prettier for formatting, and the TypeScript compiler for explicit type checking.
+
+### Linting
+
 Run ESLint:
 
 ```bash
 npm run lint
 ```
+
+### Formatting
+
+Format supported project files:
+
+```bash
+npm run format
+```
+
+Check formatting without modifying files:
+
+```bash
+npm run format:check
+```
+
+`format:check` is intended for automated validation such as CI, while `format` is intended for local development.
+
+### Type Checking
+
+Run the TypeScript compiler without generating output:
+
+```bash
+npm run typecheck
+```
+
+### Production Build
 
 Create a production build:
 
@@ -219,4 +251,17 @@ Create a production build:
 npm run build
 ```
 
-Both commands should complete successfully before changes are merged.
+Before changes are merged, the following commands should complete successfully:
+
+```bash
+npm run lint
+npm run format:check
+npm run typecheck
+npm run build
+```
+
+Formatting behavior is defined by `.prettierrc` and `.prettierignore`.
+
+ESLint configuration is maintained in `eslint.config.mjs`.
+
+Repository text files use LF line endings as defined by `.gitattributes`.
