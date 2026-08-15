@@ -297,3 +297,69 @@ Core game logic should be written so that rules, scoring, validation, and comple
 Before changes are merged, the unit test suite should complete successfully.
 
 The initial smoke test exists only to verify the testing infrastructure and will be supplemented by real domain tests as game functionality is implemented.
+
+## End-to-End Testing
+
+The project uses Playwright for browser-level end-to-end testing.
+
+Run the E2E test suite:
+
+```bash
+npm run test:e2e
+```
+
+Open Playwright's interactive test UI:
+
+```bash
+npm run test:e2e:ui
+```
+
+E2E tests are stored under:
+
+```text
+tests/e2e/
+```
+
+The current Playwright configuration runs tests against:
+
+- Chromium
+- Firefox
+- WebKit
+
+Playwright automatically starts the local Next.js development server for test execution.
+
+The initial smoke test verifies that the application can start, load successfully in a browser, and satisfy a basic page assertion.
+
+End-to-end tests should be used for complete user flows and browser behavior that are better validated through a real browser than through isolated unit tests.
+
+Examples of future E2E flows include:
+
+```text
+Open Application
+    ->
+Create Player
+    ->
+Start Puzzle
+    ->
+Submit Gameplay Actions
+    ->
+Complete Puzzle
+    ->
+Receive Score
+    ->
+View Leaderboard
+```
+
+Unit tests and E2E tests have separate responsibilities:
+
+```text
+Vitest
+    -> unit and component-level behavior
+    -> tests/unit/
+
+Playwright
+    -> browser-level user flows
+    -> tests/e2e/
+```
+
+Generated Playwright reports and test artifacts are excluded from source control.
