@@ -363,3 +363,107 @@ Playwright
 ```
 
 Generated Playwright reports and test artifacts are excluded from source control.
+
+## Continuous Integration
+
+The project uses GitHub Actions for continuous integration.
+
+The CI workflow is defined in:
+
+```text
+.github/workflows/ci.yml
+```
+
+CI runs automatically when:
+
+- A pull request targets `main`
+- A commit is pushed to `main`
+
+The validation job performs the following steps:
+
+```text
+Checkout Repository
+    ->
+Install Node.js
+    ->
+Install Dependencies with npm ci
+    ->
+Lint
+    ->
+Check Formatting
+    ->
+Type Check
+    ->
+Run Unit Tests
+    ->
+Install Playwright Browsers
+    ->
+Run End-to-End Tests
+    ->
+Build Application
+```
+
+The `main` branch is protected by a GitHub branch ruleset.
+
+Changes to `main` must be submitted through a pull request, and the required `validate` CI status check must pass before the pull request can be merged.
+
+Unresolved pull request conversations must also be resolved before merging.
+
+## Deployment
+
+The application is deployed through Vercel using the repository's GitHub integration.
+
+### Preview Deployments
+
+Pull requests automatically receive an isolated Vercel preview deployment.
+
+Preview deployments allow changes to be tested in a publicly accessible environment without modifying the production application.
+
+The expected development workflow is:
+
+```text
+Create Feature Branch
+    ->
+Develop and Test Locally
+    ->
+Commit and Push Branch
+    ->
+Open Pull Request
+    ->
+GitHub Actions Validation
+    +
+Vercel Preview Deployment
+    ->
+Review and Test Preview
+    ->
+Merge Pull Request
+```
+
+### Production Deployment
+
+The `main` branch is the production branch.
+
+After a pull request is merged into `main`, Vercel automatically creates a new production deployment.
+
+The current temporary production URL is:
+
+```text
+https://wedding-games-ten.vercel.app/
+```
+
+A custom wedding domain may replace or point to this deployment later.
+
+### Branch Cleanup
+
+After a pull request has been merged and the production deployment has been verified, the merged feature branch should normally be deleted remotely and locally.
+
+A typical cleanup workflow is:
+
+```bash
+git checkout main
+git pull
+git branch -d <branch-name>
+git fetch --prune
+```
+
+This keeps local and remote branch references clean after completed work.
