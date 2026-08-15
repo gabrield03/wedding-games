@@ -106,7 +106,7 @@ Current workspace behavior includes:
 - Format files automatically on save
 - Use Prettier as the default formatter
 
-Linting-specific editor behavior will be configured after the project's ESLint configuration is established.
+Linting behavior is provided by the ESLint VS Code extension, while project lint rules are defined in `eslint.config.mjs`.
 
 ## Integrated Terminal
 
@@ -204,8 +204,6 @@ Stop the development server with:
 ```text
 Ctrl+C
 ```
-
-## Application Validation
 
 ## Code Quality
 
