@@ -60,15 +60,22 @@ Planned project documentation:
 
 ## Development
 
-Local development instructions will be added once the initial application is bootstrapped.
+Local development setup and commands are documented in
+[`docs/development.md`](docs/development.md).
 
 ## Testing
 
-Testing instructions and coverage expectations will be documented as the application is implemented.
+The project currently uses Vitest for unit testing and Playwright for
+browser-level end-to-end testing. See
+[`docs/development.md`](docs/development.md) for commands and workflow details.
 
 ## Deployment
 
-Deployment documentation will be added once development and production environments are configured.
+The application is deployed through Vercel with automatic pull request
+preview deployments and production deployments from `main`.
+
+Temporary production URL:
+https://wedding-games-ten.vercel.app/
 
 ## Roadmap
 
