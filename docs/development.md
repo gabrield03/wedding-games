@@ -263,3 +263,37 @@ Formatting behavior is defined by `.prettierrc` and `.prettierignore`.
 ESLint configuration is maintained in `eslint.config.mjs`.
 
 Repository text files use LF line endings as defined by `.gitattributes`.
+
+## Unit Testing
+
+The project uses Vitest for unit testing.
+
+Run the unit test suite once:
+
+```bash
+npm test
+```
+
+Run Vitest in watch mode during development:
+
+```bash
+npm run test:watch
+```
+
+Unit tests are stored under:
+
+```text
+tests/unit/
+```
+
+Current unit testing infrastructure uses:
+
+- Vitest as the test runner
+- jsdom as the browser-like test environment
+- React Testing Library for React component testing
+
+Core game logic should be written so that rules, scoring, validation, and completion behavior can be tested independently from the user interface where practical.
+
+Before changes are merged, the unit test suite should complete successfully.
+
+The initial smoke test exists only to verify the testing infrastructure and will be supplemented by real domain tests as game functionality is implemented.
