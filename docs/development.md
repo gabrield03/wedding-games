@@ -88,6 +88,7 @@ Current recommended extensions:
 
 - ESLint
 - Prettier - Code formatter
+- GitHub Actions
 
 VS Code should prompt developers to install recommended extensions when the repository is opened.
 
