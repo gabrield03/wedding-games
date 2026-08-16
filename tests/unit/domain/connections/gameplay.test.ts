@@ -11,6 +11,14 @@ import {
   type ConnectionsGameState,
 } from "@/domain/connections/gameplay";
 
+function group(index: number) {
+  return developmentPuzzle.groups[index]!;
+}
+
+function tileId(groupIndex: number, tileIndex: number) {
+  return group(groupIndex).tiles[tileIndex]!.id;
+}
+
 describe("Connections gameplay", () => {
   describe("createInitialGameState", () => {
     it("creates an empty playthrough", () => {
@@ -24,17 +32,18 @@ describe("Connections gameplay", () => {
   describe("evaluateGuess", () => {
     it("identifies a correct group regardless of tile order", () => {
       const state = createInitialGameState();
+      const firstGroup = group(0);
 
       const result = evaluateGuess(developmentPuzzle, state, [
-        "letter-d",
-        "letter-b",
-        "letter-a",
-        "letter-c",
+        tileId(0, 3),
+        tileId(0, 1),
+        tileId(0, 0),
+        tileId(0, 2),
       ]);
 
       expect(result).toEqual({
         status: "correct",
-        groupId: "group-letters",
+        groupId: firstGroup.id,
       });
     });
 
@@ -42,16 +51,16 @@ describe("Connections gameplay", () => {
       const state = createInitialGameState();
 
       const result = evaluateGuess(developmentPuzzle, state, [
-        "letter-a",
-        "letter-b",
-        "letter-c",
-        "number-1",
+        tileId(0, 0),
+        tileId(0, 1),
+        tileId(0, 2),
+        tileId(1, 0),
       ]);
 
       expect(result).toEqual({
         status: "incorrect",
         oneAway: true,
-        tileIds: ["letter-a", "letter-b", "letter-c", "number-1"],
+        tileIds: [tileId(0, 0), tileId(0, 1), tileId(0, 2), tileId(1, 0)],
       });
     });
 
@@ -59,16 +68,16 @@ describe("Connections gameplay", () => {
       const state = createInitialGameState();
 
       const result = evaluateGuess(developmentPuzzle, state, [
-        "letter-a",
-        "letter-b",
-        "number-1",
-        "number-2",
+        tileId(0, 0),
+        tileId(0, 1),
+        tileId(1, 0),
+        tileId(1, 1),
       ]);
 
       expect(result).toEqual({
         status: "incorrect",
         oneAway: false,
-        tileIds: ["letter-a", "letter-b", "number-1", "number-2"],
+        tileIds: [tileId(0, 0), tileId(0, 1), tileId(1, 0), tileId(1, 1)],
       });
     });
 
@@ -76,19 +85,19 @@ describe("Connections gameplay", () => {
       const initialState = createInitialGameState();
 
       const firstResult = evaluateGuess(developmentPuzzle, initialState, [
-        "letter-a",
-        "letter-b",
-        "number-1",
-        "number-2",
+        tileId(0, 0),
+        tileId(0, 1),
+        tileId(1, 0),
+        tileId(1, 1),
       ]);
 
       const nextState = applyGuessResult(initialState, firstResult);
 
       const duplicateResult = evaluateGuess(developmentPuzzle, nextState, [
-        "number-2",
-        "letter-b",
-        "number-1",
-        "letter-a",
+        tileId(1, 1),
+        tileId(0, 1),
+        tileId(1, 0),
+        tileId(0, 0),
       ]);
 
       expect(duplicateResult).toEqual({
@@ -100,9 +109,9 @@ describe("Connections gameplay", () => {
       const state = createInitialGameState();
 
       const result = evaluateGuess(developmentPuzzle, state, [
-        "letter-a",
-        "letter-b",
-        "letter-c",
+        tileId(0, 0),
+        tileId(0, 1),
+        tileId(0, 2),
       ]);
 
       expect(result).toEqual({
@@ -115,10 +124,10 @@ describe("Connections gameplay", () => {
       const state = createInitialGameState();
 
       const result = evaluateGuess(developmentPuzzle, state, [
-        "letter-a",
-        "letter-a",
-        "letter-b",
-        "letter-c",
+        tileId(0, 0),
+        tileId(0, 0),
+        tileId(0, 1),
+        tileId(0, 2),
       ]);
 
       expect(result).toEqual({
@@ -131,9 +140,9 @@ describe("Connections gameplay", () => {
       const state = createInitialGameState();
 
       const result = evaluateGuess(developmentPuzzle, state, [
-        "letter-a",
-        "letter-b",
-        "letter-c",
+        tileId(0, 0),
+        tileId(0, 1),
+        tileId(0, 2),
         "does-not-exist",
       ]);
 
@@ -144,16 +153,18 @@ describe("Connections gameplay", () => {
     });
 
     it("rejects guesses containing tiles from an already solved group", () => {
+      const firstGroup = group(0);
+
       const state: ConnectionsGameState = {
-        solvedGroupIds: ["group-letters"],
+        solvedGroupIds: [firstGroup.id],
         incorrectGuesses: [],
       };
 
       const result = evaluateGuess(developmentPuzzle, state, [
-        "letter-a",
-        "number-1",
-        "number-2",
-        "number-3",
+        tileId(0, 0),
+        tileId(1, 0),
+        tileId(1, 1),
+        tileId(1, 2),
       ]);
 
       expect(result).toEqual({
@@ -168,12 +179,11 @@ describe("Connections gameplay", () => {
         incorrectGuesses: [["guess-1"], ["guess-2"], ["guess-3"], ["guess-4"]],
       };
 
-      const result = evaluateGuess(developmentPuzzle, state, [
-        "letter-a",
-        "letter-b",
-        "letter-c",
-        "letter-d",
-      ]);
+      const result = evaluateGuess(
+        developmentPuzzle,
+        state,
+        group(0).tiles.map((tile) => tile.id),
+      );
 
       expect(result).toEqual({
         status: "invalid",
@@ -185,17 +195,17 @@ describe("Connections gameplay", () => {
   describe("applyGuessResult", () => {
     it("adds a solved group after a correct guess", () => {
       const state = createInitialGameState();
+      const firstGroup = group(0);
 
-      const result = evaluateGuess(developmentPuzzle, state, [
-        "letter-a",
-        "letter-b",
-        "letter-c",
-        "letter-d",
-      ]);
+      const result = evaluateGuess(
+        developmentPuzzle,
+        state,
+        firstGroup.tiles.map((tile) => tile.id),
+      );
 
       const nextState = applyGuessResult(state, result);
 
-      expect(nextState.solvedGroupIds).toEqual(["group-letters"]);
+      expect(nextState.solvedGroupIds).toEqual([firstGroup.id]);
       expect(state.solvedGroupIds).toEqual([]);
     });
 
@@ -203,10 +213,10 @@ describe("Connections gameplay", () => {
       const state = createInitialGameState();
 
       const result = evaluateGuess(developmentPuzzle, state, [
-        "letter-a",
-        "letter-b",
-        "number-1",
-        "number-2",
+        tileId(0, 0),
+        tileId(0, 1),
+        tileId(1, 0),
+        tileId(1, 1),
       ]);
 
       const nextState = applyGuessResult(state, result);
@@ -250,22 +260,25 @@ describe("Connections gameplay", () => {
         }),
       ).toBe("lost");
     });
+
     it("returns only tiles from unsolved groups", () => {
       const initialState = createInitialGameState();
+      const firstGroup = group(0);
 
       expect(getRemainingTiles(developmentPuzzle, initialState)).toHaveLength(
         16,
       );
 
       const state: ConnectionsGameState = {
-        solvedGroupIds: ["group-letters"],
+        solvedGroupIds: [firstGroup.id],
         incorrectGuesses: [],
       };
 
       const remainingTiles = getRemainingTiles(developmentPuzzle, state);
+      const solvedTileIds = new Set(firstGroup.tiles.map((tile) => tile.id));
 
       expect(remainingTiles).toHaveLength(12);
-      expect(remainingTiles.some((tile) => tile.id.startsWith("letter-"))).toBe(
+      expect(remainingTiles.some((tile) => solvedTileIds.has(tile.id))).toBe(
         false,
       );
     });
