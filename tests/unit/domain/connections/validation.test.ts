@@ -28,48 +28,57 @@ describe("validateConnectionsPuzzle", () => {
 
   it("rejects a group with the wrong number of tiles", () => {
     const puzzle = createValidPuzzle();
-    puzzle.groups[0].tiles.pop();
+    const group = puzzle.groups[0]!;
+
+    group.tiles.pop();
 
     const errors = validateConnectionsPuzzle(puzzle);
 
-    expect(errors).toContain(
-      "Group group-letters must contain exactly 4 tiles",
-    );
+    expect(errors).toContain(`Group ${group.id} must contain exactly 4 tiles`);
   });
 
   it("rejects duplicate group and tile IDs", () => {
     const puzzle = createValidPuzzle();
+    const firstGroup = puzzle.groups[0]!;
+    const secondGroup = puzzle.groups[1]!;
+    const firstTile = firstGroup.tiles[0]!;
 
-    puzzle.groups[1].id = puzzle.groups[0].id;
-    puzzle.groups[1].tiles[0].id = puzzle.groups[0].tiles[0].id;
+    secondGroup.id = firstGroup.id;
+    secondGroup.tiles[0]!.id = firstTile.id;
 
     const errors = validateConnectionsPuzzle(puzzle);
 
-    expect(errors).toContain("Duplicate group ID: group-letters");
-    expect(errors).toContain("Duplicate tile ID: letter-a");
+    expect(errors).toContain(`Duplicate group ID: ${firstGroup.id}`);
+    expect(errors).toContain(`Duplicate tile ID: ${firstTile.id}`);
   });
 
   it("rejects duplicate categories and tile labels", () => {
     const puzzle = createValidPuzzle();
+    const firstGroup = puzzle.groups[0]!;
+    const secondGroup = puzzle.groups[1]!;
+    const firstTile = firstGroup.tiles[0]!;
 
-    puzzle.groups[1].category = puzzle.groups[0].category;
-    puzzle.groups[1].tiles[0].label = puzzle.groups[0].tiles[0].label;
+    secondGroup.category = firstGroup.category;
+    secondGroup.tiles[0]!.label = firstTile.label;
 
     const errors = validateConnectionsPuzzle(puzzle);
 
-    expect(errors).toContain("Duplicate group category: Letters");
-    expect(errors).toContain("Duplicate tile label: A");
+    expect(errors).toContain(
+      `Duplicate group category: ${firstGroup.category}`,
+    );
+    expect(errors).toContain(`Duplicate tile label: ${firstTile.label}`);
   });
 
   it("rejects blank required text", () => {
     const puzzle = createValidPuzzle();
+    const tile = puzzle.groups[0]!.tiles[0]!;
 
     puzzle.title = "   ";
-    puzzle.groups[0].tiles[0].label = "   ";
+    tile.label = "   ";
 
     const errors = validateConnectionsPuzzle(puzzle);
 
     expect(errors).toContain("Puzzle title must not be empty");
-    expect(errors).toContain("Tile letter-a must have a label");
+    expect(errors).toContain(`Tile ${tile.id} must have a label`);
   });
 });

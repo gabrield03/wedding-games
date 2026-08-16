@@ -1,12 +1,23 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { developmentPuzzle } from "@/domain/connections/fixtures";
 import { ConnectionsGameBoard } from "@/features/connections/ConnectionsGameBoard";
 
 afterEach(() => {
+  vi.useRealTimers();
   cleanup();
 });
+
+function tileLabel(groupIndex: number, tileIndex: number) {
+  return developmentPuzzle.groups[groupIndex]!.tiles[tileIndex]!.label;
+}
 
 describe("ConnectionsGameBoard", () => {
   it("renders all 16 puzzle tiles", () => {
@@ -22,7 +33,8 @@ describe("ConnectionsGameBoard", () => {
   it("selects and deselects a tile", () => {
     render(<ConnectionsGameBoard puzzle={developmentPuzzle} />);
 
-    const tile = screen.getByRole("button", { name: "A" });
+    const label = tileLabel(0, 0);
+    const tile = screen.getByRole("button", { name: label });
 
     fireEvent.click(tile);
 
@@ -36,27 +48,30 @@ describe("ConnectionsGameBoard", () => {
   it("allows at most four tiles to be selected", () => {
     render(<ConnectionsGameBoard puzzle={developmentPuzzle} />);
 
-    const tileLabels = ["A", "B", "C", "D", "1"];
+    const tileLabels = [
+      tileLabel(0, 0),
+      tileLabel(0, 1),
+      tileLabel(0, 2),
+      tileLabel(0, 3),
+      tileLabel(1, 0),
+    ];
 
     for (const label of tileLabels) {
       fireEvent.click(screen.getByRole("button", { name: label }));
     }
 
-    expect(
-      screen.getByRole("button", { name: "A" }).getAttribute("aria-pressed"),
-    ).toBe("true");
-    expect(
-      screen.getByRole("button", { name: "B" }).getAttribute("aria-pressed"),
-    ).toBe("true");
-    expect(
-      screen.getByRole("button", { name: "C" }).getAttribute("aria-pressed"),
-    ).toBe("true");
-    expect(
-      screen.getByRole("button", { name: "D" }).getAttribute("aria-pressed"),
-    ).toBe("true");
+    for (const label of tileLabels.slice(0, 4)) {
+      expect(
+        screen
+          .getByRole("button", { name: label })
+          .getAttribute("aria-pressed"),
+      ).toBe("true");
+    }
 
     expect(
-      screen.getByRole("button", { name: "1" }).getAttribute("aria-pressed"),
+      screen
+        .getByRole("button", { name: tileLabels[4] })
+        .getAttribute("aria-pressed"),
     ).toBe("false");
 
     expect(screen.getByText("4 / 4 selected")).toBeTruthy();
@@ -69,13 +84,20 @@ describe("ConnectionsGameBoard", () => {
 
     expect((submitButton as HTMLButtonElement).disabled).toBe(true);
 
-    for (const label of ["A", "B", "C", "D"]) {
+    const selectedLabels = [
+      tileLabel(0, 0),
+      tileLabel(0, 1),
+      tileLabel(0, 2),
+      tileLabel(0, 3),
+    ];
+
+    for (const label of selectedLabels) {
       fireEvent.click(screen.getByRole("button", { name: label }));
     }
 
     expect((submitButton as HTMLButtonElement).disabled).toBe(false);
 
-    fireEvent.click(screen.getByRole("button", { name: "A" }));
+    fireEvent.click(screen.getByRole("button", { name: selectedLabels[0] }));
 
     expect((submitButton as HTMLButtonElement).disabled).toBe(true);
   });
@@ -83,13 +105,117 @@ describe("ConnectionsGameBoard", () => {
   it("preserves selection when the board is shuffled", () => {
     render(<ConnectionsGameBoard puzzle={developmentPuzzle} />);
 
-    const tile = screen.getByRole("button", { name: "A" });
+    const label = tileLabel(0, 0);
+    const tile = screen.getByRole("button", { name: label });
 
     fireEvent.click(tile);
     fireEvent.click(screen.getByRole("button", { name: "Shuffle" }));
 
     expect(
-      screen.getByRole("button", { name: "A" }).getAttribute("aria-pressed"),
+      screen.getByRole("button", { name: label }).getAttribute("aria-pressed"),
     ).toBe("true");
+  });
+
+  it("renders the initial puzzle in a scrambled order", () => {
+    render(<ConnectionsGameBoard puzzle={developmentPuzzle} />);
+
+    const originalOrder = developmentPuzzle.groups.flatMap((group) =>
+      group.tiles.map((tile) => tile.label),
+    );
+
+    const renderedOrder = screen
+      .getAllByRole("button", { pressed: false })
+      .map((button) => button.textContent);
+
+    expect(renderedOrder).not.toEqual(originalOrder);
+  });
+
+  it("keeps an incorrect guess selected and shows feedback", () => {
+    render(<ConnectionsGameBoard puzzle={developmentPuzzle} />);
+
+    const incorrectLabels = [
+      tileLabel(0, 0),
+      tileLabel(0, 1),
+      tileLabel(1, 0),
+      tileLabel(1, 1),
+    ];
+
+    for (const label of incorrectLabels) {
+      fireEvent.click(screen.getByRole("button", { name: label }));
+    }
+
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    expect(screen.getByText("Incorrect guess")).toBeTruthy();
+    expect(screen.getByText("Mistakes remaining: 3")).toBeTruthy();
+
+    for (const label of incorrectLabels) {
+      const tile = screen.getByRole("button", { name: label });
+
+      expect(tile.getAttribute("aria-pressed")).toBe("true");
+      expect(tile.className).toContain("tile-shake");
+    }
+  });
+
+  it("does not consume another mistake for a duplicate guess", () => {
+    render(<ConnectionsGameBoard puzzle={developmentPuzzle} />);
+
+    const incorrectLabels = [
+      tileLabel(0, 0),
+      tileLabel(0, 1),
+      tileLabel(1, 0),
+      tileLabel(1, 1),
+    ];
+
+    for (const label of incorrectLabels) {
+      fireEvent.click(screen.getByRole("button", { name: label }));
+    }
+
+    const submitButton = screen.getByRole("button", { name: "Submit" });
+
+    fireEvent.click(submitButton);
+
+    expect(screen.getByText("Mistakes remaining: 3")).toBeTruthy();
+
+    fireEvent.click(submitButton);
+
+    expect(screen.getByText("Already guessed")).toBeTruthy();
+    expect(screen.getByText("Mistakes remaining: 3")).toBeTruthy();
+  });
+
+  it("shows correct feedback before resolving a solved group", () => {
+    vi.useFakeTimers();
+
+    render(<ConnectionsGameBoard puzzle={developmentPuzzle} />);
+
+    const solvedGroup = developmentPuzzle.groups[0]!;
+    const solvedLabels = solvedGroup.tiles.map((tile) => tile.label);
+
+    for (const label of solvedLabels) {
+      fireEvent.click(screen.getByRole("button", { name: label }));
+    }
+
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    expect(screen.getByText("Correct!")).toBeTruthy();
+
+    for (const label of solvedLabels) {
+      const tile = screen.getByRole("button", { name: label });
+
+      expect(tile.className).toContain("tile-correct");
+    }
+
+    expect(screen.queryByText(solvedGroup.category)).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    expect(screen.getByText(solvedGroup.category)).toBeTruthy();
+    expect(screen.queryByText("Correct!")).toBeNull();
+
+    for (const label of solvedLabels) {
+      expect(screen.queryByRole("button", { name: label })).toBeNull();
+    }
   });
 });
