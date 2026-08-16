@@ -1,8 +1,6 @@
+import { developmentPuzzle } from "@/domain/connections/fixtures";
+import { ConnectionsGameBoard } from "@/features/connections/ConnectionsGameBoard";
+
 export default function Home() {
-  return (
-    <main>
-      <h1>Wedding Games</h1>
-      <p>Development in progress.</p>
-    </main>
-  );
+  return <ConnectionsGameBoard puzzle={developmentPuzzle} />;
 }
