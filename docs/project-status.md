@@ -4,23 +4,18 @@ Last updated: 2026-08-16
 
 ## Current milestone
 
-**M2 - Production Game Structure**
+**M3 - Wordle Prototype**
 
 M1, the Connections Prototype milestone, is complete.
 
-M2 Issue 1, separating Connections application content from automated test
-fixtures, is complete.
+M2, Production Game Structure, is complete. It separated production content
+from test fixtures, extracted the Connections gameplay controller, added the
+Connections puzzle-loading boundary and dynamic route, introduced the game
+hub and narrow shared game-page shell, and polished navigation and project
+documentation.
 
-M2 Issue 2, extracting the Connections gameplay controller from the rendering
-component, is complete.
-
-M2 Issue 3, adding a Connections-specific puzzle-loading boundary, is
-complete.
-
-M2 Issue 4, adding the game hub and Connections puzzle routes, is complete.
-
-Current work is M2 Issue 5, polishing game navigation and aligning shared page
-structure and documentation.
+Current work is M3 Issue 1, building the pure Wordle domain model and
+duplicate-aware guess-evaluation algorithm.
 
 ## Product direction
 
@@ -32,6 +27,7 @@ Planned navigation direction:
 /
   Wedding games home page
   -> Connections
+  -> Wordle (planned during M3)
   -> future games
 
 /games/connections/[puzzleId]
@@ -42,7 +38,9 @@ The root page now serves a simple game-selection home page. The current
 Connections puzzle is available at
 `/games/connections/development-puzzle`.
 
-Do not build a generic game platform prematurely. Connections is the only implemented game today.
+Do not build a generic game platform prematurely. Connections is the only
+playable game today; Wordle should begin as an independent game-specific
+domain.
 
 ## M1 completed
 
@@ -132,6 +130,10 @@ src/
       gameplay.ts
       types.ts
       validation.ts
+    wordle/
+      gameplay.ts
+      types.ts
+      validation.ts
 
   features/
     connections/
@@ -145,6 +147,7 @@ tests/
   unit/
     content/connections/
     domain/connections/
+    domain/wordle/
     features/connections/
   e2e/
     smoke.spec.ts
@@ -174,9 +177,10 @@ the application puzzle because they exercise the puzzle rendered by the real
 route. Application routes access local Connections content through
 `getConnectionsPuzzle(puzzleId)` rather than importing individual puzzle files.
 
-## M2 design
+## M2 completed
 
-M2 should turn the successful prototype into maintainable production structure without rewriting the working game.
+M2 turned the successful prototype into maintainable production structure
+without rewriting the working game.
 
 ### M2 issue 1 - Separate production content from test fixtures
 
@@ -216,7 +220,8 @@ getConnectionsPuzzle(puzzleId);
 
 For M2 this may load local static content.
 
-The purpose is to let M3 later replace the implementation with Supabase/backend loading without requiring the Connections UI to know the storage mechanism.
+The purpose is to let a later backend milestone replace the implementation
+without requiring the Connections UI to know the storage mechanism.
 
 Implemented:
 
@@ -259,14 +264,15 @@ Implemented:
 - Avoided introducing a generic game registry, shared shell, or final visual
   design.
 
-### Current M2 issue 5 - Polish game navigation and align shared page structure
+### M2 issue 5 - Polish game navigation and align shared page structure
 
-Status: In progress.
+Completed:
 
-Implemented in the current branch:
+Implemented:
 
 - Simplified the home-page card so its only interactive element is the exact
-  `Play Connections` link; the game name and description remain normal content.
+  `Play Connections` link; the game name remains normal content and the card is
+  compact on wider screens.
 - Added a narrow `GamePageShell` that owns only the page-level container, small
   navigation area, explicit link to `/`, and child rendering.
 - Added visible `Back to games` navigation that works independently of browser
@@ -279,12 +285,45 @@ Implemented in the current branch:
 - Aligned the README, architecture snapshot, development setup wording, and
   project status with the structure implemented during M2.
 
-Issue 5 and M2 remain in progress until fast validation, the full local gate,
-and merge are complete.
+Issue 5 and M2 passed validation and were merged.
 
-## Deferred beyond M2
+## Current M3 issue 1 - Build Wordle domain model and guess evaluation
 
-These are intentionally not part of M2:
+Status: In progress; implementation is complete and awaiting the full local
+validation gate and merge.
+
+Issue 1 is intentionally limited to pure TypeScript Wordle domain code:
+
+- minimal Wordle puzzle and letter-evaluation types
+- fixed five-letter Wordle word length
+- runtime validation for puzzle data and evaluator input invariants
+- duplicate-aware guess evaluation
+- focused domain tests, especially for repeated-letter allocation
+
+React UI, routing, input handling, allowed-word dictionaries, attempt state,
+persistence, and shared multi-game abstractions remain outside this issue.
+
+Implemented:
+
+- Added a minimal Wordle puzzle model and per-letter evaluation types under an
+  independent `src/domain/wordle/` module.
+- Established `WORDLE_WORD_LENGTH = 5` as the single fixed word-length
+  constant.
+- Added runtime puzzle validation for blank IDs, answer length, and strict
+  ASCII alphabetic answer content.
+- Added pure, case-insensitive guess evaluation with uppercase output and clear
+  errors for malformed direct inputs.
+- Used two-pass answer-letter accounting so exact matches are reserved first
+  and each remaining answer-letter occurrence can satisfy at most one
+  misplaced guessed letter.
+- Added focused validation and gameplay tests, including repeated-letter and
+  excess-duplicate cases.
+- Kept Wordle independent from Connections, React, Next.js, content loading,
+  and generic game abstractions.
+
+## Deferred beyond the current issue
+
+These are intentionally not part of the current issue:
 
 - Supabase persistence
 - anonymous player-session persistence
@@ -295,10 +334,11 @@ These are intentionally not part of M2:
 - daily puzzle scheduling
 - guest identity/profile flows
 - cocktail-hour team/social mode
-- second game implementation
+- Wordle gameplay state and UI beyond pure guess evaluation
 - generic multi-game engine
 
-These should be handled in later milestones once the production structure is stable.
+These should be handled in later issues once concrete requirements justify
+them.
 
 ## Existing ADR decisions
 
@@ -309,7 +349,8 @@ The current ADR set includes:
 - ADR 0003: anonymous player sessions
 - ADR 0004: server-authoritative gameplay
 
-Do not create a new ADR for small refactors. Add one only when M2 makes a durable architectural decision that warrants preserving the reasoning.
+Do not create a new ADR for small refactors. Add one only when an issue makes a
+durable architectural decision that warrants preserving the reasoning.
 
 ## Local environment notes
 
@@ -331,7 +372,7 @@ Next.js sometimes reports a slow-filesystem warning for the `E:` drive. It has n
 
 ## Full validation gate
 
-Before merging an M2 implementation issue:
+Before merging an implementation issue:
 
 ```powershell
 npm run format; npm run format:check; npm run lint; npm run typecheck; npm test; npm run test:e2e; npm run build;
@@ -341,7 +382,5 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Run fast validation for Issue 5. Then run the full local gate, verify the Vercel
-preview and CI, merge the issue, and mark Issue 5 and M2 complete.
-
-The home-page/game-selection direction is accepted at a high level: the root should become a game hub, with individual games living under game-specific routes.
+Run the full local validation gate for M3 Issue 1, then merge the Wordle domain
+model and guess-evaluation implementation before starting gameplay-state work.
