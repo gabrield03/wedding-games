@@ -14,8 +14,10 @@ fixtures, is complete.
 M2 Issue 2, extracting the Connections gameplay controller from the rendering
 component, is complete.
 
-Current work is M2 Issue 3, adding a Connections-specific puzzle-loading
-boundary.
+M2 Issue 3, adding a Connections-specific puzzle-loading boundary, is
+complete.
+
+Current work is M2 Issue 4, adding the game hub and Connections puzzle routes.
 
 ## Product direction
 
@@ -33,7 +35,9 @@ Planned navigation direction:
   Individual Connections puzzle
 ```
 
-The root page currently serves the Connections prototype, but M2 should move toward a real home page with cards/buttons that let guests choose a game.
+The root page now serves a simple game-selection home page. The current
+Connections puzzle is available at
+`/games/connections/development-puzzle`.
 
 Do not build a generic game platform prematurely. Connections is the only implemented game today.
 
@@ -107,6 +111,10 @@ src/
     globals.css
     layout.tsx
     page.tsx
+    games/
+      connections/
+        [puzzleId]/
+          page.tsx
 
   content/
     connections/
@@ -188,9 +196,9 @@ Completed:
   terminal-state behavior.
 - Avoided introducing a generic game controller or engine abstraction.
 
-### Current M2 issue 3 - Add puzzle-loading boundary
+### M2 issue 3 - Add puzzle-loading boundary
 
-Status: Implementation complete; awaiting full local validation and merge.
+Completed:
 
 The UI should not permanently import a hardcoded puzzle directly.
 
@@ -215,7 +223,9 @@ Implemented:
 - Updated the root route to load its puzzle through the boundary without
   changing visible behavior.
 
-### Proposed M2 issue 4 - Add real game routes and home page
+### Current M2 issue 4 - Add real game routes and home page
+
+Status: Implementation complete; awaiting full local validation and merge.
 
 Move toward:
 
@@ -230,6 +240,18 @@ Move toward:
 The home page should eventually show available game cards/buttons.
 
 This issue should focus on simple usable navigation, not final wedding visual design.
+
+Implemented:
+
+- Replaced the root Connections prototype route with a simple Wedding Games
+  home page and one explicit Connections entry point.
+- Added `/games/connections/[puzzleId]` using the existing asynchronous puzzle
+  loader.
+- Translate unknown puzzle IDs into Next.js `notFound()` behavior.
+- Kept routing concerns outside the Connections board, controller, and domain.
+- Updated application metadata and end-to-end route/navigation coverage.
+- Avoided introducing a generic game registry, shared shell, or final visual
+  design.
 
 ### Proposed M2 issue 5 - Introduce minimal shared game shell
 
@@ -301,7 +323,7 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Run the full local validation gate for M2 Issue 3, then merge the
-Connections-specific puzzle-loading boundary before starting M2 Issue 4.
+Run the full local validation gate for M2 Issue 4, then merge the game hub and
+Connections puzzle routes before starting M2 Issue 5.
 
 The home-page/game-selection direction is accepted at a high level: the root should become a game hub, with individual games living under game-specific routes.

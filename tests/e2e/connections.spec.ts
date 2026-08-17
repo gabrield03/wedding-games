@@ -2,6 +2,8 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { developmentPuzzle } from "../../src/content/connections/developmentPuzzle";
 
+const connectionsPuzzlePath = `/games/connections/${developmentPuzzle.id}`;
+
 async function selectTiles(page: Page, labels: string[]) {
   for (const label of labels) {
     await page.getByRole("button", { name: label, exact: true }).click();
@@ -17,7 +19,7 @@ async function clearSelection(page: Page) {
 }
 
 test("player can complete and restart a puzzle", async ({ page }) => {
-  await page.goto("/");
+  await page.goto(connectionsPuzzlePath);
 
   await expect(
     page.getByRole("heading", { name: developmentPuzzle.title }),
@@ -46,7 +48,7 @@ test("player can complete and restart a puzzle", async ({ page }) => {
 });
 
 test("player can lose and restart a puzzle", async ({ page }) => {
-  await page.goto("/");
+  await page.goto(connectionsPuzzlePath);
 
   const [firstGroup, secondGroup, thirdGroup, fourthGroup] =
     developmentPuzzle.groups;
