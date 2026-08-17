@@ -1,4 +1,4 @@
-import { developmentPuzzle } from "@/domain/connections/fixtures";
+import { developmentPuzzle } from "@/content/connections/developmentPuzzle";
 import { ConnectionsGameBoard } from "@/features/connections/ConnectionsGameBoard";
 
 export default function Home() {

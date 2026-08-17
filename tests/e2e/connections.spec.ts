@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { developmentPuzzle } from "../../src/domain/connections/fixtures";
+import { developmentPuzzle } from "../../src/content/connections/developmentPuzzle";
 
 async function selectTiles(page: Page, labels: string[]) {
   for (const label of labels) {

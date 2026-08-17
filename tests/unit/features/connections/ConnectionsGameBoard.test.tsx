@@ -7,8 +7,8 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { developmentPuzzle } from "@/domain/connections/fixtures";
 import { ConnectionsGameBoard } from "@/features/connections/ConnectionsGameBoard";
+import { testConnectionsPuzzle } from "../../../fixtures/connections";
 
 afterEach(() => {
   vi.useRealTimers();
@@ -16,12 +16,12 @@ afterEach(() => {
 });
 
 function tileLabel(groupIndex: number, tileIndex: number) {
-  return developmentPuzzle.groups[groupIndex]!.tiles[tileIndex]!.label;
+  return testConnectionsPuzzle.groups[groupIndex]!.tiles[tileIndex]!.label;
 }
 
 describe("ConnectionsGameBoard", () => {
   it("renders all 16 puzzle tiles", () => {
-    render(<ConnectionsGameBoard puzzle={developmentPuzzle} />);
+    render(<ConnectionsGameBoard puzzle={testConnectionsPuzzle} />);
 
     const tileButtons = screen.getAllByRole("button", {
       pressed: false,
@@ -31,7 +31,7 @@ describe("ConnectionsGameBoard", () => {
   });
 
   it("selects and deselects a tile", () => {
-    render(<ConnectionsGameBoard puzzle={developmentPuzzle} />);
+    render(<ConnectionsGameBoard puzzle={testConnectionsPuzzle} />);
 
     const label = tileLabel(0, 0);
     const tile = screen.getByRole("button", { name: label });
@@ -46,7 +46,7 @@ describe("ConnectionsGameBoard", () => {
   });
 
   it("allows at most four tiles to be selected", () => {
-    render(<ConnectionsGameBoard puzzle={developmentPuzzle} />);
+    render(<ConnectionsGameBoard puzzle={testConnectionsPuzzle} />);
 
     const tileLabels = [
       tileLabel(0, 0),
@@ -78,7 +78,7 @@ describe("ConnectionsGameBoard", () => {
   });
 
   it("enables Submit only when exactly four tiles are selected", () => {
-    render(<ConnectionsGameBoard puzzle={developmentPuzzle} />);
+    render(<ConnectionsGameBoard puzzle={testConnectionsPuzzle} />);
 
     const submitButton = screen.getByRole("button", { name: "Submit" });
 
@@ -103,7 +103,7 @@ describe("ConnectionsGameBoard", () => {
   });
 
   it("preserves selection when the board is shuffled", () => {
-    render(<ConnectionsGameBoard puzzle={developmentPuzzle} />);
+    render(<ConnectionsGameBoard puzzle={testConnectionsPuzzle} />);
 
     const label = tileLabel(0, 0);
     const tile = screen.getByRole("button", { name: label });
@@ -117,9 +117,9 @@ describe("ConnectionsGameBoard", () => {
   });
 
   it("renders the initial puzzle in a scrambled order", () => {
-    render(<ConnectionsGameBoard puzzle={developmentPuzzle} />);
+    render(<ConnectionsGameBoard puzzle={testConnectionsPuzzle} />);
 
-    const originalOrder = developmentPuzzle.groups.flatMap((group) =>
+    const originalOrder = testConnectionsPuzzle.groups.flatMap((group) =>
       group.tiles.map((tile) => tile.label),
     );
 
@@ -131,7 +131,7 @@ describe("ConnectionsGameBoard", () => {
   });
 
   it("keeps an incorrect guess selected and shows feedback", () => {
-    render(<ConnectionsGameBoard puzzle={developmentPuzzle} />);
+    render(<ConnectionsGameBoard puzzle={testConnectionsPuzzle} />);
 
     const incorrectLabels = [
       tileLabel(0, 0),
@@ -158,7 +158,7 @@ describe("ConnectionsGameBoard", () => {
   });
 
   it("does not consume another mistake for a duplicate guess", () => {
-    render(<ConnectionsGameBoard puzzle={developmentPuzzle} />);
+    render(<ConnectionsGameBoard puzzle={testConnectionsPuzzle} />);
 
     const incorrectLabels = [
       tileLabel(0, 0),
@@ -186,9 +186,9 @@ describe("ConnectionsGameBoard", () => {
   it("shows correct feedback before resolving a solved group", () => {
     vi.useFakeTimers();
 
-    render(<ConnectionsGameBoard puzzle={developmentPuzzle} />);
+    render(<ConnectionsGameBoard puzzle={testConnectionsPuzzle} />);
 
-    const solvedGroup = developmentPuzzle.groups[0]!;
+    const solvedGroup = testConnectionsPuzzle.groups[0]!;
     const solvedLabels = solvedGroup.tiles.map((tile) => tile.label);
 
     for (const label of solvedLabels) {
