@@ -1,29 +1,59 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { getWordlePuzzle } from "../../src/content/wordle/getWordlePuzzle";
-import { featuredWordlePuzzleId } from "../../src/content/wordle/puzzles";
 
-const wordlePuzzlePath = `/games/wordle/${featuredWordlePuzzleId}`;
+const wordlePuzzleId = "wedding-01";
+const wordlePuzzlePath = `/games/wordle/${wordlePuzzleId}`;
+const wordlePuzzlePathPattern = /\/games\/wordle\/wedding-(?:0[1-9]|10)$/;
 
-async function loadFeaturedPuzzle() {
-  const puzzle = await getWordlePuzzle(featuredWordlePuzzleId);
+async function loadTestPuzzle() {
+  const puzzle = await getWordlePuzzle(wordlePuzzleId);
 
   if (!puzzle) {
-    throw new Error(
-      `Featured Wordle puzzle not found: ${featuredWordlePuzzleId}`,
-    );
+    throw new Error(`Wordle test puzzle not found: ${wordlePuzzleId}`);
   }
 
   return puzzle;
 }
 
 async function enterGuess(page: Page, guess: string) {
-  await page.keyboard.type(guess);
-  await page.keyboard.press("Enter");
+  for (const letter of guess) {
+    await page
+      .getByRole("button", {
+        name: new RegExp(`^${letter}(?:, (?:correct|present|absent))?$`),
+      })
+      .click();
+  }
+
+  await expect(
+    page.getByRole("group", { name: `Current guess: ${guess}` }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Enter" }).click();
 }
 
-test("player can win the featured puzzle and play again", async ({ page }) => {
-  const puzzle = await loadFeaturedPuzzle();
+async function navigateToNextWord(page: Page) {
+  const nextWordLink = page.getByRole("link", { name: "Next Word" });
+
+  await expect(nextWordLink).toHaveAttribute(
+    "href",
+    `/games/wordle?exclude=${wordlePuzzleId}`,
+  );
+  await nextWordLink.click();
+  await page.waitForURL(
+    (url) =>
+      url.pathname !== wordlePuzzlePath &&
+      wordlePuzzlePathPattern.test(url.pathname),
+  );
+
+  const nextPuzzleId = new URL(page.url()).pathname.split("/").at(-1);
+
+  expect(nextPuzzleId).not.toBe(wordlePuzzleId);
+}
+
+test("player can win a puzzle and navigate to a fresh next word", async ({
+  page,
+}) => {
+  const puzzle = await loadTestPuzzle();
 
   await page.goto(wordlePuzzlePath);
   await enterGuess(page, puzzle.answer);
@@ -34,8 +64,7 @@ test("player can win the featured puzzle and play again", async ({ page }) => {
     page.getByRole("group", { name: "On-screen keyboard" }),
   ).toBeVisible();
 
-  await page.getByRole("button", { name: "Play Again" }).click();
-
+  await navigateToNextWord(page);
   await expect(page.getByRole("status")).toBeEmpty();
   await expect(
     page.getByRole("group", { name: "Current guess is empty" }),
@@ -43,10 +72,10 @@ test("player can win the featured puzzle and play again", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Enter" })).toBeEnabled();
 });
 
-test("player can lose the featured puzzle, see the answer, and play again", async ({
+test("player can lose a puzzle, see the answer, and navigate to a fresh next word", async ({
   page,
 }) => {
-  const puzzle = await loadFeaturedPuzzle();
+  const puzzle = await loadTestPuzzle();
   const losingGuess = puzzle.answer === "XXXXX" ? "ZZZZZ" : "XXXXX";
 
   await page.goto(wordlePuzzlePath);
@@ -63,8 +92,7 @@ test("player can lose the featured puzzle, see the answer, and play again", asyn
     page.getByRole("group", { name: "On-screen keyboard" }),
   ).toBeVisible();
 
-  await page.getByRole("button", { name: "Play Again" }).click();
-
+  await navigateToNextWord(page);
   await expect(page.getByRole("status")).toBeEmpty();
   await expect(
     page.getByRole("group", { name: "Current guess is empty" }),

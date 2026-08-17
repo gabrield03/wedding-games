@@ -4,7 +4,7 @@ Last updated: 2026-08-16
 
 ## Current milestone
 
-**M3 - Wordle Prototype**
+**M3 - Wordle Prototype: complete**
 
 M1, the Connections Prototype milestone, is complete.
 
@@ -28,8 +28,11 @@ presentation, answer reveal, and restart, is complete.
 M3 Issue 5, polishing Wordle interactions, motion, accessibility, and
 small-screen behavior without changing gameplay rules, is complete.
 
-Current work is M3 Issue 6, integrating curated local Wordle content, a
-dynamic puzzle route, and a Wordle entry point on the game hub.
+M3 Issue 6, integrating curated local Wordle content, a dynamic puzzle route,
+and a Wordle entry point on the game hub, is complete.
+
+Current work is a narrow post-M3 correction for theme-aware Wordle text and
+request-time Next Word puzzle selection before M4 begins.
 
 ## Product direction
 
@@ -49,11 +52,14 @@ Planned navigation direction:
 
 /games/wordle/[puzzleId]
   Individual Wordle puzzle
+
+/games/wordle
+  Request-time Wordle puzzle selection and redirect
 ```
 
-The root page now serves a simple two-game selection page. The current featured
-puzzles are available at `/games/connections/development-puzzle` and
-`/games/wordle/wedding-01`.
+The root page now serves a simple two-game selection page. Connections links to
+`/games/connections/development-puzzle`; Wordle links to `/games/wordle`, which
+selects and redirects to one of the local puzzles at request time.
 
 Connections and Wordle remain independent game-specific implementations. Do
 not build a generic game platform, registry, repository, or engine until later
@@ -134,6 +140,7 @@ src/
         [puzzleId]/
           page.tsx
       wordle/
+        page.tsx
         [puzzleId]/
           page.tsx
 
@@ -210,9 +217,9 @@ route. Application routes access local Connections content through
 ## Current Wordle content
 
 `src/content/wordle/puzzles.ts` contains ten local wedding-related five-letter
-answers with opaque stable IDs from `wedding-01` through `wedding-10`. `BRIDE`
-is the initial featured answer at `wedding-01`; the home page uses the exported
-featured ID rather than random or daily selection.
+answers with opaque stable IDs from `wedding-01` through `wedding-10`. The home
+page enters through `/games/wordle`, which chooses from this collection at
+request time without introducing daily scheduling or persistent history.
 
 The collection is an answer bank only. Structurally valid five-letter guesses
 remain playable without dictionary membership or invalid-word rejection.
@@ -540,10 +547,9 @@ Implemented:
 
 Issue 5 passed validation, manual testing, and was merged.
 
-## Current M3 issue 6 - Integrate Wordle content, routes, and game hub
+## M3 issue 6 - Integrate Wordle content, routes, and game hub
 
-Status: In progress; implementation is complete and awaiting the full local
-validation gate and merge.
+Completed:
 
 Issue 6 will productionize the completed Wordle prototype without changing its
 gameplay mechanics:
@@ -560,8 +566,7 @@ remain outside this issue.
 
 Implemented:
 
-- Added ten uppercase wedding-related answer puzzles with opaque stable IDs and
-  `BRIDE` at `wedding-01` as the explicit featured puzzle.
+- Added ten uppercase wedding-related answer puzzles with opaque stable IDs.
 - Added an asynchronous Wordle-specific loader that returns `null` for unknown
   IDs, runtime-validates found content, and throws a descriptive content error
   when a stored puzzle is invalid.
@@ -573,8 +578,8 @@ Implemented:
   registry abstraction.
 - Extended smoke coverage for both home-page entries, Wordle navigation and
   return navigation, and an unknown Wordle ID.
-- Added Wordle real-browser specifications for featured-puzzle win and loss,
-  answer reveal, terminal board/keyboard retention, and restart, deriving the
+- Added Wordle real-browser specifications for puzzle win and loss, answer
+  reveal, terminal board/keyboard retention, and restart, deriving the
   real answer through the public loader.
 - Updated project documentation for the second playable game and its parallel
   content, route, controller, view, test, and domain boundaries.
@@ -583,6 +588,27 @@ Implemented:
   work.
 - Preserved both games' existing gameplay code and avoided generic content or
   game abstractions.
+
+Issue 6 passed validation and manual testing and was merged, completing M3.
+
+## Current post-M3 Wordle corrections
+
+Status: In progress; implementation is complete and awaiting the full local
+validation gate and merge.
+
+Implemented:
+
+- Replaced the hardcoded white current-tile foreground with the existing
+  light/dark theme token and added a dark-mode instruction-text variant.
+- Added `/games/wordle` as a request-time selector using `connection()` before
+  random selection and redirecting to the existing dynamic puzzle route.
+- Replaced the direct home-page puzzle link with the selection entry route.
+- Replaced terminal Play Again reset behavior with a route-provided Next Word
+  link that excludes the puzzle just completed.
+- Keep the completed board and keyboard visible until navigation, then key the
+  next board by puzzle ID to guarantee fresh client gameplay state.
+- Kept random selection in the Wordle content layer and kept the gameplay
+  controller and domain unaware of the puzzle collection and routing.
 
 ## Deferred beyond the current issue
 
@@ -599,7 +625,7 @@ These are intentionally not part of the current issue:
 - cocktail-hour team/social mode
 - personalized Wordle answers not supplied by the couple
 - allowed-guess dictionaries and invalid-word rejection
-- random or daily Wordle puzzle selection
+- daily Wordle scheduling and no-repeat puzzle history
 - generic multi-game engine
 
 These should be handled in later issues once concrete requirements justify
@@ -647,6 +673,6 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Run the full local validation gate for M3 Issue 6, manually verify both game-hub
-entries and the dynamic Wordle win/loss/restart flows, and merge before marking
-M3 complete.
+Run the full local validation gate, manually verify light/dark current-row text
+and request-time Next Word navigation on another device, then merge these
+post-M3 corrections before beginning M4.

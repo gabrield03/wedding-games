@@ -333,10 +333,11 @@ The current Playwright configuration runs tests against:
 
 Playwright automatically starts the local Next.js development server for test execution.
 
-The smoke coverage exercises both explicit game-hub entries, navigation to the
-featured Connections and Wordle puzzles, navigation back to the hub, and
+The smoke coverage exercises both explicit game-hub entries, request-time
+Wordle puzzle selection, direct puzzle URLs, navigation back to the hub, and
 unknown-puzzle not-found behavior. Game-specific E2E specifications cover the
-major Connections and Wordle completion, loss, and restart flows.
+major Connections completion/loss/restart flows and Wordle completion/loss/Next
+Word flows.
 
 End-to-end tests should be used for complete user flows and browser behavior that are better validated through a real browser than through isolated unit tests.
 

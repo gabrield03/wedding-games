@@ -1,7 +1,5 @@
 import type { WordlePuzzle } from "@/domain/wordle/types";
 
-export const featuredWordlePuzzleId = "wedding-01";
-
 const localWordlePuzzles: WordlePuzzle[] = [
   { id: "wedding-01", answer: "BRIDE" },
   { id: "wedding-02", answer: "GROOM" },
@@ -19,4 +17,18 @@ export function findLocalWordlePuzzle(puzzleId: string): WordlePuzzle | null {
   return (
     localWordlePuzzles.find((candidate) => candidate.id === puzzleId) ?? null
   );
+}
+
+export function selectRandomWordlePuzzleId(excludedPuzzleId?: string): string {
+  const eligiblePuzzles = localWordlePuzzles.filter(
+    (puzzle) => puzzle.id !== excludedPuzzleId,
+  );
+
+  if (eligiblePuzzles.length === 0) {
+    throw new Error("No eligible Wordle puzzles are available");
+  }
+
+  const selectedIndex = Math.floor(Math.random() * eligiblePuzzles.length);
+
+  return eligiblePuzzles[selectedIndex]!.id;
 }

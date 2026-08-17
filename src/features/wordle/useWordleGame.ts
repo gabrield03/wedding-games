@@ -96,14 +96,6 @@ export function useWordleGame(puzzle: WordlePuzzle) {
     });
   }, [puzzle.answer]);
 
-  const restart = useCallback(() => {
-    setControllerState({
-      gameState: createInitialWordleGameState(),
-      feedback: null,
-      incompleteAttempt: 0,
-    });
-  }, []);
-
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (
@@ -155,7 +147,6 @@ export function useWordleGame(puzzle: WordlePuzzle) {
     addLetter,
     backspace,
     submitGuess,
-    restart,
   };
 }
 

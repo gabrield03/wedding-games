@@ -1,10 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 import { developmentPuzzle } from "../../src/content/connections/developmentPuzzle";
-import { featuredWordlePuzzleId } from "../../src/content/wordle/puzzles";
 
 const connectionsPuzzlePath = `/games/connections/${developmentPuzzle.id}`;
-const wordlePuzzlePath = `/games/wordle/${featuredWordlePuzzleId}`;
+const wordlePuzzlePathPattern = /\/games\/wordle\/wedding-(?:0[1-9]|10)$/;
 
 test("player can navigate from the home page to Connections", async ({
   page,
@@ -48,9 +47,15 @@ test("player can navigate from the home page to Connections", async ({
 test("player can navigate from the home page to Wordle", async ({ page }) => {
   await page.goto("/");
 
-  await page.getByRole("link", { name: "Play Wordle", exact: true }).click();
+  const playWordleLink = page.getByRole("link", {
+    name: "Play Wordle",
+    exact: true,
+  });
 
-  await expect(page).toHaveURL(wordlePuzzlePath);
+  await expect(playWordleLink).toHaveAttribute("href", "/games/wordle");
+  await playWordleLink.click();
+
+  await expect(page).toHaveURL(wordlePuzzlePathPattern);
   await expect(page.getByRole("heading", { name: "Wordle" })).toBeVisible();
 
   const backLink = page.getByRole("link", {
@@ -64,6 +69,16 @@ test("player can navigate from the home page to Wordle", async ({ page }) => {
   await expect(page).toHaveURL("/");
   await expect(
     page.getByRole("heading", { name: "Wedding Games" }),
+  ).toBeVisible();
+});
+
+test("direct Wordle puzzle URL remains playable", async ({ page }) => {
+  await page.goto("/games/wordle/wedding-01");
+
+  await expect(page).toHaveURL("/games/wordle/wedding-01");
+  await expect(page.getByRole("heading", { name: "Wordle" })).toBeVisible();
+  await expect(
+    page.getByRole("group", { name: "Current guess is empty" }),
   ).toBeVisible();
 });
 
