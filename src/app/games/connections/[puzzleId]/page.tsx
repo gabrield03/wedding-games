@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { GamePageShell } from "@/components/GamePageShell";
 import { getConnectionsPuzzle } from "@/content/connections/getConnectionsPuzzle";
 import { ConnectionsGameBoard } from "@/features/connections/ConnectionsGameBoard";
 
@@ -13,5 +14,9 @@ export default async function ConnectionsPuzzlePage({
     notFound();
   }
 
-  return <ConnectionsGameBoard puzzle={puzzle} />;
+  return (
+    <GamePageShell>
+      <ConnectionsGameBoard puzzle={puzzle} />
+    </GamePageShell>
+  );
 }

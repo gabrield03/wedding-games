@@ -10,16 +10,15 @@ export default function Home() {
           Choose a game to play.
         </p>
 
-        <Link
-          href="/games/connections/development-puzzle"
-          className="mt-8 block rounded-lg border border-neutral-300 bg-neutral-100 p-5 text-neutral-950 transition hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2 active:scale-[0.99]"
-        >
+        <div className="mt-8 w-full max-w-sm rounded-lg border border-neutral-300 bg-neutral-100 p-5 text-neutral-950">
           <h2 className="text-xl font-bold">Connections</h2>
-          <p className="mt-2 text-neutral-700">
-            Find groups of four related items.
-          </p>
-          <p className="mt-4 font-semibold">Play Connections</p>
-        </Link>
+          <Link
+            href="/games/connections/development-puzzle"
+            className="mt-4 inline-flex rounded-full border border-neutral-800 px-4 py-2 font-semibold transition hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2 active:scale-[0.98]"
+          >
+            Play Connections
+          </Link>
+        </div>
       </section>
     </main>
   );
