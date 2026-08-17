@@ -11,6 +11,9 @@ M1, the Connections Prototype milestone, is complete.
 M2 Issue 1, separating Connections application content from automated test
 fixtures, is complete.
 
+Current work is M2 Issue 2, extracting the Connections gameplay controller
+from the rendering component.
+
 ## Product direction
 
 The wedding-games site should evolve into a small game hub.
@@ -165,7 +168,9 @@ Completed:
 - Preserved the existing root-page behavior without introducing a puzzle-loading
   abstraction.
 
-### Proposed M2 issue 2 - Extract Connections gameplay controller
+### Current M2 issue 2 - Extract Connections gameplay controller
+
+Status: In progress.
 
 `ConnectionsGameBoard.tsx` currently coordinates several responsibilities:
 
@@ -293,8 +298,8 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Proceed to M2 Issue 2 by extracting the Connections-specific React gameplay
-controller from `ConnectionsGameBoard.tsx` without changing the pure domain
-rules.
+Define and implement the smallest Connections-specific React gameplay
+controller that separates orchestration from `ConnectionsGameBoard.tsx`
+without changing the pure domain rules or current gameplay behavior.
 
 The home-page/game-selection direction is accepted at a high level: the root should become a game hub, with individual games living under game-specific routes.
