@@ -1,9 +1,111 @@
 import {
   WORDLE_WORD_LENGTH,
+  type WordleGameState,
+  type WordleGameStatus,
+  type WordleGuessSubmissionResult,
   type WordleLetterEvaluation,
 } from "@/domain/wordle/types";
 
+export const WORDLE_MAX_ATTEMPTS = 6;
+
 const WORDLE_WORD_PATTERN = new RegExp(`^[A-Za-z]{${WORDLE_WORD_LENGTH}}$`);
+const WORDLE_LETTER_PATTERN = /^[A-Za-z]$/;
+
+export function createInitialWordleGameState(): WordleGameState {
+  return {
+    currentGuess: "",
+    submittedGuesses: [],
+  };
+}
+
+export function getWordleGameStatus(state: WordleGameState): WordleGameStatus {
+  const hasWinningGuess = state.submittedGuesses.some(
+    ({ evaluation }) =>
+      evaluation.length === WORDLE_WORD_LENGTH &&
+      evaluation.every(({ status }) => status === "correct"),
+  );
+
+  if (hasWinningGuess) {
+    return "won";
+  }
+
+  if (state.submittedGuesses.length >= WORDLE_MAX_ATTEMPTS) {
+    return "lost";
+  }
+
+  return "playing";
+}
+
+export function addWordleLetter(
+  state: WordleGameState,
+  letter: string,
+): WordleGameState {
+  if (!WORDLE_LETTER_PATTERN.test(letter)) {
+    throw new Error("Letter must be a single ASCII alphabetic character");
+  }
+
+  if (
+    getWordleGameStatus(state) !== "playing" ||
+    state.currentGuess.length >= WORDLE_WORD_LENGTH
+  ) {
+    return state;
+  }
+
+  return {
+    ...state,
+    currentGuess: `${state.currentGuess}${letter.toUpperCase()}`,
+  };
+}
+
+export function removeWordleLetter(state: WordleGameState): WordleGameState {
+  if (
+    getWordleGameStatus(state) !== "playing" ||
+    state.currentGuess.length === 0
+  ) {
+    return state;
+  }
+
+  return {
+    ...state,
+    currentGuess: state.currentGuess.slice(0, -1),
+  };
+}
+
+export function submitWordleGuess(
+  answer: string,
+  state: WordleGameState,
+): WordleGuessSubmissionResult {
+  if (getWordleGameStatus(state) !== "playing") {
+    return {
+      status: "game_over",
+      state,
+    };
+  }
+
+  if (state.currentGuess.length !== WORDLE_WORD_LENGTH) {
+    return {
+      status: "incomplete",
+      state,
+    };
+  }
+
+  const normalizedGuess = state.currentGuess.toUpperCase();
+  const evaluation = evaluateWordleGuess(answer, normalizedGuess);
+
+  return {
+    status: "submitted",
+    state: {
+      currentGuess: "",
+      submittedGuesses: [
+        ...state.submittedGuesses,
+        {
+          guess: normalizedGuess,
+          evaluation,
+        },
+      ],
+    },
+  };
+}
 
 export function evaluateWordleGuess(
   answer: string,
