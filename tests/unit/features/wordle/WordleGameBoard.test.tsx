@@ -14,6 +14,13 @@ const testPuzzle: WordlePuzzle = {
   id: "test-wordle-puzzle",
   answer: "CRANE",
 };
+const nextWordHref = "/games/wordle?exclude=test-wordle-puzzle";
+
+function renderWordleGameBoard(puzzle = testPuzzle) {
+  return render(
+    <WordleGameBoard puzzle={puzzle} nextWordHref={nextWordHref} />,
+  );
+}
 
 afterEach(cleanup);
 
@@ -39,7 +46,7 @@ function submitWithOnScreenKeyboard() {
 
 describe("WordleGameBoard", () => {
   it("always renders six rows with five tiles each", () => {
-    render(<WordleGameBoard puzzle={testPuzzle} />);
+    renderWordleGameBoard();
 
     const board = screen.getByRole("group", { name: "Wordle board" });
 
@@ -48,7 +55,7 @@ describe("WordleGameBoard", () => {
   });
 
   it("renders readable special keys with a compact accessible Backspace control", () => {
-    render(<WordleGameBoard puzzle={testPuzzle} />);
+    renderWordleGameBoard();
 
     const enterKey = within(keyboard()).getByRole("button", { name: "Enter" });
     const backspaceKey = within(keyboard()).getByRole("button", {
@@ -65,7 +72,7 @@ describe("WordleGameBoard", () => {
   });
 
   it("enters uppercase letters and enforces the five-letter cap", () => {
-    render(<WordleGameBoard puzzle={testPuzzle} />);
+    renderWordleGameBoard();
 
     enterWithOnScreenKeyboard("cranes");
 
@@ -74,8 +81,8 @@ describe("WordleGameBoard", () => {
     ).toBeTruthy();
   });
 
-  it("renders current letters with high-contrast text while empty tiles remain empty", () => {
-    render(<WordleGameBoard puzzle={testPuzzle} />);
+  it("renders theme-aware current letters and instruction text", () => {
+    renderWordleGameBoard();
 
     enterWithOnScreenKeyboard("C");
 
@@ -85,14 +92,19 @@ describe("WordleGameBoard", () => {
     const tiles = currentRow.querySelectorAll("[data-wordle-tile]");
 
     expect(tiles[0]!.textContent).toBe("C");
-    expect(tiles[0]!.className).toContain("text-white");
+    expect(tiles[0]!.className).toContain("text-foreground");
+    expect(tiles[0]!.className).toContain("dark:border-neutral-300");
+    expect(tiles[0]!.className).not.toContain("text-white");
     expect(tiles[0]!.getAttribute("data-status")).toBe("unsubmitted");
     expect(tiles[1]!.textContent).toBe("");
     expect(tiles[1]!.className).toContain("border-neutral-300");
+    expect(
+      screen.getByText("Guess the five-letter word in six attempts.").className,
+    ).toContain("dark:text-neutral-400");
   });
 
   it("removes the final current letter with Backspace", () => {
-    render(<WordleGameBoard puzzle={testPuzzle} />);
+    renderWordleGameBoard();
 
     enterWithOnScreenKeyboard("CRAN");
     fireEvent.click(
@@ -105,7 +117,7 @@ describe("WordleGameBoard", () => {
   });
 
   it("retriggerably shakes an incomplete row and clears the presentation on letter entry", () => {
-    render(<WordleGameBoard puzzle={testPuzzle} />);
+    renderWordleGameBoard();
 
     enterWithOnScreenKeyboard("CRA");
     submitWithOnScreenKeyboard();
@@ -138,7 +150,7 @@ describe("WordleGameBoard", () => {
   });
 
   it("clears incomplete feedback on Backspace", () => {
-    render(<WordleGameBoard puzzle={testPuzzle} />);
+    renderWordleGameBoard();
 
     enterWithOnScreenKeyboard("CRA");
     submitWithOnScreenKeyboard();
@@ -156,7 +168,7 @@ describe("WordleGameBoard", () => {
   });
 
   it("keeps incomplete feedback cleared after a successful submission", () => {
-    render(<WordleGameBoard puzzle={testPuzzle} />);
+    renderWordleGameBoard();
 
     enterWithOnScreenKeyboard("CREA");
     submitWithOnScreenKeyboard();
@@ -175,7 +187,7 @@ describe("WordleGameBoard", () => {
   });
 
   it("submits stored evaluations, clears input, and updates key statuses", () => {
-    render(<WordleGameBoard puzzle={testPuzzle} />);
+    renderWordleGameBoard();
 
     enterWithOnScreenKeyboard("CREAM");
     submitWithOnScreenKeyboard();
@@ -204,7 +216,7 @@ describe("WordleGameBoard", () => {
   });
 
   it("reveals only the newest submitted row with staggered tile delays", () => {
-    render(<WordleGameBoard puzzle={testPuzzle} />);
+    renderWordleGameBoard();
 
     enterWithOnScreenKeyboard("CREAM");
     submitWithOnScreenKeyboard();
@@ -250,11 +262,10 @@ describe("WordleGameBoard", () => {
   });
 
   it("keeps the strongest observed keyboard status", () => {
-    render(
-      <WordleGameBoard
-        puzzle={{ id: "keyboard-status-puzzle", answer: "APPLE" }}
-      />,
-    );
+    renderWordleGameBoard({
+      id: "keyboard-status-puzzle",
+      answer: "APPLE",
+    });
 
     enterWithOnScreenKeyboard("ALLEY");
     submitWithOnScreenKeyboard();
@@ -279,7 +290,7 @@ describe("WordleGameBoard", () => {
   });
 
   it("uses physical letter, Backspace, and Enter input", () => {
-    render(<WordleGameBoard puzzle={testPuzzle} />);
+    renderWordleGameBoard();
 
     for (const key of ["c", "r", "a"]) {
       fireEvent.keyDown(window, { key });
@@ -309,7 +320,7 @@ describe("WordleGameBoard", () => {
   });
 
   it("shows a win while keeping the completed board and disabled keyboard visible", () => {
-    render(<WordleGameBoard puzzle={testPuzzle} />);
+    renderWordleGameBoard();
 
     enterWithOnScreenKeyboard("CRANE");
     submitWithOnScreenKeyboard();
@@ -317,7 +328,9 @@ describe("WordleGameBoard", () => {
     expect(screen.getByRole("status").textContent).toBe("You got it!");
     expect(screen.getByRole("group", { name: "Wordle board" })).toBeTruthy();
     expect(keyboard()).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Play Again" })).toBeTruthy();
+    const nextWordLink = screen.getByRole("link", { name: "Next Word" });
+
+    expect(nextWordLink.getAttribute("href")).toBe(nextWordHref);
 
     for (const button of within(keyboard()).getAllByRole("button")) {
       expect((button as HTMLButtonElement).disabled).toBe(true);
@@ -331,7 +344,7 @@ describe("WordleGameBoard", () => {
   });
 
   it("shows a loss and reveals the answer after the sixth unsuccessful guess", () => {
-    render(<WordleGameBoard puzzle={{ id: "loss-puzzle", answer: "APPLE" }} />);
+    renderWordleGameBoard({ id: "loss-puzzle", answer: "APPLE" });
 
     for (let attempt = 0; attempt < 6; attempt += 1) {
       enterWithOnScreenKeyboard("CRANE");
@@ -346,7 +359,9 @@ describe("WordleGameBoard", () => {
     );
     expect(screen.getByRole("group", { name: "Wordle board" })).toBeTruthy();
     expect(keyboard()).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Play Again" })).toBeTruthy();
+    const nextWordLink = screen.getByRole("link", { name: "Next Word" });
+
+    expect(nextWordLink.getAttribute("href")).toBe(nextWordHref);
 
     for (const button of within(keyboard()).getAllByRole("button")) {
       expect((button as HTMLButtonElement).disabled).toBe(true);
@@ -359,66 +374,8 @@ describe("WordleGameBoard", () => {
     );
   });
 
-  it("restarts with clean game and UI state after a win", () => {
-    render(<WordleGameBoard puzzle={testPuzzle} />);
-
-    enterWithOnScreenKeyboard("CRANE");
-    submitWithOnScreenKeyboard();
-
-    expect(
-      within(keyboard()).getByRole("button", { name: "C, correct" }),
-    ).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("button", { name: "Play Again" }));
-
-    expect(screen.getByRole("status").textContent).toBe("");
-    expect(screen.queryByRole("group", { name: /^Guess 1:/ })).toBeNull();
-    expect(
-      screen.getByRole("group", { name: "Current guess is empty" }),
-    ).toBeTruthy();
-    expect(
-      within(keyboard()).getByRole("button", { name: /^C$/ }),
-    ).toBeTruthy();
-    expect(
-      (
-        within(keyboard()).getByRole("button", {
-          name: /^C$/,
-        }) as HTMLButtonElement
-      ).disabled,
-    ).toBe(false);
-    expect(screen.queryByRole("button", { name: "Play Again" })).toBeNull();
-  });
-
-  it("restarts with no answer reveal or keyboard statuses after a loss", () => {
-    render(<WordleGameBoard puzzle={{ id: "loss-puzzle", answer: "APPLE" }} />);
-
-    for (let attempt = 0; attempt < 6; attempt += 1) {
-      enterWithOnScreenKeyboard("CRANE");
-      submitWithOnScreenKeyboard();
-    }
-
-    expect(
-      within(keyboard()).getByRole("button", { name: "C, absent" }),
-    ).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("button", { name: "Play Again" }));
-
-    expect(screen.queryByText(/The answer was APPLE/)).toBeNull();
-    expect(screen.queryByRole("group", { name: /^Guess 1:/ })).toBeNull();
-    expect(
-      within(keyboard()).getByRole("button", { name: /^C$/ }),
-    ).toBeTruthy();
-    expect(
-      (
-        within(keyboard()).getByRole("button", {
-          name: /^C$/,
-        }) as HTMLButtonElement
-      ).disabled,
-    ).toBe(false);
-  });
-
   it("ignores Ctrl, Alt, and Meta keyboard shortcuts", () => {
-    render(<WordleGameBoard puzzle={testPuzzle} />);
+    renderWordleGameBoard();
 
     fireEvent.keyDown(window, { key: "c", ctrlKey: true });
     fireEvent.keyDown(window, { key: "a", altKey: true });
@@ -430,7 +387,7 @@ describe("WordleGameBoard", () => {
   });
 
   it("does not apply a global action for keyboard events on a focused button", () => {
-    render(<WordleGameBoard puzzle={testPuzzle} />);
+    renderWordleGameBoard();
 
     enterWithOnScreenKeyboard("CREAM");
     const focusedLetterKey = letterKey("C");
@@ -449,7 +406,7 @@ describe("WordleGameBoard", () => {
     render(
       <>
         <input aria-label="Separate text input" />
-        <WordleGameBoard puzzle={testPuzzle} />
+        <WordleGameBoard puzzle={testPuzzle} nextWordHref={nextWordHref} />
       </>,
     );
 

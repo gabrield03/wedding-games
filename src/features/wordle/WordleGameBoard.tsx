@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { WORDLE_MAX_ATTEMPTS } from "@/domain/wordle/gameplay";
 import {
   WORDLE_WORD_LENGTH,
@@ -12,6 +14,7 @@ import { useWordleGame } from "./useWordleGame";
 
 type WordleGameBoardProps = {
   puzzle: WordlePuzzle;
+  nextWordHref: string;
 };
 
 type DisplayTile = {
@@ -19,7 +22,10 @@ type DisplayTile = {
   status: WordleLetterStatus | null;
 };
 
-export function WordleGameBoard({ puzzle }: WordleGameBoardProps) {
+export function WordleGameBoard({
+  puzzle,
+  nextWordHref,
+}: WordleGameBoardProps) {
   const game = useWordleGame(puzzle);
   const activeRowIndex = game.submittedGuesses.length;
   const newestSubmittedRowIndex = game.submittedGuesses.length - 1;
@@ -46,7 +52,7 @@ export function WordleGameBoard({ puzzle }: WordleGameBoardProps) {
         Wordle
       </h1>
 
-      <p className="mt-2 text-center text-neutral-600">
+      <p className="mt-2 text-center text-neutral-600 dark:text-neutral-400">
         Guess the five-letter word in six attempts.
       </p>
 
@@ -122,13 +128,13 @@ export function WordleGameBoard({ puzzle }: WordleGameBoardProps) {
 
       {game.gameStatus !== "playing" && (
         <div className="mt-6 text-center">
-          <button
-            type="button"
-            onClick={game.restart}
-            className="cursor-pointer rounded-full border px-5 py-2 font-semibold transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2"
+          <Link
+            href={nextWordHref}
+            prefetch={false}
+            className="inline-flex rounded-full border px-5 py-2 font-semibold transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2"
           >
-            Play Again
-          </button>
+            Next Word
+          </Link>
         </div>
       )}
     </section>
@@ -176,7 +182,7 @@ function getTileStatusClass(tile: DisplayTile): string {
       return "border-neutral-600 bg-neutral-600 text-white";
     default:
       return tile.letter
-        ? "border-neutral-700 text-white"
+        ? "border-neutral-700 text-foreground dark:border-neutral-300"
         : "border-neutral-300 text-neutral-950";
   }
 }

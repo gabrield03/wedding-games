@@ -4,14 +4,16 @@ A mobile-first web platform for personalized wedding games, built as a meaningfu
 
 ## Project Status
 
-The project is currently completing **M3 - Wordle Prototype**.
+**M3 - Wordle Prototype** is complete. Current work is limited to two
+post-milestone Wordle corrections before M4 begins.
 
 The application includes a game-selection home page and two complete playable
 games at:
 
 ```text
 /games/connections/development-puzzle
-/games/wordle/wedding-01
+/games/wordle
+/games/wordle/[puzzleId]
 ```
 
 See [`docs/project-status.md`](docs/project-status.md) for the active issue,
@@ -105,8 +107,7 @@ https://wedding-games-ten.vercel.app/
 
 - **M1 - Connections Prototype:** complete
 - **M2 - Production Game Structure:** complete
-- **M3 - Wordle Prototype:** in progress; implementation is complete pending
-  the full local validation gate and merge
+- **M3 - Wordle Prototype:** complete
 - **Later milestones:** backend persistence, anonymous sessions,
   server-authoritative competitive play, answer protection, scoring,
   leaderboards, and additional games

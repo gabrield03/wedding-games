@@ -16,7 +16,11 @@ export default async function WordlePuzzlePage({
 
   return (
     <GamePageShell>
-      <WordleGameBoard puzzle={puzzle} />
+      <WordleGameBoard
+        key={puzzle.id}
+        puzzle={puzzle}
+        nextWordHref={`/games/wordle?exclude=${encodeURIComponent(puzzle.id)}`}
+      />
     </GamePageShell>
   );
 }

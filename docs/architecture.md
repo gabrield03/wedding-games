@@ -56,6 +56,11 @@ M2 and M3 establish parallel, game-specific application flows:
      -> useConnectionsGame
         -> pure Connections gameplay rules
 
+/games/wordle entry route
+  -> wait for an incoming request
+  -> select a local puzzle ID, optionally excluding the previous puzzle
+  -> redirect to /games/wordle/[puzzleId]
+
 /games/wordle/[puzzleId] route
   -> getWordlePuzzle
      -> local Wordle content
@@ -76,6 +81,11 @@ Application puzzle content is separate from stable test fixtures. The home
 page links explicitly to the featured Connections and Wordle puzzles; two
 games do not yet justify a generic game registry, repository framework, or
 universal game engine.
+
+The Wordle board receives only an opaque Next Word destination from its dynamic
+route. The content layer owns random puzzle-ID selection, the entry route owns
+request-time execution and redirects, and the Wordle controller and domain
+remain unaware of both routing and the local puzzle collection.
 
 Wordle evaluation remains client-side during M3, and the validated puzzle
 answer is passed to the client game. Server-authoritative attempts and stronger
