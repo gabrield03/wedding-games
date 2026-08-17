@@ -17,7 +17,10 @@ documentation.
 M3 Issue 1, building the pure Wordle domain model and duplicate-aware
 guess-evaluation algorithm, is complete.
 
-Current work is M3 Issue 2, implementing pure Wordle gameplay state and rules.
+M3 Issue 2, implementing pure Wordle gameplay state and rules, is complete.
+
+Current work is M3 Issue 3, building the first playable Wordle board with
+physical and on-screen keyboard input.
 
 ## Product direction
 
@@ -118,6 +121,9 @@ src/
       connections/
         [puzzleId]/
           page.tsx
+      wordle/
+        development/
+          page.tsx
 
   components/
     GamePageShell.tsx
@@ -142,6 +148,10 @@ src/
       ConnectionsGameBoard.tsx
       ConnectionTile.tsx
       useConnectionsGame.ts
+    wordle/
+      WordleGameBoard.tsx
+      WordleKeyboard.tsx
+      useWordleGame.ts
 
 tests/
   fixtures/
@@ -151,6 +161,7 @@ tests/
     domain/connections/
     domain/wordle/
     features/connections/
+    features/wordle/
   e2e/
     smoke.spec.ts
     connections.spec.ts
@@ -324,10 +335,9 @@ Implemented:
 
 Issue 1 passed validation and was merged.
 
-## Current M3 issue 2 - Implement Wordle gameplay state and rules
+## M3 issue 2 - Implement Wordle gameplay state and rules
 
-Status: In progress; implementation is complete and awaiting the full local
-validation gate and merge.
+Completed:
 
 Issue 2 will build pure state transitions on top of `evaluateWordleGuess` for:
 
@@ -363,6 +373,54 @@ Implemented:
 - Kept dictionary, UI, content, persistence, Connections, and shared-engine
   concerns outside the implementation.
 
+Issue 2 passed validation and was merged.
+
+## Current M3 issue 3 - Build playable Wordle board and keyboard input
+
+Status: In progress; implementation is complete and awaiting the full local
+validation gate and merge.
+
+Issue 3 will add the first Wordle-specific React controller and view on top of
+the existing domain API:
+
+- six five-letter board rows derived from submitted guesses, current input,
+  and remaining attempts
+- physical keyboard input with correct listener cleanup
+- an accessible on-screen keyboard using the same controller actions
+- submitted correct, present, and absent tile states
+- derived keyboard-letter status with correct-over-present-over-absent
+  precedence
+- a minimal development-only route and puzzle value for manual testing
+- focused component coverage for both input paths and evaluated output
+
+Final animations, refined responsive styling, word-bank/content loading,
+game-hub integration, and fuller terminal-state presentation remain outside
+this issue.
+
+Implemented:
+
+- Added a Wordle-specific React controller that owns UI state, delegates all
+  transitions to the existing domain API, and exposes shared letter,
+  backspace, and submission actions.
+- Added a cleaned-up global physical-keyboard listener that ignores Ctrl, Alt,
+  and Meta shortcuts along with interactive and editable event targets.
+- Added an always-six-row, five-tile board derived from stored submissions,
+  current input, and remaining rows without reevaluating historical guesses.
+- Added an accessible on-screen keyboard using native buttons and the same
+  controller actions as physical input.
+- Derive keyboard status from submitted evaluations with
+  correct-over-present-over-absent precedence and no stored duplicate state.
+- Communicate submitted letter results through accessible row descriptions in
+  addition to visual color states.
+- Added a static `/games/wordle/development` route with one route-local typed
+  puzzle for manual testing, without adding a loader, registry, dynamic route,
+  or game-hub entry.
+- Added focused component tests for board shape, on-screen input, physical
+  input, submission display, keyboard statuses, shortcuts, and focused or
+  editable input handling.
+- Kept Connections, Wordle domain rules, content architecture, and generic
+  game or keyboard abstractions unchanged.
+
 ## Deferred beyond the current issue
 
 These are intentionally not part of the current issue:
@@ -376,7 +434,7 @@ These are intentionally not part of the current issue:
 - daily puzzle scheduling
 - guest identity/profile flows
 - cocktail-hour team/social mode
-- Wordle UI, routing, and content loading beyond pure gameplay rules
+- Wordle polish, curated content, content loading, and game-hub integration
 - generic multi-game engine
 
 These should be handled in later issues once concrete requirements justify
@@ -424,5 +482,6 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Run the full local validation gate for M3 Issue 2, then merge the Wordle
-gameplay-state implementation before starting UI/controller work.
+Run the full local validation gate for M3 Issue 3, manually verify the
+development route, and merge the playable Wordle board before beginning later
+feedback, content, routing, and game-hub work.
