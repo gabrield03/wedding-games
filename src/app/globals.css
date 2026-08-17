@@ -79,3 +79,51 @@ body {
     animation: none;
   }
 }
+
+@keyframes wordle-row-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-5px);
+  }
+
+  50% {
+    transform: translateX(5px);
+  }
+
+  75% {
+    transform: translateX(-3px);
+  }
+}
+
+.wordle-row-shake {
+  animation: wordle-row-shake 250ms ease-in-out;
+}
+
+@keyframes wordle-tile-reveal {
+  0% {
+    transform: rotateX(0);
+  }
+
+  50% {
+    transform: rotateX(90deg);
+  }
+
+  100% {
+    transform: rotateX(0);
+  }
+}
+
+.wordle-tile-reveal {
+  animation: wordle-tile-reveal 400ms ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wordle-row-shake,
+  .wordle-tile-reveal {
+    animation: none;
+  }
+}

@@ -22,8 +22,11 @@ M3 Issue 2, implementing pure Wordle gameplay state and rules, is complete.
 M3 Issue 3, building the first playable Wordle board with physical and
 on-screen keyboard input, is complete.
 
-Current work is M3 Issue 4, completing the full Wordle round flow with
-feedback, terminal presentation, answer reveal, and restart.
+M3 Issue 4, completing the full Wordle round flow with feedback, terminal
+presentation, answer reveal, and restart, is complete.
+
+Current work is M3 Issue 5, polishing Wordle interactions, motion,
+accessibility, and small-screen behavior without changing gameplay rules.
 
 ## Product direction
 
@@ -427,10 +430,9 @@ Implemented:
 
 Issue 3 passed validation, manual testing, and was merged.
 
-## Current M3 issue 4 - Complete Wordle gameplay flow
+## M3 issue 4 - Complete Wordle gameplay flow
 
-Status: In progress; implementation is complete and awaiting the full local
-validation gate and merge.
+Completed:
 
 Issue 4 will complete a full Wordle round using the existing domain API:
 
@@ -469,8 +471,49 @@ Implemented:
 - Added focused component coverage for incomplete feedback lifecycle, attempt
   preservation, win, sixth-attempt loss, answer reveal, terminal input lock,
   and restart after both outcomes.
-- Kept the Wordle domain, keyboard component, development route, Connections,
-  and shared infrastructure unchanged.
+- Kept the Wordle domain, development route, Connections, and shared
+  infrastructure unchanged.
+- Refined the on-screen keyboard after manual testing so correct and present
+  letters retain the neutral key appearance while absent letters alone are
+  visually ruled out in gray; accessible status names and status precedence
+  remain unchanged.
+
+Issue 4 passed validation, manual testing, and was merged.
+
+## Current M3 issue 5 - Polish Wordle interactions and accessibility
+
+Status: In progress; implementation is complete and awaiting the full local
+validation gate and merge.
+
+Issue 5 will add focused interaction polish to the completed Wordle flow:
+
+- retriggerable active-row feedback for incomplete submissions
+- short submitted-tile reveal feedback
+- reduced-motion alternatives for all nonessential motion
+- focused accessibility and approximately 320px responsive review
+
+Gameplay rules, board evaluation colors, the simplified keyboard color
+mapping, content, routing, persistence, and broad wedding visual design remain
+outside this issue.
+
+Implemented:
+
+- Added a controller-owned incomplete-submission attempt counter that advances
+  on every incomplete result and resets with the rest of the game.
+- Use that counter only to remount the active row so repeated incomplete
+  submissions can retrigger a short shake without remounting the board or
+  submitted rows.
+- Added a short reveal animation to only the newest submitted row, using its
+  stored evaluation and 50ms tile staggering without timers, delayed state, or
+  an input lock.
+- Added Wordle-specific motion styles and disabled both new animations for
+  `prefers-reduced-motion` while preserving evaluation colors and text/status
+  feedback.
+- Added focused component coverage for incomplete shake presentation and
+  retriggering, clearing motion on edit, newest-row-only reveal treatment, and
+  stagger delays.
+- Preserved the existing responsive board and keyboard layout after inspection;
+  no speculative small-screen styling changes were required.
 
 ## Deferred beyond the current issue
 

@@ -104,24 +104,37 @@ describe("WordleGameBoard", () => {
     ).toBeTruthy();
   });
 
-  it("shows incomplete feedback without consuming an attempt and clears it on letter entry", () => {
+  it("retriggerably shakes an incomplete row and clears the presentation on letter entry", () => {
     render(<WordleGameBoard puzzle={testPuzzle} />);
 
     enterWithOnScreenKeyboard("CRA");
     submitWithOnScreenKeyboard();
 
     expect(screen.getByRole("status").textContent).toBe("Not enough letters");
-    expect(
-      screen.getByRole("group", { name: "Current guess: CRA" }),
-    ).toBeTruthy();
+    const firstShakingRow = screen.getByRole("group", {
+      name: "Current guess: CRA",
+    });
+
+    expect(firstShakingRow.className).toContain("wordle-row-shake");
     expect(screen.queryByRole("group", { name: /^Guess 1:/ })).toBeNull();
+
+    submitWithOnScreenKeyboard();
+
+    const retriggeredShakingRow = screen.getByRole("group", {
+      name: "Current guess: CRA",
+    });
+
+    expect(retriggeredShakingRow).not.toBe(firstShakingRow);
+    expect(retriggeredShakingRow.className).toContain("wordle-row-shake");
 
     fireEvent.click(letterKey("N"));
 
     expect(screen.getByRole("status").textContent).toBe("");
-    expect(
-      screen.getByRole("group", { name: "Current guess: CRAN" }),
-    ).toBeTruthy();
+    const editedRow = screen.getByRole("group", {
+      name: "Current guess: CRAN",
+    });
+
+    expect(editedRow.className).not.toContain("wordle-row-shake");
   });
 
   it("clears incomplete feedback on Backspace", () => {
@@ -188,6 +201,52 @@ describe("WordleGameBoard", () => {
     expect(correctKey.className).toContain("bg-neutral-300");
     expect(presentKey.className).toContain("bg-neutral-300");
     expect(absentKey.className).toContain("bg-neutral-600");
+  });
+
+  it("reveals only the newest submitted row with staggered tile delays", () => {
+    render(<WordleGameBoard puzzle={testPuzzle} />);
+
+    enterWithOnScreenKeyboard("CREAM");
+    submitWithOnScreenKeyboard();
+
+    const firstSubmittedRow = screen.getByRole("group", {
+      name: /^Guess 1:/,
+    });
+    const firstRowTiles =
+      firstSubmittedRow.querySelectorAll("[data-wordle-tile]");
+
+    expect(
+      Array.from(firstRowTiles, (tile) => tile.className).every((className) =>
+        className.includes("wordle-tile-reveal"),
+      ),
+    ).toBe(true);
+    expect(
+      Array.from(
+        firstRowTiles,
+        (tile) => (tile as HTMLElement).style.animationDelay,
+      ),
+    ).toEqual(["0ms", "50ms", "100ms", "150ms", "200ms"]);
+
+    enterWithOnScreenKeyboard("BLOAT");
+    submitWithOnScreenKeyboard();
+
+    const olderRowTiles = screen
+      .getByRole("group", { name: /^Guess 1:/ })
+      .querySelectorAll("[data-wordle-tile]");
+    const newestRowTiles = screen
+      .getByRole("group", { name: /^Guess 2:/ })
+      .querySelectorAll("[data-wordle-tile]");
+
+    expect(
+      Array.from(olderRowTiles, (tile) => tile.className).every(
+        (className) => !className.includes("wordle-tile-reveal"),
+      ),
+    ).toBe(true);
+    expect(
+      Array.from(newestRowTiles, (tile) => tile.className).every((className) =>
+        className.includes("wordle-tile-reveal"),
+      ),
+    ).toBe(true);
   });
 
   it("keeps the strongest observed keyboard status", () => {
