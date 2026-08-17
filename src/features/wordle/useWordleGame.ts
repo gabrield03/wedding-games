@@ -8,6 +8,7 @@ import {
   submitWordleGuess,
 } from "@/domain/wordle/gameplay";
 import type {
+  WordleGameState,
   WordleLetterStatus,
   WordlePuzzle,
   WordleSubmittedGuess,
@@ -17,6 +18,13 @@ export type WordleKeyboardStatuses = Partial<
   Record<string, WordleLetterStatus>
 >;
 
+export type WordleFeedback = "incomplete" | null;
+
+type WordleControllerState = {
+  gameState: WordleGameState;
+  feedback: WordleFeedback;
+};
+
 const KEY_STATUS_PRIORITY: Record<WordleLetterStatus, number> = {
   absent: 0,
   present: 1,
@@ -24,23 +32,70 @@ const KEY_STATUS_PRIORITY: Record<WordleLetterStatus, number> = {
 };
 
 export function useWordleGame(puzzle: WordlePuzzle) {
-  const [gameState, setGameState] = useState(createInitialWordleGameState);
+  const [controllerState, setControllerState] = useState<WordleControllerState>(
+    () => ({
+      gameState: createInitialWordleGameState(),
+      feedback: null,
+    }),
+  );
 
   const addLetter = useCallback((letter: string) => {
-    setGameState((currentState) => addWordleLetter(currentState, letter));
+    setControllerState((currentState) => {
+      const nextGameState = addWordleLetter(currentState.gameState, letter);
+
+      if (nextGameState === currentState.gameState && !currentState.feedback) {
+        return currentState;
+      }
+
+      return {
+        gameState: nextGameState,
+        feedback: null,
+      };
+    });
   }, []);
 
   const backspace = useCallback(() => {
-    setGameState((currentState) => removeWordleLetter(currentState));
+    setControllerState((currentState) => {
+      const nextGameState = removeWordleLetter(currentState.gameState);
+
+      if (nextGameState === currentState.gameState && !currentState.feedback) {
+        return currentState;
+      }
+
+      return {
+        gameState: nextGameState,
+        feedback: null,
+      };
+    });
   }, []);
 
   const submitGuess = useCallback(() => {
-    setGameState((currentState) => {
-      const result = submitWordleGuess(puzzle.answer, currentState);
+    setControllerState((currentState) => {
+      const result = submitWordleGuess(puzzle.answer, currentState.gameState);
 
-      return result.status === "submitted" ? result.state : currentState;
+      switch (result.status) {
+        case "submitted":
+          return {
+            gameState: result.state,
+            feedback: null,
+          };
+        case "incomplete":
+          return {
+            gameState: currentState.gameState,
+            feedback: "incomplete",
+          };
+        case "game_over":
+          return currentState;
+      }
     });
   }, [puzzle.answer]);
+
+  const restart = useCallback(() => {
+    setControllerState({
+      gameState: createInitialWordleGameState(),
+      feedback: null,
+    });
+  }, []);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -79,18 +134,20 @@ export function useWordleGame(puzzle: WordlePuzzle) {
   }, [addLetter, backspace, submitGuess]);
 
   const keyboardStatuses = useMemo(
-    () => deriveKeyboardStatuses(gameState.submittedGuesses),
-    [gameState.submittedGuesses],
+    () => deriveKeyboardStatuses(controllerState.gameState.submittedGuesses),
+    [controllerState.gameState.submittedGuesses],
   );
 
   return {
-    currentGuess: gameState.currentGuess,
-    submittedGuesses: gameState.submittedGuesses,
-    gameStatus: getWordleGameStatus(gameState),
+    currentGuess: controllerState.gameState.currentGuess,
+    submittedGuesses: controllerState.gameState.submittedGuesses,
+    gameStatus: getWordleGameStatus(controllerState.gameState),
     keyboardStatuses,
+    feedback: controllerState.feedback,
     addLetter,
     backspace,
     submitGuess,
+    restart,
   };
 }
 
