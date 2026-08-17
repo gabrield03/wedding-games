@@ -14,8 +14,10 @@ Connections puzzle-loading boundary and dynamic route, introduced the game
 hub and narrow shared game-page shell, and polished navigation and project
 documentation.
 
-Current work is M3 Issue 1, building the pure Wordle domain model and
-duplicate-aware guess-evaluation algorithm.
+M3 Issue 1, building the pure Wordle domain model and duplicate-aware
+guess-evaluation algorithm, is complete.
+
+Current work is M3 Issue 2, implementing pure Wordle gameplay state and rules.
 
 ## Product direction
 
@@ -287,10 +289,9 @@ Implemented:
 
 Issue 5 and M2 passed validation and were merged.
 
-## Current M3 issue 1 - Build Wordle domain model and guess evaluation
+## M3 issue 1 - Build Wordle domain model and guess evaluation
 
-Status: In progress; implementation is complete and awaiting the full local
-validation gate and merge.
+Completed:
 
 Issue 1 is intentionally limited to pure TypeScript Wordle domain code:
 
@@ -321,6 +322,47 @@ Implemented:
 - Kept Wordle independent from Connections, React, Next.js, content loading,
   and generic game abstractions.
 
+Issue 1 passed validation and was merged.
+
+## Current M3 issue 2 - Implement Wordle gameplay state and rules
+
+Status: In progress; implementation is complete and awaiting the full local
+validation gate and merge.
+
+Issue 2 will build pure state transitions on top of `evaluateWordleGuess` for:
+
+- six attempts
+- current unsubmitted guess input
+- letter addition, input limits, and backspace
+- submitted guess and evaluation history
+- derived playing, won, and lost status
+- terminal-state action prevention
+- clean initial/reset state
+
+Dictionary membership, allowed-word lists, keyboard UI, React, routing,
+content loading, persistence, and shared game abstractions remain outside this
+issue.
+
+Implemented:
+
+- Added immutable Wordle state for the current guess and submitted guess
+  history.
+- Added `WORDLE_MAX_ATTEMPTS = 6` as a Wordle gameplay-domain rule.
+- Added letter entry with uppercase normalization, a five-letter cap, clear
+  rejection of malformed direct input, and backspace behavior.
+- Added explicit `submitted`, `incomplete`, and `game_over` submission results.
+- Store each normalized submitted guess with its existing evaluator-produced
+  letter evaluation, then clear the current guess.
+- Derive playing, won, and lost status solely from submitted evaluations and
+  attempt count, checking for a win before the sixth-attempt loss boundary.
+- Prevent editing and submission after terminal states through immutable
+  no-op transitions.
+- Added focused tests for input boundaries, submission history, five and six
+  misses, wins before and on attempt six, terminal states, reset behavior, and
+  immutability.
+- Kept dictionary, UI, content, persistence, Connections, and shared-engine
+  concerns outside the implementation.
+
 ## Deferred beyond the current issue
 
 These are intentionally not part of the current issue:
@@ -334,7 +376,7 @@ These are intentionally not part of the current issue:
 - daily puzzle scheduling
 - guest identity/profile flows
 - cocktail-hour team/social mode
-- Wordle gameplay state and UI beyond pure guess evaluation
+- Wordle UI, routing, and content loading beyond pure gameplay rules
 - generic multi-game engine
 
 These should be handled in later issues once concrete requirements justify
@@ -382,5 +424,5 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Run the full local validation gate for M3 Issue 1, then merge the Wordle domain
-model and guess-evaluation implementation before starting gameplay-state work.
+Run the full local validation gate for M3 Issue 2, then merge the Wordle
+gameplay-state implementation before starting UI/controller work.
