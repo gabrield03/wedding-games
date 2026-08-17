@@ -299,8 +299,9 @@ Core game logic should be written so that rules, scoring, validation, and comple
 
 Before changes are merged, the unit test suite should complete successfully.
 
-The current suite includes Connections domain tests and React component tests
-for gameplay integration and accessibility behavior.
+The current suite includes independent Connections and Wordle domain tests,
+game-specific content-loader tests, and React component tests for gameplay
+integration, accessibility behavior, and interaction state.
 
 ## End-to-End Testing
 
@@ -332,9 +333,10 @@ The current Playwright configuration runs tests against:
 
 Playwright automatically starts the local Next.js development server for test execution.
 
-The smoke coverage exercises navigation from the game hub to the current
-Connections puzzle, explicit navigation back to the hub, and unknown-puzzle
-not-found behavior.
+The smoke coverage exercises both explicit game-hub entries, navigation to the
+featured Connections and Wordle puzzles, navigation back to the hub, and
+unknown-puzzle not-found behavior. Game-specific E2E specifications cover the
+major Connections and Wordle completion, loss, and restart flows.
 
 End-to-end tests should be used for complete user flows and browser behavior that are better validated through a real browser than through isolated unit tests.
 

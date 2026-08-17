@@ -25,8 +25,11 @@ on-screen keyboard input, is complete.
 M3 Issue 4, completing the full Wordle round flow with feedback, terminal
 presentation, answer reveal, and restart, is complete.
 
-Current work is M3 Issue 5, polishing Wordle interactions, motion,
-accessibility, and small-screen behavior without changing gameplay rules.
+M3 Issue 5, polishing Wordle interactions, motion, accessibility, and
+small-screen behavior without changing gameplay rules, is complete.
+
+Current work is M3 Issue 6, integrating curated local Wordle content, a
+dynamic puzzle route, and a Wordle entry point on the game hub.
 
 ## Product direction
 
@@ -38,20 +41,23 @@ Planned navigation direction:
 /
   Wedding games home page
   -> Connections
-  -> Wordle (planned during M3)
+  -> Wordle
   -> future games
 
 /games/connections/[puzzleId]
   Individual Connections puzzle
+
+/games/wordle/[puzzleId]
+  Individual Wordle puzzle
 ```
 
-The root page now serves a simple game-selection home page. The current
-Connections puzzle is available at
-`/games/connections/development-puzzle`.
+The root page now serves a simple two-game selection page. The current featured
+puzzles are available at `/games/connections/development-puzzle` and
+`/games/wordle/wedding-01`.
 
-Do not build a generic game platform prematurely. Connections is the only
-playable game today; Wordle should begin as an independent game-specific
-domain.
+Connections and Wordle remain independent game-specific implementations. Do
+not build a generic game platform, registry, repository, or engine until later
+requirements demonstrate a concrete shared need.
 
 ## M1 completed
 
@@ -128,7 +134,7 @@ src/
         [puzzleId]/
           page.tsx
       wordle/
-        development/
+        [puzzleId]/
           page.tsx
 
   components/
@@ -138,6 +144,9 @@ src/
     connections/
       developmentPuzzle.ts
       getConnectionsPuzzle.ts
+    wordle/
+      puzzles.ts
+      getWordlePuzzle.ts
 
   domain/
     connections/
@@ -164,6 +173,7 @@ tests/
     connections.ts
   unit/
     content/connections/
+    content/wordle/
     domain/connections/
     domain/wordle/
     features/connections/
@@ -171,6 +181,7 @@ tests/
   e2e/
     smoke.spec.ts
     connections.spec.ts
+    wordle.spec.ts
 
 docs/
   adr/
@@ -195,6 +206,19 @@ wrapping. Unit and component tests now use the stable fixture in
 the application puzzle because they exercise the puzzle rendered by the real
 route. Application routes access local Connections content through
 `getConnectionsPuzzle(puzzleId)` rather than importing individual puzzle files.
+
+## Current Wordle content
+
+`src/content/wordle/puzzles.ts` contains ten local wedding-related five-letter
+answers with opaque stable IDs from `wedding-01` through `wedding-10`. `BRIDE`
+is the initial featured answer at `wedding-01`; the home page uses the exported
+featured ID rather than random or daily selection.
+
+The collection is an answer bank only. Structurally valid five-letter guesses
+remain playable without dictionary membership or invalid-word rejection.
+Application routes access Wordle content through
+`getWordlePuzzle(puzzleId)`, which validates found content and keeps missing IDs
+distinct from invalid stored puzzles.
 
 ## M2 completed
 
@@ -480,10 +504,9 @@ Implemented:
 
 Issue 4 passed validation, manual testing, and was merged.
 
-## Current M3 issue 5 - Polish Wordle interactions and accessibility
+## M3 issue 5 - Polish Wordle interactions and accessibility
 
-Status: In progress; implementation is complete and awaiting the full local
-validation gate and merge.
+Completed:
 
 Issue 5 will add focused interaction polish to the completed Wordle flow:
 
@@ -515,6 +538,52 @@ Implemented:
 - Preserved the existing responsive board and keyboard layout after inspection;
   no speculative small-screen styling changes were required.
 
+Issue 5 passed validation, manual testing, and was merged.
+
+## Current M3 issue 6 - Integrate Wordle content, routes, and game hub
+
+Status: In progress; implementation is complete and awaiting the full local
+validation gate and merge.
+
+Issue 6 will productionize the completed Wordle prototype without changing its
+gameplay mechanics:
+
+- add a small curated local bank of wedding-related five-letter answers
+- load Wordle puzzles through a Wordle-specific validated content boundary
+- replace the temporary development route with `/games/wordle/[puzzleId]`
+- add Wordle as the second playable game on the home page
+- add focused loader, routing, navigation, and real-browser gameplay coverage
+
+Allowed-guess dictionaries, random or daily selection, backend persistence,
+sessions, scoring, statistics, leaderboards, and final wedding visual design
+remain outside this issue.
+
+Implemented:
+
+- Added ten uppercase wedding-related answer puzzles with opaque stable IDs and
+  `BRIDE` at `wedding-01` as the explicit featured puzzle.
+- Added an asynchronous Wordle-specific loader that returns `null` for unknown
+  IDs, runtime-validates found content, and throws a descriptive content error
+  when a stored puzzle is invalid.
+- Replaced the temporary development route with
+  `/games/wordle/[puzzleId]`, using the existing generated `PageProps` shape,
+  loader boundary, `notFound()`, `GamePageShell`, and unchanged Wordle board.
+- Added an explicit Wordle entry to the home page and arranged the two explicit
+  game cards in a responsive one-column/two-column grid without a card or game
+  registry abstraction.
+- Extended smoke coverage for both home-page entries, Wordle navigation and
+  return navigation, and an unknown Wordle ID.
+- Added Wordle real-browser specifications for featured-puzzle win and loss,
+  answer reveal, terminal board/keyboard retention, and restart, deriving the
+  real answer through the public loader.
+- Updated project documentation for the second playable game and its parallel
+  content, route, controller, view, test, and domain boundaries.
+- Kept Wordle client-evaluated during M3; server-authoritative attempts and
+  stronger answer protection remain deferred with backend and competitive
+  work.
+- Preserved both games' existing gameplay code and avoided generic content or
+  game abstractions.
+
 ## Deferred beyond the current issue
 
 These are intentionally not part of the current issue:
@@ -528,7 +597,9 @@ These are intentionally not part of the current issue:
 - daily puzzle scheduling
 - guest identity/profile flows
 - cocktail-hour team/social mode
-- Wordle polish, curated content, content loading, and game-hub integration
+- personalized Wordle answers not supplied by the couple
+- allowed-guess dictionaries and invalid-word rejection
+- random or daily Wordle puzzle selection
 - generic multi-game engine
 
 These should be handled in later issues once concrete requirements justify
@@ -576,6 +647,6 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Run the full local validation gate for M3 Issue 4, manually verify the complete
-win/loss/restart flow, and merge before beginning later animation, content,
-routing, and game-hub work.
+Run the full local validation gate for M3 Issue 6, manually verify both game-hub
+entries and the dynamic Wordle win/loss/restart flows, and merge before marking
+M3 complete.

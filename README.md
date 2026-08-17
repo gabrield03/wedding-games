@@ -4,13 +4,14 @@ A mobile-first web platform for personalized wedding games, built as a meaningfu
 
 ## Project Status
 
-The project is currently completing **M2 - Production Game Structure**.
+The project is currently completing **M3 - Wordle Prototype**.
 
-The application includes a game-selection home page and a complete playable
-Connections-style puzzle at:
+The application includes a game-selection home page and two complete playable
+games at:
 
 ```text
 /games/connections/development-puzzle
+/games/wordle/wedding-01
 ```
 
 See [`docs/project-status.md`](docs/project-status.md) for the active issue,
@@ -21,12 +22,14 @@ completed work, and immediate next step.
 - Mobile-friendly Wedding Games home page
 - Complete Connections-style gameplay, including feedback, terminal states,
   and restart behavior
+- Complete Wordle-style gameplay with physical and on-screen keyboards,
+  duplicate-aware evaluation, terminal states, restart, and interaction polish
 - Responsive, keyboard-accessible interactions and reduced-motion support
-- Dynamic Connections puzzle routes
-- Local puzzle content behind an asynchronous loading boundary
+- Dynamic Connections and Wordle puzzle routes
+- Game-specific local puzzle content behind asynchronous loading boundaries
 - Separate production content and automated test fixtures
-- Pure Connections domain rules independent from React
-- Connections-specific React gameplay controller
+- Pure Connections and Wordle domain rules independent from React
+- Game-specific React gameplay controllers
 - Unit, component, and cross-browser end-to-end test coverage
 
 ## Goals
@@ -59,10 +62,10 @@ completed work, and immediate next step.
 
 ## Architecture
 
-Connections is organized into separate content, domain, controller, and view
-layers. Routes load puzzles through a Connections-specific boundary and pass
-validated puzzle data into the game UI. The project deliberately does not use
-a universal game-engine abstraction.
+Connections and Wordle each have separate content, domain, controller, and
+view layers. Dynamic routes load puzzles through game-specific boundaries and
+pass validated puzzle data into their respective UIs. The project deliberately
+does not use a universal game-engine, repository, or game-registry abstraction.
 
 See [`docs/architecture.md`](docs/architecture.md) for the broader system
 direction and [`docs/adr/`](docs/adr/) for accepted architectural decisions.
@@ -101,10 +104,12 @@ https://wedding-games-ten.vercel.app/
 ## Roadmap
 
 - **M1 - Connections Prototype:** complete
-- **M2 - Production Game Structure:** in progress
+- **M2 - Production Game Structure:** complete
+- **M3 - Wordle Prototype:** in progress; implementation is complete pending
+  the full local validation gate and merge
 - **Later milestones:** backend persistence, anonymous sessions,
-  server-authoritative competitive play, scoring, leaderboards, and additional
-  games
+  server-authoritative competitive play, answer protection, scoring,
+  leaderboards, and additional games
 
 Shared game infrastructure will be generalized only after multiple game
 implementations demonstrate a concrete shared need.
