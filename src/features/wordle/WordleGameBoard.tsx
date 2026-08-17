@@ -21,6 +21,8 @@ type DisplayTile = {
 
 export function WordleGameBoard({ puzzle }: WordleGameBoardProps) {
   const game = useWordleGame(puzzle);
+  const activeRowIndex = game.submittedGuesses.length;
+  const newestSubmittedRowIndex = game.submittedGuesses.length - 1;
   const rows = Array.from({ length: WORDLE_MAX_ATTEMPTS }, (_, rowIndex) => {
     const submittedGuess = game.submittedGuesses[rowIndex];
 
@@ -68,31 +70,46 @@ export function WordleGameBoard({ puzzle }: WordleGameBoardProps) {
         role="group"
         aria-label="Wordle board"
       >
-        {rows.map((row, rowIndex) => (
-          <div
-            key={rowIndex}
-            className="grid grid-cols-5 gap-1.5"
-            role="group"
-            aria-label={getRowLabel(
-              row,
-              rowIndex,
-              game.submittedGuesses.length,
-            )}
-            data-wordle-row
-          >
-            {row.map((tile, tileIndex) => (
-              <div
-                key={tileIndex}
-                aria-hidden="true"
-                data-wordle-tile
-                data-status={tile.status ?? "unsubmitted"}
-                className={`flex aspect-square items-center justify-center border-2 text-2xl font-bold sm:text-3xl ${getTileStatusClass(tile)}`}
-              >
-                {tile.letter}
-              </div>
-            ))}
-          </div>
-        ))}
+        {rows.map((row, rowIndex) => {
+          const isActiveRow = rowIndex === activeRowIndex;
+          const isNewestSubmittedRow = rowIndex === newestSubmittedRowIndex;
+          const shouldShake = isActiveRow && game.feedback === "incomplete";
+
+          return (
+            <div
+              key={
+                isActiveRow
+                  ? `active-${rowIndex}-${game.incompleteAttempt}`
+                  : `row-${rowIndex}`
+              }
+              className={`grid grid-cols-5 gap-1.5 ${shouldShake ? "wordle-row-shake" : ""}`}
+              role="group"
+              aria-label={getRowLabel(
+                row,
+                rowIndex,
+                game.submittedGuesses.length,
+              )}
+              data-wordle-row
+            >
+              {row.map((tile, tileIndex) => (
+                <div
+                  key={tileIndex}
+                  aria-hidden="true"
+                  data-wordle-tile
+                  data-status={tile.status ?? "unsubmitted"}
+                  className={`flex aspect-square items-center justify-center border-2 text-2xl font-bold sm:text-3xl ${getTileStatusClass(tile)} ${isNewestSubmittedRow ? "wordle-tile-reveal" : ""}`}
+                  style={
+                    isNewestSubmittedRow
+                      ? { animationDelay: `${tileIndex * 50}ms` }
+                      : undefined
+                  }
+                >
+                  {tile.letter}
+                </div>
+              ))}
+            </div>
+          );
+        })}
       </div>
 
       <WordleKeyboard

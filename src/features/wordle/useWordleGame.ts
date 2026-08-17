@@ -23,6 +23,7 @@ export type WordleFeedback = "incomplete" | null;
 type WordleControllerState = {
   gameState: WordleGameState;
   feedback: WordleFeedback;
+  incompleteAttempt: number;
 };
 
 const KEY_STATUS_PRIORITY: Record<WordleLetterStatus, number> = {
@@ -36,6 +37,7 @@ export function useWordleGame(puzzle: WordlePuzzle) {
     () => ({
       gameState: createInitialWordleGameState(),
       feedback: null,
+      incompleteAttempt: 0,
     }),
   );
 
@@ -50,6 +52,7 @@ export function useWordleGame(puzzle: WordlePuzzle) {
       return {
         gameState: nextGameState,
         feedback: null,
+        incompleteAttempt: currentState.incompleteAttempt,
       };
     });
   }, []);
@@ -65,6 +68,7 @@ export function useWordleGame(puzzle: WordlePuzzle) {
       return {
         gameState: nextGameState,
         feedback: null,
+        incompleteAttempt: currentState.incompleteAttempt,
       };
     });
   }, []);
@@ -78,11 +82,13 @@ export function useWordleGame(puzzle: WordlePuzzle) {
           return {
             gameState: result.state,
             feedback: null,
+            incompleteAttempt: currentState.incompleteAttempt,
           };
         case "incomplete":
           return {
             gameState: currentState.gameState,
             feedback: "incomplete",
+            incompleteAttempt: currentState.incompleteAttempt + 1,
           };
         case "game_over":
           return currentState;
@@ -94,6 +100,7 @@ export function useWordleGame(puzzle: WordlePuzzle) {
     setControllerState({
       gameState: createInitialWordleGameState(),
       feedback: null,
+      incompleteAttempt: 0,
     });
   }, []);
 
@@ -144,6 +151,7 @@ export function useWordleGame(puzzle: WordlePuzzle) {
     gameStatus: getWordleGameStatus(controllerState.gameState),
     keyboardStatuses,
     feedback: controllerState.feedback,
+    incompleteAttempt: controllerState.incompleteAttempt,
     addLetter,
     backspace,
     submitGuess,
