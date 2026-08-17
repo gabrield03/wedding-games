@@ -11,8 +11,11 @@ M1, the Connections Prototype milestone, is complete.
 M2 Issue 1, separating Connections application content from automated test
 fixtures, is complete.
 
-Current work is M2 Issue 2, extracting the Connections gameplay controller
-from the rendering component.
+M2 Issue 2, extracting the Connections gameplay controller from the rendering
+component, is complete.
+
+Current work is M2 Issue 3, adding a Connections-specific puzzle-loading
+boundary.
 
 ## Product direction
 
@@ -108,6 +111,7 @@ src/
   content/
     connections/
       developmentPuzzle.ts
+      getConnectionsPuzzle.ts
 
   domain/
     connections/
@@ -119,11 +123,13 @@ src/
     connections/
       ConnectionsGameBoard.tsx
       ConnectionTile.tsx
+      useConnectionsGame.ts
 
 tests/
   fixtures/
     connections.ts
   unit/
+    content/connections/
     domain/connections/
     features/connections/
   e2e/
@@ -151,7 +157,8 @@ This content remains useful for exercising more realistic labels and mobile
 wrapping. Unit and component tests now use the stable fixture in
 `tests/fixtures/connections.ts`. The end-to-end tests intentionally reference
 the application puzzle because they exercise the puzzle rendered by the real
-route.
+route. Application routes access local Connections content through
+`getConnectionsPuzzle(puzzleId)` rather than importing individual puzzle files.
 
 ## M2 design
 
@@ -168,37 +175,22 @@ Completed:
 - Preserved the existing root-page behavior without introducing a puzzle-loading
   abstraction.
 
-### Current M2 issue 2 - Extract Connections gameplay controller
+### M2 issue 2 - Extract Connections gameplay controller
 
-Status: In progress.
+Completed:
 
-`ConnectionsGameBoard.tsx` currently coordinates several responsibilities:
+- Extracted Connections-specific React orchestration into
+  `src/features/connections/useConnectionsGame.ts`.
+- Kept pure gameplay rules in `src/domain/connections/gameplay.ts`.
+- Reduced `ConnectionsGameBoard.tsx` to presentation, accessibility markup,
+  and controller wiring.
+- Preserved selection, feedback, animation timing, shuffle, restart, and
+  terminal-state behavior.
+- Avoided introducing a generic game controller or engine abstraction.
 
-- selection
-- shuffle
-- feedback
-- animations
-- restart
-- domain state transitions
-- presentation
+### Current M2 issue 3 - Add puzzle-loading boundary
 
-Extract the non-rendering React orchestration into a Connections-specific controller/hook, tentatively:
-
-```text
-src/features/connections/useConnectionsGame.ts
-```
-
-Expected usage could resemble:
-
-```ts
-const game = useConnectionsGame(puzzle);
-```
-
-Do not move pure game rules out of `src/domain/connections/gameplay.ts`.
-
-Do not create a generic multi-game hook/framework yet.
-
-### Proposed M2 issue 3 - Add puzzle-loading boundary
+Status: Implementation complete; awaiting full local validation and merge.
 
 The UI should not permanently import a hardcoded puzzle directly.
 
@@ -211,6 +203,17 @@ getConnectionsPuzzle(puzzleId);
 For M2 this may load local static content.
 
 The purpose is to let M3 later replace the implementation with Supabase/backend loading without requiring the Connections UI to know the storage mechanism.
+
+Implemented:
+
+- Added an asynchronous Connections-specific lookup boundary under
+  `src/content/connections/`.
+- Kept the local puzzle collection private to the loader implementation.
+- Return `null` for unknown puzzle IDs.
+- Validate found puzzles with the existing domain validator and throw a clear
+  content error when stored data is invalid.
+- Updated the root route to load its puzzle through the boundary without
+  changing visible behavior.
 
 ### Proposed M2 issue 4 - Add real game routes and home page
 
@@ -298,8 +301,7 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Define and implement the smallest Connections-specific React gameplay
-controller that separates orchestration from `ConnectionsGameBoard.tsx`
-without changing the pure domain rules or current gameplay behavior.
+Run the full local validation gate for M2 Issue 3, then merge the
+Connections-specific puzzle-loading boundary before starting M2 Issue 4.
 
 The home-page/game-selection direction is accepted at a high level: the root should become a game hub, with individual games living under game-specific routes.
