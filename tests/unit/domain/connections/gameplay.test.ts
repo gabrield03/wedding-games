@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { developmentPuzzle } from "@/domain/connections/fixtures";
 import {
   applyGuessResult,
   createInitialGameState,
@@ -10,9 +9,10 @@ import {
   getRemainingTiles,
   type ConnectionsGameState,
 } from "@/domain/connections/gameplay";
+import { testConnectionsPuzzle } from "../../../fixtures/connections";
 
 function group(index: number) {
-  return developmentPuzzle.groups[index]!;
+  return testConnectionsPuzzle.groups[index]!;
 }
 
 function tileId(groupIndex: number, tileIndex: number) {
@@ -34,7 +34,7 @@ describe("Connections gameplay", () => {
       const state = createInitialGameState();
       const firstGroup = group(0);
 
-      const result = evaluateGuess(developmentPuzzle, state, [
+      const result = evaluateGuess(testConnectionsPuzzle, state, [
         tileId(0, 3),
         tileId(0, 1),
         tileId(0, 0),
@@ -50,7 +50,7 @@ describe("Connections gameplay", () => {
     it("identifies an incorrect guess that is one away", () => {
       const state = createInitialGameState();
 
-      const result = evaluateGuess(developmentPuzzle, state, [
+      const result = evaluateGuess(testConnectionsPuzzle, state, [
         tileId(0, 0),
         tileId(0, 1),
         tileId(0, 2),
@@ -67,7 +67,7 @@ describe("Connections gameplay", () => {
     it("identifies an incorrect guess that is not one away", () => {
       const state = createInitialGameState();
 
-      const result = evaluateGuess(developmentPuzzle, state, [
+      const result = evaluateGuess(testConnectionsPuzzle, state, [
         tileId(0, 0),
         tileId(0, 1),
         tileId(1, 0),
@@ -84,7 +84,7 @@ describe("Connections gameplay", () => {
     it("rejects a previously submitted incorrect guess regardless of order", () => {
       const initialState = createInitialGameState();
 
-      const firstResult = evaluateGuess(developmentPuzzle, initialState, [
+      const firstResult = evaluateGuess(testConnectionsPuzzle, initialState, [
         tileId(0, 0),
         tileId(0, 1),
         tileId(1, 0),
@@ -93,7 +93,7 @@ describe("Connections gameplay", () => {
 
       const nextState = applyGuessResult(initialState, firstResult);
 
-      const duplicateResult = evaluateGuess(developmentPuzzle, nextState, [
+      const duplicateResult = evaluateGuess(testConnectionsPuzzle, nextState, [
         tileId(1, 1),
         tileId(0, 1),
         tileId(1, 0),
@@ -108,7 +108,7 @@ describe("Connections gameplay", () => {
     it("rejects a guess that does not contain exactly four tiles", () => {
       const state = createInitialGameState();
 
-      const result = evaluateGuess(developmentPuzzle, state, [
+      const result = evaluateGuess(testConnectionsPuzzle, state, [
         tileId(0, 0),
         tileId(0, 1),
         tileId(0, 2),
@@ -123,7 +123,7 @@ describe("Connections gameplay", () => {
     it("rejects a guess containing the same tile more than once", () => {
       const state = createInitialGameState();
 
-      const result = evaluateGuess(developmentPuzzle, state, [
+      const result = evaluateGuess(testConnectionsPuzzle, state, [
         tileId(0, 0),
         tileId(0, 0),
         tileId(0, 1),
@@ -139,7 +139,7 @@ describe("Connections gameplay", () => {
     it("rejects a guess containing a tile that does not exist", () => {
       const state = createInitialGameState();
 
-      const result = evaluateGuess(developmentPuzzle, state, [
+      const result = evaluateGuess(testConnectionsPuzzle, state, [
         tileId(0, 0),
         tileId(0, 1),
         tileId(0, 2),
@@ -160,7 +160,7 @@ describe("Connections gameplay", () => {
         incorrectGuesses: [],
       };
 
-      const result = evaluateGuess(developmentPuzzle, state, [
+      const result = evaluateGuess(testConnectionsPuzzle, state, [
         tileId(0, 0),
         tileId(1, 0),
         tileId(1, 1),
@@ -180,7 +180,7 @@ describe("Connections gameplay", () => {
       };
 
       const result = evaluateGuess(
-        developmentPuzzle,
+        testConnectionsPuzzle,
         state,
         group(0).tiles.map((tile) => tile.id),
       );
@@ -198,7 +198,7 @@ describe("Connections gameplay", () => {
       const firstGroup = group(0);
 
       const result = evaluateGuess(
-        developmentPuzzle,
+        testConnectionsPuzzle,
         state,
         firstGroup.tiles.map((tile) => tile.id),
       );
@@ -212,7 +212,7 @@ describe("Connections gameplay", () => {
     it("records a new incorrect guess", () => {
       const state = createInitialGameState();
 
-      const result = evaluateGuess(developmentPuzzle, state, [
+      const result = evaluateGuess(testConnectionsPuzzle, state, [
         tileId(0, 0),
         tileId(0, 1),
         tileId(1, 0),
@@ -237,19 +237,19 @@ describe("Connections gameplay", () => {
     });
 
     it("derives playing, won, and lost states", () => {
-      expect(getGameStatus(developmentPuzzle, createInitialGameState())).toBe(
-        "playing",
-      );
+      expect(
+        getGameStatus(testConnectionsPuzzle, createInitialGameState()),
+      ).toBe("playing");
 
       expect(
-        getGameStatus(developmentPuzzle, {
-          solvedGroupIds: developmentPuzzle.groups.map((group) => group.id),
+        getGameStatus(testConnectionsPuzzle, {
+          solvedGroupIds: testConnectionsPuzzle.groups.map((group) => group.id),
           incorrectGuesses: [],
         }),
       ).toBe("won");
 
       expect(
-        getGameStatus(developmentPuzzle, {
+        getGameStatus(testConnectionsPuzzle, {
           solvedGroupIds: [],
           incorrectGuesses: [
             ["guess-1"],
@@ -265,16 +265,16 @@ describe("Connections gameplay", () => {
       const initialState = createInitialGameState();
       const firstGroup = group(0);
 
-      expect(getRemainingTiles(developmentPuzzle, initialState)).toHaveLength(
-        16,
-      );
+      expect(
+        getRemainingTiles(testConnectionsPuzzle, initialState),
+      ).toHaveLength(16);
 
       const state: ConnectionsGameState = {
         solvedGroupIds: [firstGroup.id],
         incorrectGuesses: [],
       };
 
-      const remainingTiles = getRemainingTiles(developmentPuzzle, state);
+      const remainingTiles = getRemainingTiles(testConnectionsPuzzle, state);
       const solvedTileIds = new Set(firstGroup.tiles.map((tile) => tile.id));
 
       expect(remainingTiles).toHaveLength(12);

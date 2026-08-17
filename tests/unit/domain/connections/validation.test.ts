@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { developmentPuzzle } from "@/domain/connections/fixtures";
 import type { ConnectionsPuzzle } from "@/domain/connections/types";
 import { validateConnectionsPuzzle } from "@/domain/connections/validation";
+import { testConnectionsPuzzle } from "../../../fixtures/connections";
 
 function createValidPuzzle(): ConnectionsPuzzle {
-  return structuredClone(developmentPuzzle);
+  return structuredClone(testConnectionsPuzzle);
 }
 
 describe("validateConnectionsPuzzle", () => {
