@@ -4,9 +4,30 @@ A mobile-first web platform for personalized wedding games, built as a meaningfu
 
 ## Project Status
 
-**Early Development**
+The project is currently completing **M2 - Production Game Structure**.
 
-The project is currently in the architecture and initial implementation phase. Features, technologies, and requirements are expected to evolve as development progresses.
+The application includes a game-selection home page and a complete playable
+Connections-style puzzle at:
+
+```text
+/games/connections/development-puzzle
+```
+
+See [`docs/project-status.md`](docs/project-status.md) for the active issue,
+completed work, and immediate next step.
+
+## Implemented Features
+
+- Mobile-friendly Wedding Games home page
+- Complete Connections-style gameplay, including feedback, terminal states,
+  and restart behavior
+- Responsive, keyboard-accessible interactions and reduced-motion support
+- Dynamic Connections puzzle routes
+- Local puzzle content behind an asynchronous loading boundary
+- Separate production content and automated test fixtures
+- Pure Connections domain rules independent from React
+- Connections-specific React gameplay controller
+- Unit, component, and cross-browser end-to-end test coverage
 
 ## Goals
 
@@ -18,45 +39,45 @@ The project is currently in the architecture and initial implementation phase. F
 
 ## Planned Features
 
-- Personalized puzzle games
+- Personalized production puzzle content
 - Anonymous player sessions
-- Persistent game attempts and scores
-- Server-authoritative score validation
-- Overall and game-specific leaderboards
-- Mobile-first responsive design
-- Additional game types over time
+- Persistent attempts and scores
+- Server-authoritative competitive gameplay
+- Leaderboards
+- Additional game types when concrete requirements justify shared platform
+  abstractions
 
 ## Tech Stack
 
-> Final technology choices are still being evaluated and will be documented through Architecture Decision Records (ADRs).
-
-Current direction:
-
 - **Language:** TypeScript
-- **Frontend:** React / Next.js
-- **Backend:** Next.js server APIs
-- **Database:** PostgreSQL
-- **Database Platform:** Supabase
+- **Application:** Next.js 16 App Router and React
+- **Styling:** Tailwind CSS
+- **Testing:** Vitest, React Testing Library, and Playwright
 - **Hosting:** Vercel
-- **CI/CD:** GitHub Actions
-- **Testing:** Vitest, Playwright
+- **Database direction:** PostgreSQL through Supabase when persistence is added
+- **CI/CD:** GitHub Actions and Vercel previews
 
 ## Architecture
 
-Architecture documentation will be maintained in [`docs/architecture.md`](docs/architecture.md).
+Connections is organized into separate content, domain, controller, and view
+layers. Routes load puzzles through a Connections-specific boundary and pass
+validated puzzle data into the game UI. The project deliberately does not use
+a universal game-engine abstraction.
 
-Major technical decisions will be documented in [`docs/adr/`](docs/adr/) using Architecture Decision Records.
+See [`docs/architecture.md`](docs/architecture.md) for the broader system
+direction and [`docs/adr/`](docs/adr/) for accepted architectural decisions.
 
 ## Documentation
 
-Planned project documentation:
-
-- `docs/requirements.md` — functional and non-functional requirements
-- `docs/architecture.md` — system architecture and component responsibilities
-- `docs/data-model.md` — database and domain model
-- `docs/security.md` — security considerations and threat model
-- `docs/testing.md` — testing strategy
-- `docs/adr/` — architecture decision records
+- [`docs/project-status.md`](docs/project-status.md) - current milestone and
+  progress
+- [`docs/requirements.md`](docs/requirements.md) - product and system
+  requirements
+- [`docs/architecture.md`](docs/architecture.md) - architecture and component
+  boundaries
+- [`docs/development.md`](docs/development.md) - local setup, validation, and
+  deployment workflow
+- [`docs/adr/`](docs/adr/) - architecture decision records
 
 ## Development
 
@@ -79,20 +100,14 @@ https://wedding-games-ten.vercel.app/
 
 ## Roadmap
 
-Development is organized incrementally so that architecture and product requirements can evolve as the project develops.
+- **M1 - Connections Prototype:** complete
+- **M2 - Production Game Structure:** in progress
+- **Later milestones:** backend persistence, anonymous sessions,
+  server-authoritative competitive play, scoring, leaderboards, and additional
+  games
 
-Initial milestones include:
-
-1. Repository and engineering foundation
-2. First game prototype
-3. Reusable game engine
-4. Backend and persistence
-5. Server-authoritative gameplay
-6. Leaderboards
-7. Production deployment
-8. Additional game types
-
-See the project issues and milestones for current work.
+Shared game infrastructure will be generalized only after multiple game
+implementations demonstrate a concrete shared need.
 
 ## License
 

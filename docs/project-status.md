@@ -17,7 +17,10 @@ component, is complete.
 M2 Issue 3, adding a Connections-specific puzzle-loading boundary, is
 complete.
 
-Current work is M2 Issue 4, adding the game hub and Connections puzzle routes.
+M2 Issue 4, adding the game hub and Connections puzzle routes, is complete.
+
+Current work is M2 Issue 5, polishing game navigation and aligning shared page
+structure and documentation.
 
 ## Product direction
 
@@ -115,6 +118,9 @@ src/
       connections/
         [puzzleId]/
           page.tsx
+
+  components/
+    GamePageShell.tsx
 
   content/
     connections/
@@ -223,9 +229,9 @@ Implemented:
 - Updated the root route to load its puzzle through the boundary without
   changing visible behavior.
 
-### Current M2 issue 4 - Add real game routes and home page
+### M2 issue 4 - Add real game routes and home page
 
-Status: Implementation complete; awaiting full local validation and merge.
+Completed:
 
 Move toward:
 
@@ -253,16 +259,28 @@ Implemented:
 - Avoided introducing a generic game registry, shared shell, or final visual
   design.
 
-### Proposed M2 issue 5 - Introduce minimal shared game shell
+### Current M2 issue 5 - Polish game navigation and align shared page structure
 
-Only extract presentation/layout concepts that are already clearly shared or platform-level, such as:
+Status: In progress.
 
-- game page width/container
-- common title/header area
-- future game navigation hooks
-- loading/not-found presentation if needed
+Implemented in the current branch:
 
-Do not move Connections-specific concepts such as mistakes, guesses, solved groups, or tile selection into the shared shell.
+- Simplified the home-page card so its only interactive element is the exact
+  `Play Connections` link; the game name and description remain normal content.
+- Added a narrow `GamePageShell` that owns only the page-level container, small
+  navigation area, explicit link to `/`, and child rendering.
+- Added visible `Back to games` navigation that works independently of browser
+  history and has a visible keyboard focus state.
+- Removed only the outer page-level container from `ConnectionsGameBoard`; its
+  game content, accessibility markup, controls, feedback, and behavior remain
+  unchanged.
+- Extended the home-page end-to-end flow to cover navigation into the puzzle
+  and back to the game hub.
+- Aligned the README, architecture snapshot, development setup wording, and
+  project status with the structure implemented during M2.
+
+Issue 5 and M2 remain in progress until fast validation, the full local gate,
+and merge are complete.
 
 ## Deferred beyond M2
 
@@ -323,7 +341,7 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Run the full local validation gate for M2 Issue 4, then merge the game hub and
-Connections puzzle routes before starting M2 Issue 5.
+Run fast validation for Issue 5. Then run the full local gate, verify the Vercel
+preview and CI, merge the issue, and mark Issue 5 and M2 complete.
 
 The home-page/game-selection direction is accepted at a high level: the root should become a game hub, with individual games living under game-specific routes.

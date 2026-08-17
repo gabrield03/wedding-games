@@ -38,6 +38,31 @@ The application is expected to be hosted on Vercel, with PostgreSQL initially pr
 
 These technology choices are architectural decisions rather than permanent requirements and will be documented through ADRs.
 
+## Current Implemented Structure
+
+M2 establishes the following application flow for the first playable game:
+
+```text
+/games/connections/[puzzleId] route
+  -> getConnectionsPuzzle
+     -> local Connections content
+     -> Connections domain validation and types
+  -> GamePageShell
+  -> ConnectionsGameBoard
+     -> useConnectionsGame
+        -> pure Connections gameplay rules
+```
+
+The dynamic route owns route parameters, puzzle loading, and translating an
+unknown puzzle ID into Next.js `notFound()` behavior. `GamePageShell` owns only
+shared page layout and the explicit link back to the game hub. The Connections
+board remains the view, its Connections-specific hook coordinates interaction
+state and timing, and the domain contains framework-independent rules.
+
+Production puzzle content is separate from stable test fixtures. The home page
+links explicitly to the current Connections puzzle; there is no generic game
+registry, repository framework, or universal game engine.
+
 ## Architectural Goals
 
 The architecture should:

@@ -4,7 +4,8 @@
 
 This document describes the local tooling required to develop the Wedding Games application.
 
-Application-specific setup instructions will be expanded as the project is implemented.
+This document describes the setup, validation, testing, and deployment workflow
+used by the current application.
 
 ## Required Tools
 
@@ -36,7 +37,8 @@ Current development environment:
 Node.js 24.19.0
 ```
 
-The project currently requires Node.js 20.9 or newer because of the planned Next.js application stack.
+The project requires Node.js 20.9 or newer for the current Next.js 16 application
+stack.
 
 Verify installation:
 
@@ -297,7 +299,8 @@ Core game logic should be written so that rules, scoring, validation, and comple
 
 Before changes are merged, the unit test suite should complete successfully.
 
-The initial smoke test exists only to verify the testing infrastructure and will be supplemented by real domain tests as game functionality is implemented.
+The current suite includes Connections domain tests and React component tests
+for gameplay integration and accessibility behavior.
 
 ## End-to-End Testing
 
@@ -329,7 +332,9 @@ The current Playwright configuration runs tests against:
 
 Playwright automatically starts the local Next.js development server for test execution.
 
-The initial smoke test verifies that the application can start, load successfully in a browser, and satisfy a basic page assertion.
+The smoke coverage exercises navigation from the game hub to the current
+Connections puzzle, explicit navigation back to the hub, and unknown-puzzle
+not-found behavior.
 
 End-to-end tests should be used for complete user flows and browser behavior that are better validated through a real browser than through isolated unit tests.
 

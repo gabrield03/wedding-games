@@ -14,11 +14,26 @@ test("player can navigate from the home page to Connections", async ({
     page.getByRole("heading", { name: "Wedding Games" }),
   ).toBeVisible();
 
-  await page.getByRole("link", { name: /Play Connections/ }).click();
+  await page
+    .getByRole("link", { name: "Play Connections", exact: true })
+    .click();
 
   await expect(page).toHaveURL(connectionsPuzzlePath);
   await expect(
     page.getByRole("heading", { name: developmentPuzzle.title }),
+  ).toBeVisible();
+
+  const backLink = page.getByRole("link", {
+    name: "Back to games",
+    exact: true,
+  });
+
+  await expect(backLink).toBeVisible();
+  await backLink.click();
+
+  await expect(page).toHaveURL("/");
+  await expect(
+    page.getByRole("heading", { name: "Wedding Games" }),
   ).toBeVisible();
 });
 
