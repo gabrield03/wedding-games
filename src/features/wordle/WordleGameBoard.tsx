@@ -49,7 +49,22 @@ export function WordleGameBoard({ puzzle }: WordleGameBoardProps) {
       </p>
 
       <div
-        className="mx-auto mt-8 w-full max-w-sm space-y-1.5"
+        className="mt-4 min-h-6 text-center font-semibold"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {game.gameStatus === "won" && <p>You got it!</p>}
+        {game.gameStatus === "lost" && (
+          <p>Game over. The answer was {puzzle.answer.toUpperCase()}.</p>
+        )}
+        {game.gameStatus === "playing" && game.feedback === "incomplete" && (
+          <p>Not enough letters</p>
+        )}
+      </div>
+
+      <div
+        className="mx-auto mt-4 w-full max-w-sm space-y-1.5"
         role="group"
         aria-label="Wordle board"
       >
@@ -87,6 +102,18 @@ export function WordleGameBoard({ puzzle }: WordleGameBoardProps) {
         onBackspace={game.backspace}
         onEnter={game.submitGuess}
       />
+
+      {game.gameStatus !== "playing" && (
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={game.restart}
+            className="cursor-pointer rounded-full border px-5 py-2 font-semibold transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2"
+          >
+            Play Again
+          </button>
+        </div>
+      )}
     </section>
   );
 }

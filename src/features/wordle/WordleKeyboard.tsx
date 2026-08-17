@@ -95,12 +95,10 @@ function ActionKey({
 
 function getKeyStatusClass(status: WordleLetterStatus | undefined): string {
   switch (status) {
-    case "correct":
-      return "bg-green-700 text-white";
-    case "present":
-      return "bg-amber-500 text-neutral-950";
     case "absent":
       return "bg-neutral-600 text-white";
+    case "correct":
+    case "present":
     default:
       return "bg-neutral-300 text-neutral-950";
   }

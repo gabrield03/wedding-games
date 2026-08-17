@@ -19,8 +19,11 @@ guess-evaluation algorithm, is complete.
 
 M3 Issue 2, implementing pure Wordle gameplay state and rules, is complete.
 
-Current work is M3 Issue 3, building the first playable Wordle board with
-physical and on-screen keyboard input.
+M3 Issue 3, building the first playable Wordle board with physical and
+on-screen keyboard input, is complete.
+
+Current work is M3 Issue 4, completing the full Wordle round flow with
+feedback, terminal presentation, answer reveal, and restart.
 
 ## Product direction
 
@@ -375,10 +378,9 @@ Implemented:
 
 Issue 2 passed validation and was merged.
 
-## Current M3 issue 3 - Build playable Wordle board and keyboard input
+## M3 issue 3 - Build playable Wordle board and keyboard input
 
-Status: In progress; implementation is complete and awaiting the full local
-validation gate and merge.
+Completed:
 
 Issue 3 will add the first Wordle-specific React controller and view on top of
 the existing domain API:
@@ -418,8 +420,57 @@ Implemented:
 - Added focused component tests for board shape, on-screen input, physical
   input, submission display, keyboard statuses, shortcuts, and focused or
   editable input handling.
+- Fixed current-row letter contrast and refined the Enter and accessible
+  Backspace controls after manual testing.
 - Kept Connections, Wordle domain rules, content architecture, and generic
   game or keyboard abstractions unchanged.
+
+Issue 3 passed validation, manual testing, and was merged.
+
+## Current M3 issue 4 - Complete Wordle gameplay flow
+
+Status: In progress; implementation is complete and awaiting the full local
+validation gate and merge.
+
+Issue 4 will complete a full Wordle round using the existing domain API:
+
+- visible incomplete-submission feedback without consuming an attempt
+- clear win and loss presentation
+- answer reveal after loss
+- board and keyboard retained but disabled after completion
+- Play Again using the same puzzle
+- complete reset of guesses, current input, derived keyboard statuses,
+  feedback, and terminal presentation
+- accessible live-region announcements for feedback and outcomes
+
+Allowed-word validation, curated content, animations, dynamic routing,
+game-hub integration, persistence, and shared game abstractions remain outside
+this issue.
+
+Implemented:
+
+- Added transient incomplete-submission feedback to the Wordle controller
+  alongside the existing domain game state.
+- Interpret the domain submission result directly: submitted guesses update
+  state, incomplete guesses show `Not enough letters`, and terminal submission
+  remains a no-op.
+- Clear incomplete feedback immediately on letter entry, backspace, successful
+  submission, and restart.
+- Derive win and loss presentation entirely from the existing domain
+  `gameStatus`, with no duplicate terminal UI state.
+- Keep the completed board and disabled keyboard visible while showing a
+  concise success state or game-over state with the actual puzzle answer.
+- Added a native `Play Again` control that creates a fresh domain state and
+  clears controller feedback while retaining the same puzzle.
+- Allow submitted guesses, current input, keyboard statuses, terminal state,
+  and answer reveal to reset naturally from the fresh state.
+- Added one visible atomic polite status region for incomplete, win, loss, and
+  answer-reveal announcements.
+- Added focused component coverage for incomplete feedback lifecycle, attempt
+  preservation, win, sixth-attempt loss, answer reveal, terminal input lock,
+  and restart after both outcomes.
+- Kept the Wordle domain, keyboard component, development route, Connections,
+  and shared infrastructure unchanged.
 
 ## Deferred beyond the current issue
 
@@ -482,6 +533,6 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Run the full local validation gate for M3 Issue 3, manually verify the
-development route, and merge the playable Wordle board before beginning later
-feedback, content, routing, and game-hub work.
+Run the full local validation gate for M3 Issue 4, manually verify the complete
+win/loss/restart flow, and merge before beginning later animation, content,
+routing, and game-hub work.
