@@ -40,9 +40,13 @@ These technology choices are architectural decisions rather than permanent requi
 
 ## Current Implemented Structure
 
-M2 establishes the following application flow for the first playable game:
+M2 and M3 establish parallel, game-specific application flows:
 
 ```text
+/ game hub
+  -> explicit Connections entry
+  -> explicit Wordle entry
+
 /games/connections/[puzzleId] route
   -> getConnectionsPuzzle
      -> local Connections content
@@ -51,17 +55,32 @@ M2 establishes the following application flow for the first playable game:
   -> ConnectionsGameBoard
      -> useConnectionsGame
         -> pure Connections gameplay rules
+
+/games/wordle/[puzzleId] route
+  -> getWordlePuzzle
+     -> local Wordle content
+     -> Wordle domain validation and types
+  -> GamePageShell
+  -> WordleGameBoard
+     -> useWordleGame
+        -> pure Wordle gameplay rules and evaluation
 ```
 
-The dynamic route owns route parameters, puzzle loading, and translating an
+Each dynamic route owns route parameters, puzzle loading, and translating an
 unknown puzzle ID into Next.js `notFound()` behavior. `GamePageShell` owns only
-shared page layout and the explicit link back to the game hub. The Connections
-board remains the view, its Connections-specific hook coordinates interaction
-state and timing, and the domain contains framework-independent rules.
+shared page layout and the explicit link back to the game hub. Each board
+remains a game-specific view, each hook coordinates only its game's React
+interaction state, and both domains contain framework-independent rules.
 
-Production puzzle content is separate from stable test fixtures. The home page
-links explicitly to the current Connections puzzle; there is no generic game
-registry, repository framework, or universal game engine.
+Application puzzle content is separate from stable test fixtures. The home
+page links explicitly to the featured Connections and Wordle puzzles; two
+games do not yet justify a generic game registry, repository framework, or
+universal game engine.
+
+Wordle evaluation remains client-side during M3, and the validated puzzle
+answer is passed to the client game. Server-authoritative attempts and stronger
+answer protection remain deferred until persistence, scoring, or competitive
+requirements justify that boundary.
 
 ## Architectural Goals
 
