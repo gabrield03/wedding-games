@@ -42,8 +42,11 @@ pressure-testing the current application against a hypothetical second
 wedding, is complete.
 
 M4 Issue 3, reviewing security and trust boundaries before persistence work,
-is the current issue. Accepted production and test refactors remain deferred
-to M4 Issue 4.
+is complete.
+
+M4 Issue 4, implementing the narrow production and test refactors accepted by
+the preceding architecture, event-boundary, and security reviews, is the
+current issue.
 
 ## Product direction
 
@@ -692,18 +695,51 @@ Before M5 persistence, the project must understand explicit ownership for:
 - Leaderboards
 - Personalized assets and event administration
 
-The M4 Issue 3 security/trust review and pre-M5 design must still resolve:
-
-- One event per deployment/database versus a shared multi-event system
-- How trusted event context is established
-- Whether player identity and sessions are event-scoped
-- How persistent data is isolated by event
-- How event administrators and private/custom assets are scoped
+The M4 Issue 3 security/trust review established that the server must resolve
+trusted event context and that persisted event-owned data must have explicit
+event scope. Session identity remains separate from event and administrative
+authorization. The exact session/event relationship remains open for M5
+design.
 
 No database schema, multi-event route, giant event configuration object, or
 reaction framework is designed or implemented by Issue 2.
 
-## Deferred beyond M4 issue 2
+## M4 issue 3 - Define security and trust boundaries
+
+Status: Security review complete; `docs/security.md` records the accepted
+trust model and pre-M5 decisions.
+
+Accepted conclusions:
+
+- Continue operating the current product as one wedding/event without
+  implementing multi-tenancy now.
+- Make `Event` an explicit persistent ownership concept before M5 so the first
+  backend does not silently treat data as globally owned.
+- Require the server to establish trusted event context; client-provided IDs,
+  slugs, route parameters, cookies, and request data do not establish
+  authorization by themselves.
+- Apply explicit event scope to protected reads and writes for future puzzles,
+  sessions, players, attempts, scores, leaderboards, reaction assets, and
+  administrative permissions.
+- Keep anonymous session identity separate from event and administrative
+  authorization, while deferring the exact session/event relationship to M5
+  design.
+- Have clients submit gameplay actions rather than authoritative outcomes once
+  persistence, scoring, or competition requires trusted results.
+- Treat opaque identifiers as lookup/discovery controls rather than
+  authorization.
+- Keep private solutions, assets, privileged data, and secrets out of public
+  responses, and treat anything delivered to browser JavaScript as public.
+- Validate and resource-bound all external input.
+
+The accepted model also records future constraints for personalized reaction
+assets, server-only secrets, identifier scope, public versus private puzzle
+representations, and application authorization backed by database defense in
+depth. It does not choose a database schema, final multi-event deployment
+model, authentication system, upload implementation, rate limits, or final RLS
+policies.
+
+## Deferred beyond M4 issue 3
 
 These are intentionally not part of the current issue:
 
@@ -766,6 +802,8 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Complete M4 Issue 3's security and trust-boundary review, carrying forward the
-event ownership questions identified by Issue 2. Implement accepted production
-and test refactor candidates only in M4 Issue 4 after that review is complete.
+Implement only the narrow production and test refactors accepted for M4 Issue
+4: a presentational `GameCard`, Connections E2E content access through
+`getConnectionsPuzzle`, and a Connections-specific selection-size constant if
+inspection confirms it is worthwhile. Do not introduce generic game, content,
+route, controller, or test frameworks.

@@ -83,6 +83,8 @@ direction and [`docs/adr/`](docs/adr/) for accepted architectural decisions.
   requirements
 - [`docs/architecture.md`](docs/architecture.md) - architecture and component
   boundaries
+- [`docs/security.md`](docs/security.md) - trust boundaries, security
+  invariants, and pre-persistence decisions
 - [`docs/development.md`](docs/development.md) - local setup, validation, and
   deployment workflow
 - [`docs/adr/`](docs/adr/) - architecture decision records

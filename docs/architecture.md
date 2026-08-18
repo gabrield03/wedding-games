@@ -184,18 +184,18 @@ Reaction-image architecture follows the same boundary:
 - Temporary image presentation may become reusable only after a real
   implementation demonstrates stable shared behavior.
 
-The following decisions remain unresolved for the M4 Issue 3 security/trust
-review and pre-M5 design:
-
-- One event per deployment/database versus a shared multi-event system
-- How trusted event context would be established
-- Whether players and sessions are event-scoped
-- How persistence and queries enforce event ownership
-- How administration and personalized assets are isolated by event
+The M4 Issue 3 security review keeps the product operating as one event today
+without selecting a final shared multi-event deployment model. Before M5 adds
+persistence, `Event` must be an explicit ownership concept, trusted event
+context must be resolved by the server, and event scope must apply to protected
+reads and writes. Anonymous identity and event authorization remain separate;
+their exact relationship is deliberately deferred to M5 design.
 
 A separate deployment remains a reasonable model for the current wedding. No
 multi-event routes, giant event configuration object, shared reaction
-framework, or database design are justified by this review.
+framework, or database design are justified by these reviews. The complete
+accepted security invariants and deferred decisions are recorded in
+[`docs/security.md`](security.md).
 
 ## Architectural Goals
 
@@ -495,7 +495,8 @@ The server should validate:
 
 User-controlled values such as display names must not be assumed safe.
 
-Additional security considerations will be documented in `docs/security.md`.
+The current trust model, security invariants, event-isolation requirements, and
+pre-M5 decisions are documented in [`docs/security.md`](security.md).
 
 ## Testing Boundaries
 
