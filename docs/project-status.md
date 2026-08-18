@@ -35,9 +35,15 @@ The immediate post-M3 corrections for theme-aware Wordle text, request-time
 puzzle selection, and Next Word navigation are complete.
 
 M4 Issue 1, reviewing multi-game architecture and duplication before any
-abstraction work, is the current issue. The review is complete and its
-documentation-only conclusions are recorded below. Accepted production and
-test refactors remain deferred to M4 Issue 4.
+abstraction work, is complete.
+
+M4 Issue 2, defining wedding-specific and platform boundaries by
+pressure-testing the current application against a hypothetical second
+wedding, is complete.
+
+M4 Issue 3, reviewing security and trust boundaries before persistence work,
+is the current issue. Accepted production and test refactors remain deferred
+to M4 Issue 4.
 
 ## Product direction
 
@@ -651,7 +657,53 @@ reviews:
 A shared shake-animation CSS refactor is not planned. Reconsider it only if
 future work naturally changes the animations in both games.
 
-## Deferred beyond M4 issue 1
+## M4 issue 2 - Define wedding-specific and platform boundaries
+
+Status: Boundary review complete; documentation alignment is the only change
+in this issue.
+
+Accepted conclusions:
+
+- Treat platform/application behavior, game-specific behavior, and
+  event/wedding-specific data as distinct conceptual boundaries.
+- Keep the current application as one intentional implicit event; this issue
+  does not choose between one event per deployment/database and a shared
+  multi-event system.
+- Keep Connections and Wordle mechanics reusable and free of couple identity.
+- Treat puzzle instances as game-owned content that is conceptually associated
+  with an event without introducing a generic content schema.
+- Treat Connections puzzle data, Wordle answers, enabled games, and
+  event-facing presentation or metadata as the current event-related data.
+- Retain harmless hardcoding for the Wedding Games product name, game and
+  navigation labels, explicit routes, the neutral theme, and local
+  repository-backed content.
+- Treat current puzzle IDs as local prototype lookup keys rather than final
+  durable database identity with assumed scope semantics.
+- Keep reaction triggers game-specific and future couple photos event-owned;
+  wait for implementation evidence before sharing reaction presentation.
+- Continue to allow a separate deployment as a reasonable isolation model for
+  the current wedding.
+
+Before M5 persistence, the project must understand explicit ownership for:
+
+- Puzzles and game availability
+- Players and sessions
+- Attempts and scores
+- Leaderboards
+- Personalized assets and event administration
+
+The M4 Issue 3 security/trust review and pre-M5 design must still resolve:
+
+- One event per deployment/database versus a shared multi-event system
+- How trusted event context is established
+- Whether player identity and sessions are event-scoped
+- How persistent data is isolated by event
+- How event administrators and private/custom assets are scoped
+
+No database schema, multi-event route, giant event configuration object, or
+reaction framework is designed or implemented by Issue 2.
+
+## Deferred beyond M4 issue 2
 
 These are intentionally not part of the current issue:
 
@@ -714,6 +766,6 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Review and merge the M4 Issue 1 documentation, then complete the planned
-wedding/platform-boundary and security reviews. Implement accepted multi-game
-refactor candidates only in M4 Issue 4 after those reviews are complete.
+Complete M4 Issue 3's security and trust-boundary review, carrying forward the
+event ownership questions identified by Issue 2. Implement accepted production
+and test refactor candidates only in M4 Issue 4 after that review is complete.

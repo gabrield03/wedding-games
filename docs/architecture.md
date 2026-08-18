@@ -128,6 +128,75 @@ through `getConnectionsPuzzle`, and considering a Connections-specific
 selection-size constant. A shared shake-animation refactor is not planned and
 should be reconsidered only if future work naturally touches those animations.
 
+## M4 Wedding and Platform Boundary Review
+
+The M4 Issue 2 review distinguishes three conceptual boundaries:
+
+- **Platform/application:** behavior shared regardless of which wedding uses
+  the application, including the game hub, page navigation, session and
+  persistence direction, and shared application presentation.
+- **Game-specific:** Connections and Wordle rules, state, validation,
+  controllers, boards, content shapes, selection behavior, and routes.
+- **Event/wedding-specific:** data and presentation that may differ between
+  weddings, including puzzle instances, answer content, enabled games,
+  event-facing metadata, and personalized assets.
+
+The current application intentionally represents one implicit event. It does
+not yet resolve an event at runtime or model multiple weddings. Connections
+and Wordle mechanics contain no couple identity and can be reused unchanged
+with different game-owned content.
+
+Current event-related data includes:
+
+- Connections puzzle titles, groups, categories, and tile labels
+- Wordle answer content
+- The games enabled on the home page
+- Event-facing presentation or metadata where it differs from the generic
+  Wedding Games product
+
+Game-owned content may conceptually belong to an event without requiring a
+generic cross-game content schema. Connections and Wordle should continue to
+own their different content shapes and loading behavior.
+
+The following hardcoding remains intentional for the current stage:
+
+- The Wedding Games product name
+- Game names and play/navigation labels
+- Explicit game-specific routes
+- The current neutral visual theme
+- Local repository-backed puzzle content
+
+Current puzzle IDs such as `development-puzzle` and `wedding-01` through
+`wedding-10` are local prototype lookup keys. They should not silently become
+durable database identity without first deciding whether identifiers are
+global or scoped by event and game, and whether public route slugs differ from
+internal persistence IDs.
+
+Before M5 introduces persistence, the project must understand ownership for
+puzzles, players and sessions, attempts, scores, leaderboards, and personalized
+assets. This issue does not choose or design a database model.
+
+Reaction-image architecture follows the same boundary:
+
+- A reaction trigger remains game-specific, such as a Connections correct
+  guess or a Wordle win.
+- The actual couple photo and related content are event-owned assets.
+- Temporary image presentation may become reusable only after a real
+  implementation demonstrates stable shared behavior.
+
+The following decisions remain unresolved for the M4 Issue 3 security/trust
+review and pre-M5 design:
+
+- One event per deployment/database versus a shared multi-event system
+- How trusted event context would be established
+- Whether players and sessions are event-scoped
+- How persistence and queries enforce event ownership
+- How administration and personalized assets are isolated by event
+
+A separate deployment remains a reasonable model for the current wedding. No
+multi-event routes, giant event configuration object, shared reaction
+framework, or database design are justified by this review.
+
 ## Architectural Goals
 
 The architecture should:
