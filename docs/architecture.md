@@ -103,10 +103,10 @@ The following shared application decisions are currently justified:
 
 - `GamePageShell` remains a narrow shared application abstraction for page
   layout, navigation back to the hub, and child rendering.
-- A narrow presentational `GameCard` is a justified candidate for later M4
-  refactoring because the home-page entries now share stable markup and
-  styling. The home page should still own explicit game names, destinations,
-  and link behavior.
+- `GameCard` is a narrow shared presentation abstraction for the home-page card
+  container, title, and action link. The home page still owns two explicit game
+  entries, their names, destinations, action labels, and Wordle prefetch
+  behavior.
 
 The following abstractions are not currently justified:
 
@@ -121,12 +121,18 @@ and descriptive invalid-content errors are a shared convention. They do not
 require shared implementation. Future storage, availability, public/private
 solution data, and attempt behavior may differ by game.
 
-Production refactors from this review are deliberately deferred until M4 Issue
-4, after the wedding/platform and security reviews. Candidate work is limited
-to a narrow `GameCard`, aligning Connections E2E production-content access
-through `getConnectionsPuzzle`, and considering a Connections-specific
-selection-size constant. A shared shake-animation refactor is not planned and
-should be reconsidered only if future work naturally touches those animations.
+M4 Issue 4 implemented only the refactors supported by the completed reviews:
+
+- Extracted the narrow `GameCard` without introducing a registry or metadata
+  collection.
+- Aligned Connections E2E production-content access with the game-specific
+  `getConnectionsPuzzle` boundary.
+- Added the domain-owned `CONNECTIONS_GROUP_SIZE` invariant for puzzle group
+  validation, submitted-guess evaluation, and controller selection behavior.
+
+Matching loader contracts remain a convention rather than a shared
+implementation. A shared shake-animation refactor is not planned and should be
+reconsidered only if future work naturally touches those animations.
 
 ## M4 Wedding and Platform Boundary Review
 

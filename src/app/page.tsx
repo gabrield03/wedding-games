@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { GameCard } from "@/components/GameCard";
 
 export default function Home() {
   return (
@@ -11,26 +11,18 @@ export default function Home() {
         </p>
 
         <div className="mt-8 grid w-full gap-4 sm:grid-cols-2">
-          <div className="rounded-lg border border-neutral-300 bg-neutral-100 p-5 text-left text-neutral-950">
-            <h2 className="text-xl font-bold">Connections</h2>
-            <Link
-              href="/games/connections/development-puzzle"
-              className="mt-4 inline-flex rounded-full border border-neutral-800 px-4 py-2 font-semibold transition hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2 active:scale-[0.98]"
-            >
-              Play Connections
-            </Link>
-          </div>
+          <GameCard
+            title="Connections"
+            actionLabel="Play Connections"
+            href="/games/connections/development-puzzle"
+          />
 
-          <div className="rounded-lg border border-neutral-300 bg-neutral-100 p-5 text-left text-neutral-950">
-            <h2 className="text-xl font-bold">Wordle</h2>
-            <Link
-              href="/games/wordle"
-              prefetch={false}
-              className="mt-4 inline-flex rounded-full border border-neutral-800 px-4 py-2 font-semibold transition hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2 active:scale-[0.98]"
-            >
-              Play Wordle
-            </Link>
-          </div>
+          <GameCard
+            title="Wordle"
+            actionLabel="Play Wordle"
+            href="/games/wordle"
+            prefetch={false}
+          />
         </div>
       </section>
     </main>

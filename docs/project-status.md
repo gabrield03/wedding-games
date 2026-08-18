@@ -4,7 +4,8 @@ Last updated: 2026-08-17
 
 ## Current milestone
 
-**M4 - Multi-Game Architecture & Product Readiness: in progress**
+**M4 - Multi-Game Architecture & Product Readiness: implementation complete;
+full local validation and merge pending**
 
 M1, the Connections Prototype milestone, is complete.
 
@@ -44,9 +45,9 @@ wedding, is complete.
 M4 Issue 3, reviewing security and trust boundaries before persistence work,
 is complete.
 
-M4 Issue 4, implementing the narrow production and test refactors accepted by
-the preceding architecture, event-boundary, and security reviews, is the
-current issue.
+M4 Issue 4 implemented the narrow production and test refactors accepted by
+the preceding architecture, event-boundary, and security reviews. The branch
+implementation is complete; full local validation and merge remain pending.
 
 ## Product direction
 
@@ -159,6 +160,7 @@ src/
           page.tsx
 
   components/
+    GameCard.tsx
     GamePageShell.tsx
 
   content/
@@ -209,6 +211,7 @@ docs/
   architecture.md
   development.md
   requirements.md
+  security.md
 ```
 
 ## Current Connections content
@@ -739,7 +742,34 @@ depth. It does not choose a database schema, final multi-event deployment
 model, authentication system, upload implementation, rate limits, or final RLS
 policies.
 
-## Deferred beyond M4 issue 3
+## M4 issue 4 - Apply justified multi-game architecture refactors
+
+Status: Branch implementation complete; full local validation and merge are
+pending.
+
+Implemented:
+
+- Added a narrow shared `GameCard` that owns only home-card presentation while
+  `page.tsx` continues to declare the Connections and Wordle entries, labels,
+  destinations, and Wordle prefetch behavior explicitly.
+- Added the Connections-domain `CONNECTIONS_GROUP_SIZE` invariant and used it
+  for group validation, guess evaluation, one-away evaluation, selection caps,
+  and submit eligibility. The separate required group-count rule and static
+  four-column presentation remain independent.
+- Updated Connections browser tests to obtain application puzzle content
+  through `getConnectionsPuzzle` rather than importing the concrete local
+  content module directly.
+- Preserved independent Connections and Wordle content, domains, controllers,
+  boards, loaders, and routes.
+
+No game registry, generic repository, generic loader, shared route, generic
+controller/domain interface, shared gameplay E2E framework, event runtime,
+multi-tenancy, authentication, persistence, or security infrastructure was
+introduced. The event-ownership, trusted-context, session, and authoritative
+gameplay findings remain requirements for M5 design rather than M4
+implementation.
+
+## Deferred beyond M4
 
 These are intentionally not part of the current issue:
 
@@ -802,8 +832,7 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Implement only the narrow production and test refactors accepted for M4 Issue
-4: a presentational `GameCard`, Connections E2E content access through
-`getConnectionsPuzzle`, and a Connections-specific selection-size constant if
-inspection confirms it is worthwhile. Do not introduce generic game, content,
-route, controller, or test frameworks.
+Complete the full local validation gate and merge M4 Issue 4. M5 is the next
+design step: resolve the initial event-ownership, trusted event-context, and
+anonymous-session relationship decisions before implementing persistence. Do
+not begin M5 backend or security infrastructure as part of this M4 branch.

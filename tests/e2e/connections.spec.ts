@@ -1,8 +1,21 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { developmentPuzzle } from "../../src/content/connections/developmentPuzzle";
+import { getConnectionsPuzzle } from "../../src/content/connections/getConnectionsPuzzle";
 
-const connectionsPuzzlePath = `/games/connections/${developmentPuzzle.id}`;
+const connectionsPuzzleId = "development-puzzle";
+const connectionsPuzzlePath = `/games/connections/${connectionsPuzzleId}`;
+
+async function loadTestPuzzle() {
+  const puzzle = await getConnectionsPuzzle(connectionsPuzzleId);
+
+  if (!puzzle) {
+    throw new Error(
+      `Connections test puzzle not found: ${connectionsPuzzleId}`,
+    );
+  }
+
+  return puzzle;
+}
 
 async function selectTiles(page: Page, labels: string[]) {
   for (const label of labels) {
@@ -19,15 +32,15 @@ async function clearSelection(page: Page) {
 }
 
 test("player can complete and restart a puzzle", async ({ page }) => {
+  const puzzle = await loadTestPuzzle();
+
   await page.goto(connectionsPuzzlePath);
 
-  await expect(
-    page.getByRole("heading", { name: developmentPuzzle.title }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: puzzle.title })).toBeVisible();
 
   await expect(page.locator("button[aria-pressed]")).toHaveCount(16);
 
-  for (const group of developmentPuzzle.groups) {
+  for (const group of puzzle.groups) {
     await selectTiles(
       page,
       group.tiles.map((tile) => tile.label),
@@ -48,10 +61,11 @@ test("player can complete and restart a puzzle", async ({ page }) => {
 });
 
 test("player can lose and restart a puzzle", async ({ page }) => {
+  const puzzle = await loadTestPuzzle();
+
   await page.goto(connectionsPuzzlePath);
 
-  const [firstGroup, secondGroup, thirdGroup, fourthGroup] =
-    developmentPuzzle.groups;
+  const [firstGroup, secondGroup, thirdGroup, fourthGroup] = puzzle.groups;
 
   const incorrectGuesses = [
     [
@@ -95,7 +109,7 @@ test("player can lose and restart a puzzle", async ({ page }) => {
 
   await expect(page.getByText("Game over")).toBeVisible();
 
-  for (const group of developmentPuzzle.groups) {
+  for (const group of puzzle.groups) {
     await expect(page.getByText(group.category, { exact: true })).toBeVisible();
   }
 

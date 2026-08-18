@@ -8,9 +8,10 @@ import {
   getMistakesRemaining,
   getRemainingTiles,
 } from "@/domain/connections/gameplay";
-import type { ConnectionsPuzzle } from "@/domain/connections/types";
-
-const SELECTION_LIMIT = 4;
+import {
+  CONNECTIONS_GROUP_SIZE,
+  type ConnectionsPuzzle,
+} from "@/domain/connections/types";
 
 export type ConnectionsFeedback =
   "incorrect" | "one-away" | "duplicate" | "correct" | null;
@@ -43,7 +44,7 @@ export function useConnectionsGame(puzzle: ConnectionsPuzzle) {
         return currentTileIds.filter((id) => id !== tileId);
       }
 
-      if (currentTileIds.length >= SELECTION_LIMIT) {
+      if (currentTileIds.length >= CONNECTIONS_GROUP_SIZE) {
         return currentTileIds;
       }
 
@@ -89,7 +90,8 @@ export function useConnectionsGame(puzzle: ConnectionsPuzzle) {
     gameStatus === "lost" ? [...solvedGroups, ...unsolvedGroups] : solvedGroups;
 
   const canSubmit =
-    selectedTileIds.length === SELECTION_LIMIT && !isResolvingCorrectGuess;
+    selectedTileIds.length === CONNECTIONS_GROUP_SIZE &&
+    !isResolvingCorrectGuess;
 
   function submitGuess() {
     const result = evaluateGuess(puzzle, gameState, selectedTileIds);
@@ -151,7 +153,7 @@ export function useConnectionsGame(puzzle: ConnectionsPuzzle) {
     feedback,
     correctGuessTileIds,
     feedbackAttempt,
-    selectionLimit: SELECTION_LIMIT,
+    selectionLimit: CONNECTIONS_GROUP_SIZE,
     canSubmit,
     toggleTile,
     shuffleTiles,
