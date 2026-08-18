@@ -4,7 +4,7 @@
 
 This repository contains a custom wedding-games web application. The project should be useful for the wedding while also being a professionally structured portfolio project.
 
-The current first game is a personalized Connections-style puzzle. Future games may be added, but do not introduce a generic multi-game framework before repeated requirements justify one.
+Connections and Wordle are established playable games. Keep their implementations independent, and do not introduce a generic multi-game framework before repeated requirements justify one.
 
 ## Before starting work
 
@@ -23,7 +23,7 @@ For non-trivial repository work, read `docs/project-status.md` first for the cur
 
 - Prefer simple, maintainable designs over speculative abstractions.
 - Generalize the platform around games only when there is a demonstrated shared need.
-- Keep Connections-specific rules in the Connections domain.
+- Keep Connections-specific rules in the Connections domain and Wordle-specific rules in the Wordle domain.
 - Keep domain/game rules independent from React rendering.
 - Keep puzzle/content loading behind a boundary that can later move from local content to a backend.
 - Avoid over-engineering for wedding-scale traffic.
@@ -46,14 +46,18 @@ For non-trivial repository work, read `docs/project-status.md` first for the cur
 
 ## Current architecture
 
-- `src/domain/connections/`
-  - Static puzzle/domain types
+- `src/domain/<game>/`
+  - Game-specific puzzle/domain types
   - Runtime validation
   - Pure gameplay rules and state transitions
-- `src/features/connections/`
-  - Connections React UI and interaction state
-- `src/app/`
-  - Next.js application routes and global styling
+- `src/features/<game>/`
+  - Game-specific React UI and interaction controllers
+- `src/content/<game>/`
+  - Game-specific local content and loading boundaries
+- `src/app/games/<game>/`
+  - Explicit game-specific Next.js routes
+- `src/components/GamePageShell.tsx`
+  - Narrow shared page layout and navigation
 - `tests/unit/`
   - Domain and component tests
 - `tests/e2e/`
@@ -61,7 +65,7 @@ For non-trivial repository work, read `docs/project-status.md` first for the cur
 - `docs/adr/`
   - Architectural decisions
 
-The Connections domain should remain pure. React components/controllers may coordinate UI state, animations, feedback, and domain calls, but should not duplicate game rules.
+Game domains should remain pure and independent. React components/controllers may coordinate UI state, animations, feedback, and domain calls, but should not duplicate game rules. Matching content-loader contracts are a convention, not a reason to introduce a generic repository.
 
 ## Established architecture decisions
 
@@ -69,8 +73,8 @@ The Connections domain should remain pure. React components/controllers may coor
 - Use PostgreSQL through Supabase when persistence is introduced.
 - Use anonymous player sessions later rather than requiring accounts/passwords.
 - Move toward server-authoritative gameplay when competitive/scored functionality is introduced.
-- Do not build a universal `GameEngine<T...>` abstraction during M2.
-- Puzzle content should eventually be separable from test fixtures and loaded through a stable interface.
+- Do not build a universal `GameEngine<T...>`, generic game interface, game registry, or generic repository without demonstrated requirements.
+- Keep production puzzle content separate from test fixtures and load it through stable game-specific boundaries.
 
 ## Development workflow
 
@@ -141,11 +145,11 @@ Do not treat the known slow-filesystem warning on the `E:` drive as a product de
 
 ## Testing principles
 
-- Domain tests should validate Connections rules independently from the UI.
+- Domain tests should validate each game's rules independently from the UI.
 - Component tests should validate React/domain integration and UI behavior.
 - E2E tests should validate major real-browser flows rather than duplicate every unit test.
 - Tests that use puzzle content should derive labels/IDs from fixtures instead of assuming particular values such as `A`, `B`, or a specific group ID.
-- Keep test fixtures stable and separate from production content as M2 evolves.
+- Keep test fixtures stable and separate from production content.
 
 ## Documentation
 

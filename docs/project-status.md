@@ -1,10 +1,10 @@
 # Project Status
 
-Last updated: 2026-08-16
+Last updated: 2026-08-17
 
 ## Current milestone
 
-**M3 - Wordle Prototype: complete**
+**M4 - Multi-Game Architecture & Product Readiness: in progress**
 
 M1, the Connections Prototype milestone, is complete.
 
@@ -23,7 +23,7 @@ M3 Issue 3, building the first playable Wordle board with physical and
 on-screen keyboard input, is complete.
 
 M3 Issue 4, completing the full Wordle round flow with feedback, terminal
-presentation, answer reveal, and restart, is complete.
+presentation, answer reveal, and replay behavior, is complete.
 
 M3 Issue 5, polishing Wordle interactions, motion, accessibility, and
 small-screen behavior without changing gameplay rules, is complete.
@@ -31,8 +31,13 @@ small-screen behavior without changing gameplay rules, is complete.
 M3 Issue 6, integrating curated local Wordle content, a dynamic puzzle route,
 and a Wordle entry point on the game hub, is complete.
 
-Current work is a narrow post-M3 correction for theme-aware Wordle text and
-request-time Next Word puzzle selection before M4 begins.
+The immediate post-M3 corrections for theme-aware Wordle text, request-time
+puzzle selection, and Next Word navigation are complete.
+
+M4 Issue 1, reviewing multi-game architecture and duplication before any
+abstraction work, is the current issue. The review is complete and its
+documentation-only conclusions are recorded below. Accepted production and
+test refactors remain deferred to M4 Issue 4.
 
 ## Product direction
 
@@ -511,6 +516,9 @@ Implemented:
 
 Issue 4 passed validation, manual testing, and was merged.
 
+The same-puzzle Play Again behavior delivered by this issue was later replaced
+by the completed post-M3 request-time Next Word flow.
+
 ## M3 issue 5 - Polish Wordle interactions and accessibility
 
 Completed:
@@ -583,7 +591,7 @@ Implemented:
   real answer through the public loader.
 - Updated project documentation for the second playable game and its parallel
   content, route, controller, view, test, and domain boundaries.
-- Kept Wordle client-evaluated during M3; server-authoritative attempts and
+- Kept Wordle client-evaluated through M3; server-authoritative attempts and
   stronger answer protection remain deferred with backend and competitive
   work.
 - Preserved both games' existing gameplay code and avoided generic content or
@@ -591,10 +599,9 @@ Implemented:
 
 Issue 6 passed validation and manual testing and was merged, completing M3.
 
-## Current post-M3 Wordle corrections
+## Post-M3 Wordle corrections completed
 
-Status: In progress; implementation is complete and awaiting the full local
-validation gate and merge.
+Status: Complete and locally validated.
 
 Implemented:
 
@@ -610,7 +617,41 @@ Implemented:
 - Kept random selection in the Wordle content layer and kept the gameplay
   controller and domain unaware of the puzzle collection and routing.
 
-## Deferred beyond the current issue
+## M4 issue 1 - Review multi-game architecture and duplication
+
+Status: Architecture review complete; documentation alignment is the only
+change in this issue.
+
+Accepted conclusions:
+
+- Retain independent Connections and Wordle vertical slices.
+- Keep domain types, validation, and gameplay rules pure and game-specific.
+- Keep React controllers, boards, and interaction behavior game-specific.
+- Keep content implementations and dynamic routes explicit per game.
+- Retain `GamePageShell` as a genuinely shared, intentionally narrow
+  application abstraction.
+- Treat a narrow presentational `GameCard` as a justified candidate for later
+  M4 refactoring while keeping game entries explicit.
+- Treat matching asynchronous loader contracts as a convention rather than a
+  generic repository or loader implementation.
+- Wait for more evidence before introducing a game registry or catalog.
+- Do not introduce generic game, domain, gameplay-state, controller, or route
+  interfaces.
+- Do not introduce shared gameplay-flow E2E infrastructure yet.
+
+Candidates recorded for M4 Issue 4, after the wedding/platform and security
+reviews:
+
+- Extract a narrow presentational `GameCard` without adding a registry.
+- Align Connections E2E production-content access through
+  `getConnectionsPuzzle`.
+- Consider a Connections-specific selection-size constant if it meaningfully
+  prevents domain/controller drift.
+
+A shared shake-animation CSS refactor is not planned. Reconsider it only if
+future work naturally changes the animations in both games.
+
+## Deferred beyond M4 issue 1
 
 These are intentionally not part of the current issue:
 
@@ -673,6 +714,6 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Run the full local validation gate, manually verify light/dark current-row text
-and request-time Next Word navigation on another device, then merge these
-post-M3 corrections before beginning M4.
+Review and merge the M4 Issue 1 documentation, then complete the planned
+wedding/platform-boundary and security reviews. Implement accepted multi-game
+refactor candidates only in M4 Issue 4 after those reviews are complete.
