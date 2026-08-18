@@ -78,19 +78,55 @@ remains a game-specific view, each hook coordinates only its game's React
 interaction state, and both domains contain framework-independent rules.
 
 Application puzzle content is separate from stable test fixtures. The home
-page links explicitly to the featured Connections and Wordle puzzles; two
-games do not yet justify a generic game registry, repository framework, or
-universal game engine.
+page links explicitly to the Connections puzzle and the request-time Wordle
+selection route. Two games do not justify a generic game registry, repository
+framework, or universal game engine.
 
 The Wordle board receives only an opaque Next Word destination from its dynamic
 route. The content layer owns random puzzle-ID selection, the entry route owns
 request-time execution and redirects, and the Wordle controller and domain
 remain unaware of both routing and the local puzzle collection.
 
-Wordle evaluation remains client-side during M3, and the validated puzzle
+Wordle evaluation currently remains client-side, and the validated puzzle
 answer is passed to the client game. Server-authoritative attempts and stronger
 answer protection remain deferred until persistence, scoring, or competitive
 requirements justify that boundary.
+
+## M4 Multi-Game Architecture Review
+
+The M4 Issue 1 review confirms that Connections and Wordle should remain
+independent vertical slices. Their domain rules, runtime validation, gameplay
+state, React controllers, boards, content implementations, and routes are
+game-specific and should evolve independently.
+
+The following shared application decisions are currently justified:
+
+- `GamePageShell` remains a narrow shared application abstraction for page
+  layout, navigation back to the hub, and child rendering.
+- A narrow presentational `GameCard` is a justified candidate for later M4
+  refactoring because the home-page entries now share stable markup and
+  styling. The home page should still own explicit game names, destinations,
+  and link behavior.
+
+The following abstractions are not currently justified:
+
+- A generic game, game engine, domain-state, or controller interface
+- A generic repository or content loader implementation
+- Generic Next.js game routes
+- A `GameRegistry` or catalog configuration collection
+- Shared gameplay-flow E2E helpers or parameterized game test suites
+
+The asynchronous `puzzle | null` loader shape, validation of found content,
+and descriptive invalid-content errors are a shared convention. They do not
+require shared implementation. Future storage, availability, public/private
+solution data, and attempt behavior may differ by game.
+
+Production refactors from this review are deliberately deferred until M4 Issue
+4, after the wedding/platform and security reviews. Candidate work is limited
+to a narrow `GameCard`, aligning Connections E2E production-content access
+through `getConnectionsPuzzle`, and considering a Connections-specific
+selection-size constant. A shared shake-animation refactor is not planned and
+should be reconsidered only if future work naturally touches those animations.
 
 ## Architectural Goals
 
@@ -432,7 +468,8 @@ Receive Score
 View Leaderboard
 ```
 
-The detailed testing strategy will be maintained in `docs/testing.md`.
+Current testing commands and responsibilities are maintained in
+`docs/development.md`.
 
 ## Known Future Questions
 

@@ -4,8 +4,8 @@ A mobile-first web platform for personalized wedding games, built as a meaningfu
 
 ## Project Status
 
-**M3 - Wordle Prototype** is complete. Current work is limited to two
-post-milestone Wordle corrections before M4 begins.
+**M4 - Multi-Game Architecture & Product Readiness** is the current milestone.
+M3 and the immediate post-M3 Wordle corrections are complete.
 
 The application includes a game-selection home page and two complete playable
 games at:
@@ -25,7 +25,8 @@ completed work, and immediate next step.
 - Complete Connections-style gameplay, including feedback, terminal states,
   and restart behavior
 - Complete Wordle-style gameplay with physical and on-screen keyboards,
-  duplicate-aware evaluation, terminal states, restart, and interaction polish
+  duplicate-aware evaluation, terminal states, Next Word navigation, and
+  interaction polish
 - Responsive, keyboard-accessible interactions and reduced-motion support
 - Dynamic Connections and Wordle puzzle routes
 - Game-specific local puzzle content behind asynchronous loading boundaries
@@ -68,6 +69,8 @@ Connections and Wordle each have separate content, domain, controller, and
 view layers. Dynamic routes load puzzles through game-specific boundaries and
 pass validated puzzle data into their respective UIs. The project deliberately
 does not use a universal game-engine, repository, or game-registry abstraction.
+`GamePageShell` is intentionally shared; a narrow presentational `GameCard` is
+an accepted candidate for later M4 refactoring, not part of the current review.
 
 See [`docs/architecture.md`](docs/architecture.md) for the broader system
 direction and [`docs/adr/`](docs/adr/) for accepted architectural decisions.
@@ -108,6 +111,7 @@ https://wedding-games-ten.vercel.app/
 - **M1 - Connections Prototype:** complete
 - **M2 - Production Game Structure:** complete
 - **M3 - Wordle Prototype:** complete
+- **M4 - Multi-Game Architecture & Product Readiness:** in progress
 - **Later milestones:** backend persistence, anonymous sessions,
   server-authoritative competitive play, answer protection, scoring,
   leaderboards, and additional games
