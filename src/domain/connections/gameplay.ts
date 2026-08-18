@@ -1,4 +1,4 @@
-import type { ConnectionsPuzzle } from "./types";
+import { CONNECTIONS_GROUP_SIZE, type ConnectionsPuzzle } from "./types";
 
 const MAX_MISTAKES = 4;
 
@@ -137,7 +137,7 @@ function validateSubmittedGuess(
     return "game_over";
   }
 
-  if (tileIds.length !== 4) {
+  if (tileIds.length !== CONNECTIONS_GROUP_SIZE) {
     return "wrong_tile_count";
   }
 
@@ -191,7 +191,7 @@ function findMatchingGroup(
       getOverlapCount(
         group.tiles.map((tile) => tile.id),
         tileIds,
-      ) === 4
+      ) === CONNECTIONS_GROUP_SIZE
     );
   });
 }
@@ -210,7 +210,8 @@ function isOneAway(
       getOverlapCount(
         group.tiles.map((tile) => tile.id),
         tileIds,
-      ) === 3
+      ) ===
+      CONNECTIONS_GROUP_SIZE - 1
     );
   });
 }

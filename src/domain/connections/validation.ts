@@ -1,7 +1,6 @@
-import type { ConnectionsPuzzle } from "./types";
+import { CONNECTIONS_GROUP_SIZE, type ConnectionsPuzzle } from "./types";
 
 const REQUIRED_GROUP_COUNT = 4;
-const REQUIRED_TILES_PER_GROUP = 4;
 
 export function validateConnectionsPuzzle(puzzle: ConnectionsPuzzle): string[] {
   const errors: string[] = [];
@@ -40,9 +39,9 @@ export function validateConnectionsPuzzle(puzzle: ConnectionsPuzzle): string[] {
       categories.add(group.category);
     }
 
-    if (group.tiles.length !== REQUIRED_TILES_PER_GROUP) {
+    if (group.tiles.length !== CONNECTIONS_GROUP_SIZE) {
       errors.push(
-        `Group ${group.id} must contain exactly ${REQUIRED_TILES_PER_GROUP} tiles`,
+        `Group ${group.id} must contain exactly ${CONNECTIONS_GROUP_SIZE} tiles`,
       );
     }
 

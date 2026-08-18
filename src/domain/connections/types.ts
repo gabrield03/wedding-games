@@ -1,3 +1,5 @@
+export const CONNECTIONS_GROUP_SIZE = 4;
+
 export type ConnectionTile = {
   id: string;
   label: string;

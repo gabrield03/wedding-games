@@ -69,8 +69,9 @@ Connections and Wordle each have separate content, domain, controller, and
 view layers. Dynamic routes load puzzles through game-specific boundaries and
 pass validated puzzle data into their respective UIs. The project deliberately
 does not use a universal game-engine, repository, or game-registry abstraction.
-`GamePageShell` is intentionally shared; a narrow presentational `GameCard` is
-an accepted candidate for later M4 refactoring, not part of the current review.
+`GamePageShell` and `GameCard` are intentionally narrow shared application
+components. Game content, domains, controllers, boards, loaders, and routes
+remain game-specific.
 
 See [`docs/architecture.md`](docs/architecture.md) for the broader system
 direction and [`docs/adr/`](docs/adr/) for accepted architectural decisions.
@@ -113,7 +114,7 @@ https://wedding-games-ten.vercel.app/
 - **M1 - Connections Prototype:** complete
 - **M2 - Production Game Structure:** complete
 - **M3 - Wordle Prototype:** complete
-- **M4 - Multi-Game Architecture & Product Readiness:** in progress
+- **M4 - Multi-Game Architecture & Product Readiness:** implementation complete
 - **Later milestones:** backend persistence, anonymous sessions,
   server-authoritative competitive play, answer protection, scoring,
   leaderboards, and additional games

@@ -1,13 +1,28 @@
 import { expect, test } from "@playwright/test";
 
-import { developmentPuzzle } from "../../src/content/connections/developmentPuzzle";
+import { getConnectionsPuzzle } from "../../src/content/connections/getConnectionsPuzzle";
 
-const connectionsPuzzlePath = `/games/connections/${developmentPuzzle.id}`;
+const connectionsPuzzleId = "development-puzzle";
+const connectionsPuzzlePath = `/games/connections/${connectionsPuzzleId}`;
 const wordlePuzzlePathPattern = /\/games\/wordle\/wedding-(?:0[1-9]|10)$/;
+
+async function loadConnectionsTestPuzzle() {
+  const puzzle = await getConnectionsPuzzle(connectionsPuzzleId);
+
+  if (!puzzle) {
+    throw new Error(
+      `Connections test puzzle not found: ${connectionsPuzzleId}`,
+    );
+  }
+
+  return puzzle;
+}
 
 test("player can navigate from the home page to Connections", async ({
   page,
 }) => {
+  const puzzle = await loadConnectionsTestPuzzle();
+
   await page.goto("/");
 
   await expect(page).toHaveTitle(/Wedding Games/);
@@ -26,9 +41,7 @@ test("player can navigate from the home page to Connections", async ({
     .click();
 
   await expect(page).toHaveURL(connectionsPuzzlePath);
-  await expect(
-    page.getByRole("heading", { name: developmentPuzzle.title }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: puzzle.title })).toBeVisible();
 
   const backLink = page.getByRole("link", {
     name: "Back to games",
