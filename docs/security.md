@@ -150,6 +150,33 @@ remain server-only and must not be committed to source control.
 - Treat complete puzzle solutions sent to current client gameplay as a
   transitional M5 limitation; M6 owns authoritative play and answer protection.
 
+## Implemented Issue 2 Database Posture
+
+The local PostgreSQL foundation now makes Event ownership explicit:
+
+- `players.event_id` references `events.id` with Event deletion restricted.
+- `players.auth_user_id` references `auth.users.id` with Auth-user deletion
+  cascading to the associated Player rows.
+- `unique(event_id, auth_user_id)` prevents duplicate participation records
+  within one Event without globally restricting an Auth identity to one Event.
+- Both public application tables have RLS enabled and explicit client
+  privileges.
+- Events have no direct `anon` or `authenticated` client access.
+- Authenticated identities may select only Player rows whose
+  `auth_user_id = auth.uid()`.
+- Client roles cannot insert, update, or delete Players.
+
+This posture intentionally does not bootstrap Players. Issue 3 must determine
+how a verified anonymous identity and trusted server-resolved Event produce or
+reuse a Player. Normal authenticated access, a narrowly scoped database
+function/policy, narrowly privileged server access, or another justified
+mechanism remain candidates. Issue 2 neither introduces nor permanently rules
+out privileged access.
+
+The local seed's `isolation-test` Event exists only to exercise ownership and
+RLS assumptions. It is not a second production wedding. No credentials,
+service-role keys, Auth users, or Players are committed as seed data.
+
 ## Safely Deferred Decisions
 
 - Multi-event URL structure

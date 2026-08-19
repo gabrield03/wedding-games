@@ -34,6 +34,8 @@ completed work, and immediate next step.
 - Pure Connections and Wordle domain rules independent from React
 - Game-specific React gameplay controllers
 - Unit, component, and cross-browser end-to-end test coverage
+- Reproducible local Supabase/PostgreSQL migrations, deterministic Event seed
+  data, Event-scoped Player schema, row-level security, and pgTAP tests
 
 ## Goals
 
@@ -60,7 +62,8 @@ completed work, and immediate next step.
 - **Styling:** Tailwind CSS
 - **Testing:** Vitest, React Testing Library, and Playwright
 - **Hosting:** Vercel
-- **Database direction:** PostgreSQL through Supabase when persistence is added
+- **Database:** PostgreSQL through Supabase, currently established as a local
+  migration and testing foundation
 - **CI/CD:** GitHub Actions and Vercel previews
 
 ## Architecture
@@ -76,6 +79,9 @@ remain game-specific.
 The approved M5 direction uses Supabase anonymous Auth identity, a separate
 event-scoped Player, and a server-configured current Event. M5 preserves replay
 and keeps attempts, scoring, and server-authoritative gameplay deferred.
+The current implementation is local-only: application Auth, trusted Event
+resolution, Player bootstrap, hosted Supabase, and puzzle persistence have not
+yet been integrated.
 
 See [`docs/architecture.md`](docs/architecture.md) for the broader system
 direction and [`docs/adr/`](docs/adr/) for accepted architectural decisions.

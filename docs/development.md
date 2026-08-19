@@ -62,6 +62,40 @@ Verify installation:
 npm --version
 ```
 
+### Docker Desktop
+
+The local Supabase stack runs in Docker containers. On the primary Windows
+development environment, Docker Desktop uses Linux containers through its WSL
+2 backend.
+
+Verify that both the Docker client and engine are available before running
+database commands:
+
+```powershell
+wsl --version
+docker version
+docker info
+```
+
+The first local Supabase start downloads its container images and may take
+several minutes. Docker Desktop must remain running while the local database is
+used.
+
+### Supabase CLI
+
+The Supabase CLI is pinned as a project development dependency. Do not install
+or rely on a global CLI version. npm scripts resolve the repository-local
+binary.
+
+Verify the installed version after `npm install`:
+
+```powershell
+npx.cmd supabase --version
+```
+
+No hosted Supabase account, project, access token, or database password is
+required for the current local workflow.
+
 ### Visual Studio Code
 
 Visual Studio Code is the primary development environment used for the project.
@@ -207,6 +241,72 @@ Stop the development server with:
 ```text
 Ctrl+C
 ```
+
+## Local Database Setup
+
+Database migrations under `supabase/migrations/` are the schema source of
+truth. `supabase/seed.sql` contains deterministic local/test data applied after
+the migrations. The generated database contract is committed at
+`src/types/database.generated.ts`.
+
+Start the local Supabase stack:
+
+```powershell
+npm.cmd run db:start
+```
+
+Reset the disposable local database, replay every migration, and apply the
+seed:
+
+```powershell
+npm.cmd run db:reset
+```
+
+Lint the local database schema:
+
+```powershell
+npx.cmd supabase db lint --local --level warning
+```
+
+Run the pgTAP database tests:
+
+```powershell
+npm.cmd run db:test
+```
+
+Regenerate the TypeScript database types after any migration change:
+
+```powershell
+npm.cmd run db:types
+```
+
+Stop the local stack when it is no longer needed:
+
+```powershell
+npx.cmd supabase stop
+```
+
+The reproducibility sequence is:
+
+```text
+start local Supabase
+  -> reset the database
+  -> replay migrations
+  -> apply deterministic seed data
+  -> lint the schema
+  -> run database tests
+  -> regenerate database types
+```
+
+The seed creates exactly two Events: `current-wedding`, representing the local
+current Event, and `isolation-test`, a test-only boundary used to verify
+isolation behavior. It creates no Auth users or Players. Local/test seed data
+is not a hosted production bootstrap process.
+
+The current schema includes Event and event-scoped Player foundations only.
+Application anonymous sign-in, Auth cookies, trusted Event resolution,
+automatic Player bootstrap, puzzle persistence, and hosted Supabase linking
+remain deferred. No service-role or secret application client is used.
 
 ## Code Quality
 
@@ -411,6 +511,11 @@ Run End-to-End Tests
     ->
 Build Application
 ```
+
+Database reset, lint, pgTAP tests, and generated-type drift checks remain local
+requirements during M5 Issue 2. CI database workflow hardening is intentionally
+deferred to M5 Issue 6; the current workflow does not start Supabase or require
+hosted Supabase credentials.
 
 The `main` branch is protected by a GitHub branch ruleset.
 

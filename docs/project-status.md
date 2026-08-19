@@ -49,9 +49,12 @@ the preceding architecture, event-boundary, and security reviews. M4 is
 complete and merged.
 
 M5 Issue 1, designing backend ownership and the anonymous identity/Player
-model, is the current issue. Its documentation implementation is complete on
-the branch; validation and merge remain pending. M5 Issue 2 is the next
-implementation step.
+model, is complete and merged.
+
+M5 Issue 2, establishing local Supabase tooling and the Event/Player schema
+foundation, is the current issue. Its implementation, database validation, and
+fast application validation are complete on the branch; the full pre-merge
+gate and merge remain pending.
 
 ## Product direction
 
@@ -194,6 +197,18 @@ src/
       WordleGameBoard.tsx
       WordleKeyboard.tsx
       useWordleGame.ts
+
+  types/
+    database.generated.ts
+
+supabase/
+  config.toml
+  migrations/
+    20260818000000_create_event_player_foundation.sql
+  seed.sql
+  tests/database/
+    event_player_schema.test.sql
+    player_rls.test.sql
 
 tests/
   fixtures/
@@ -774,7 +789,7 @@ implementation.
 
 ## M5 issue 1 - Design backend ownership and anonymous session model
 
-Status: Design approved and documented; branch validation and merge pending.
+Status: Complete and merged.
 
 Accepted decisions:
 
@@ -820,12 +835,37 @@ as historical context.
 
 #### Issue 2 - Establish Supabase tooling and event-owned schema foundation
 
+Status: Implemented and locally validated; full pre-merge gate and merge
+pending.
+
 - Add local Supabase development tooling.
 - Add reproducible migrations, deterministic seed data, generated database
   types, and local database tests/documentation.
 - Create the minimum Event and Player persistence foundation with initial
   constraints/RLS.
 - Do not add the application Auth flow yet.
+
+Implemented on the current branch:
+
+- Pinned Supabase CLI `2.115.0` as a project-local development dependency.
+- Initialized version-controlled local Supabase configuration with migrations
+  as the only schema source of truth.
+- Added `events` and event-scoped `players` with internal UUIDs, timestamps,
+  validated unique Event slugs, foreign keys, and
+  `unique(event_id, auth_user_id)`.
+- Restricted Event deletion while Players exist and cascade Player cleanup
+  when the corresponding Supabase Auth user is deleted.
+- Enabled RLS immediately. Events have no client access; authenticated users
+  can select only their own Player rows and cannot directly mutate Players.
+- Seeded deterministic `current-wedding` and test-only `isolation-test` Events
+  without seeding Auth users, Players, game content, or personal data.
+- Added focused pgTAP schema/constraint and RLS tests.
+- Generated and committed the TypeScript database contract from the local
+  schema.
+- Added local start, reset, database-test, and type-generation npm scripts and
+  documented the Docker-backed reproducibility workflow.
+- Kept application Auth, trusted Event resolution, Player bootstrap, hosted
+  Supabase, privileged application access, and puzzle persistence deferred.
 
 #### Issue 3 - Add trusted event resolution and anonymous player bootstrap
 
@@ -922,6 +962,8 @@ Known environment:
 - Node 24
 - npm 11
 - VS Code
+- Docker Desktop 4.87.0 using Linux containers through WSL 2
+- Supabase CLI 2.115.0 installed as a project development dependency
 - repository located on `E:` drive
 
 Next.js sometimes reports a slow-filesystem warning for the `E:` drive. It has not been a functional blocker.
@@ -938,6 +980,9 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Validate and merge the M5 Issue 1 documentation and ADRs. Then begin M5 Issue
-2 by establishing local Supabase tooling and the minimum Event/Player schema
-foundation. Do not add the application Auth flow until Issue 3.
+Run the remaining full pre-merge gate, including Playwright and the production
+build, then merge M5 Issue 2. After merge, begin M5 Issue 3 by designing and
+implementing trusted Event resolution, Supabase anonymous Auth integration,
+and silent Player creation/reuse. Issue 3 must choose the narrow trusted
+Player-bootstrap mechanism; Issue 2 does not preselect a privileged client or
+weaken its conservative RLS posture.
