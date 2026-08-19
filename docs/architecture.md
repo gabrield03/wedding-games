@@ -271,6 +271,40 @@ These decisions are recorded in
 and
 [`ADR-0006`](adr/0006-use-event-as-the-persistent-ownership-boundary.md).
 
+### Implemented M5 Schema Foundation
+
+M5 Issue 2 establishes a local, migration-owned PostgreSQL foundation:
+
+```text
+auth.users
+    |
+    | players.auth_user_id (on delete cascade)
+    v
+public.players
+    |
+    | players.event_id (on delete restrict)
+    v
+public.events
+```
+
+`events` has an internal UUID, a unique validated slug, and a creation
+timestamp. `players` has an internal UUID, Event ownership, Supabase Auth-user
+identity, and a creation timestamp. `unique(event_id, auth_user_id)` permits
+one Auth identity to participate in multiple Events while preventing duplicate
+Players within one Event.
+
+Both public tables have RLS enabled. Events have no direct client access in
+this foundation. Authenticated identities may select only their own Player
+rows and cannot directly insert, update, or delete Players. This deliberately
+does not implement trusted Event resolution or Player bootstrap. Issue 3 must
+choose the narrow bootstrap mechanism after identity and trusted Event context
+are established; a privileged server client remains possible only if that
+design demonstrates a concrete need.
+
+The schema is reproducible through committed Supabase migrations, deterministic
+local/test seed data, pgTAP tests, and generated TypeScript database types.
+Hosted Supabase deployment and application data access are not part of Issue 2.
+
 ## Architectural Goals
 
 The architecture should:
@@ -349,13 +383,16 @@ The architecture should not attempt to create a universal abstraction for all po
 
 ### Persistence Layer
 
-PostgreSQL will initially store persistent application state.
+PostgreSQL now contains the local Event and Player schema foundation. Game
+content and gameplay records remain unpersisted.
 
 Expected domain entities include:
 
 ```text
 Event
 Player
+
+Planned during M5:
 Connections Puzzle
 Wordle Puzzle
 
