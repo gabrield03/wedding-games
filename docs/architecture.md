@@ -178,9 +178,9 @@ durable database identity without first deciding whether identifiers are
 global or scoped by event and game, and whether public route slugs differ from
 internal persistence IDs.
 
-Before M5 introduces persistence, the project must understand ownership for
-puzzles, players and sessions, attempts, scores, leaderboards, and personalized
-assets. This issue does not choose or design a database model.
+The M5 design makes Event the owner of persisted Players and game-specific
+content. Future attempts, scores, leaderboards, and personalized assets must
+also receive explicit Event ownership when they are designed.
 
 Reaction-image architecture follows the same boundary:
 
@@ -191,17 +191,85 @@ Reaction-image architecture follows the same boundary:
   implementation demonstrates stable shared behavior.
 
 The M4 Issue 3 security review keeps the product operating as one event today
-without selecting a final shared multi-event deployment model. Before M5 adds
-persistence, `Event` must be an explicit ownership concept, trusted event
-context must be resolved by the server, and event scope must apply to protected
-reads and writes. Anonymous identity and event authorization remain separate;
-their exact relationship is deliberately deferred to M5 design.
+without selecting a final shared multi-event deployment model. M5 makes
+`Event` an explicit ownership concept, resolves trusted event context from
+server-owned configuration, and separates Supabase Auth identity from
+event-scoped Player participation and authorization.
 
 A separate deployment remains a reasonable model for the current wedding. No
 multi-event routes, giant event configuration object, shared reaction
 framework, or database design are justified by these reviews. The complete
 accepted security invariants and deferred decisions are recorded in
 [`docs/security.md`](security.md).
+
+## M5 Backend Ownership and Anonymous Identity Direction
+
+M5 introduces `Event` as the first-class owner of persisted wedding-specific
+data while retaining one wedding as the current operational model. The initial
+Event is resolved from server-owned configuration such as
+`CURRENT_EVENT_SLUG`; client-provided event values do not establish
+authorization.
+
+The approved M5 direction is:
+
+```text
+Browser
+  |
+  | Supabase anonymous Auth cookies
+  v
+Next.js server boundary
+  |
+  +-- verify Auth identity
+  |
+  +-- resolve trusted current Event
+  |     -> server-owned CURRENT_EVENT_SLUG
+  |
+  +-- resolve or bootstrap event-scoped Player
+  |
+  +-- game-specific content loaders
+        |
+        +-- Connections persistence
+        +-- Wordle persistence
+  |
+  v
+Supabase PostgreSQL
+```
+
+The responsibilities remain distinct:
+
+- **Supabase Auth identity:** provider-managed, browser/device-bound anonymous
+  identity and session lifecycle.
+- **Application Player:** participation in one Event and the future owner of
+  event-scoped gameplay/profile data.
+- **Event:** owner of wedding-specific content and future persisted gameplay
+  data.
+- **Attempt/result:** future gameplay records separate from identity; not part
+  of M5 persistence.
+
+Player bootstrap is silent and does not require a display name. Identity does
+not restrict play or replay. Connections restart and Wordle next-puzzle
+behavior remain available; future scoring design must separately decide which
+attempts are leaderboard-eligible.
+
+Next.js Proxy may refresh and propagate Supabase Auth cookies. It is not the
+application's authorization boundary. Server-side application/data-access code
+verifies identity, resolves the trusted Event, and authorizes operations;
+database constraints and RLS provide defense in depth.
+
+Normal access should use the authenticated anonymous user's identity and RLS.
+A privileged server-only Supabase client is not a required architecture
+component and should be introduced only when a concrete operation cannot use
+normal scoped access.
+
+M5 will persist Event, Player, Connections content, and Wordle content.
+Connections and Wordle retain separate persistence models and loaders. M5 may
+continue sending full puzzle solutions to the current client gameplay as an
+explicit transition; M6 owns authoritative attempts and answer protection.
+
+These decisions are recorded in
+[`ADR-0005`](adr/0005-use-supabase-anonymous-auth-with-event-scoped-players.md)
+and
+[`ADR-0006`](adr/0006-use-event-as-the-persistent-ownership-boundary.md).
 
 ## Architectural Goals
 
@@ -286,11 +354,14 @@ PostgreSQL will initially store persistent application state.
 Expected domain entities include:
 
 ```text
+Event
 Player
-Game
-Puzzle
+Connections Puzzle
+Wordle Puzzle
+
+Future:
 Attempt
-Move
+Result
 ```
 
 Additional entities may be introduced as requirements become clearer.
@@ -299,7 +370,8 @@ Database access should be isolated from user-interface components so persistence
 
 ### Session Management
 
-Players should be able to participate without traditional account registration.
+Players should be able to participate without traditional account
+registration or required onboarding.
 
 The expected initial model is:
 
@@ -307,19 +379,21 @@ The expected initial model is:
 First Visit
     |
     v
-Enter Display Name
+Create or reuse Supabase anonymous Auth identity
     |
     v
-Server Creates Player
+Resolve trusted current Event
     |
     v
-Session Identifier Stored in Browser
+Create or reuse event-scoped Player
     |
     v
 Future Requests Resolve Existing Player
 ```
 
-The exact session implementation will be defined separately through an ADR.
+Supabase Auth manages the anonymous identity and session. The application does
+not create a duplicate Session table. Player profile/display-name behavior is
+deferred until a concrete product requirement needs it.
 
 ### Leaderboard
 
@@ -397,9 +471,11 @@ Development and automated tests may use fixture puzzle files stored in the repos
 
 Production puzzle content, especially unpublished solutions, may instead be stored outside the public source repository.
 
-## Initial Request Flow
+## Future Competitive Request Flow
 
-A typical gameplay flow may look like:
+M5 establishes identity, event ownership, players, and content persistence but
+does not persist attempts or results. A later server-authoritative gameplay
+flow may look like:
 
 ```text
 Player Opens Application
@@ -502,7 +578,7 @@ The server should validate:
 User-controlled values such as display names must not be assumed safe.
 
 The current trust model, security invariants, event-isolation requirements, and
-pre-M5 decisions are documented in [`docs/security.md`](security.md).
+M5 decisions are documented in [`docs/security.md`](security.md).
 
 ## Testing Boundaries
 
@@ -533,7 +609,7 @@ Used for complete user flows such as:
 ```text
 Open Application
     ->
-Create Player
+Bootstrap Anonymous Player
     ->
 Start Puzzle
     ->
@@ -551,9 +627,13 @@ Current testing commands and responsibilities are maintained in
 
 The following decisions are intentionally unresolved:
 
-- Exact player session implementation
+- Exact Supabase SSR cookie/session integration details
+- Whether a concrete operation requires a privileged server-only client
+- Exact initial RLS policy syntax
 - Whether player identity should eventually connect to the wedding guest list
-- Exact database schema
+- Cross-device recovery and account-linking behavior
+- Future leaderboard scoring and replay-eligibility rules
+- Anonymous-user cleanup, CAPTCHA, and rate-limit approach
 - Whether puzzle scheduling belongs in the application or database layer
 - Whether an administrative puzzle editor is worthwhile
 - Whether leaderboard updates should ever require real-time communication

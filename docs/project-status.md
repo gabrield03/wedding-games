@@ -1,11 +1,10 @@
 # Project Status
 
-Last updated: 2026-08-17
+Last updated: 2026-08-18
 
 ## Current milestone
 
-**M4 - Multi-Game Architecture & Product Readiness: implementation complete;
-full local validation and merge pending**
+**M5 - Backend Foundation & Anonymous Sessions: in progress**
 
 M1, the Connections Prototype milestone, is complete.
 
@@ -46,8 +45,13 @@ M4 Issue 3, reviewing security and trust boundaries before persistence work,
 is complete.
 
 M4 Issue 4 implemented the narrow production and test refactors accepted by
-the preceding architecture, event-boundary, and security reviews. The branch
-implementation is complete; full local validation and merge remain pending.
+the preceding architecture, event-boundary, and security reviews. M4 is
+complete and merged.
+
+M5 Issue 1, designing backend ownership and the anonymous identity/Player
+model, is the current issue. Its documentation implementation is complete on
+the branch; validation and merge remain pending. M5 Issue 2 is the next
+implementation step.
 
 ## Product direction
 
@@ -744,8 +748,7 @@ policies.
 
 ## M4 issue 4 - Apply justified multi-game architecture refactors
 
-Status: Branch implementation complete; full local validation and merge are
-pending.
+Status: Complete and merged.
 
 Implemented:
 
@@ -769,26 +772,127 @@ introduced. The event-ownership, trusted-context, session, and authoritative
 gameplay findings remain requirements for M5 design rather than M4
 implementation.
 
-## Deferred beyond M4
+## M5 issue 1 - Design backend ownership and anonymous session model
 
-These are intentionally not part of the current issue:
+Status: Design approved and documented; branch validation and merge pending.
+
+Accepted decisions:
+
+- Introduce `Event` as the first-class owner of persisted wedding-specific
+  data while continuing to operate one current wedding.
+- Resolve the current Event from trusted server-owned configuration such as
+  `CURRENT_EVENT_SLUG`; client-provided event values do not authorize.
+- Use Supabase Auth anonymous sign-in instead of a custom application-owned
+  session-token system.
+- Keep Supabase Auth identity separate from an event-scoped application
+  Player, and do not create a duplicate custom Session table.
+- Bootstrap the anonymous identity and Player silently without requiring a
+  display name.
+- Keep identity separate from attempts, completion, scoring, and leaderboard
+  eligibility. Identity does not limit replay or consume puzzle access.
+- Scope public puzzle IDs by Event and game while keeping internal database
+  UUIDs conceptually separate.
+- Persist Event, Player, Connections content, and Wordle content during M5.
+- Keep Connections and Wordle persistence game-specific; a Connections JSONB
+  representation and typed Wordle columns are acceptable different designs.
+- Preserve current client gameplay and its transitional full-solution exposure
+  during M5. M6 owns authoritative gameplay and answer protection.
+- Default to authenticated request-scoped Supabase access and RLS. Introduce a
+  privileged server-only client only if a concrete operation proves normal
+  scoped access insufficient.
+- Limit Next.js Proxy to Supabase Auth cookie/token refresh and propagation;
+  server-side application/data-access code remains responsible for trusted
+  Event resolution and authorization.
+- Evaluate anonymous-user abuse, cleanup, CAPTCHA, and rate-limit protection
+  before broad public guest launch without implementing them in Issue 1.
+
+These decisions are recorded in ADR-0005 and ADR-0006. ADR-0005 refines and
+supersedes ADR-0003's implementation details while ADR-0003 remains unchanged
+as historical context.
+
+### Final M5 issue plan
+
+#### Issue 1 - Design backend ownership and anonymous session model
+
+- Record the approved Event, Auth identity, Player, and persistence direction.
+- Add ADR-0005 and ADR-0006.
+- Make documentation changes only; add no backend implementation.
+
+#### Issue 2 - Establish Supabase tooling and event-owned schema foundation
+
+- Add local Supabase development tooling.
+- Add reproducible migrations, deterministic seed data, generated database
+  types, and local database tests/documentation.
+- Create the minimum Event and Player persistence foundation with initial
+  constraints/RLS.
+- Do not add the application Auth flow yet.
+
+#### Issue 3 - Add trusted event resolution and anonymous player bootstrap
+
+- Integrate Supabase anonymous Auth with Next.js.
+- Resolve the current Event only from trusted server configuration.
+- Silently create or reuse the event-scoped Player without a display-name form.
+- Reuse identity/Player for the same browser without adding replay limits.
+- Use Proxy only for Auth cookie/token refresh, not authorization.
+- Add no custom Session table or required privileged client.
+
+#### Issue 4 - Move Connections content behind PostgreSQL
+
+- Replace repository-backed production Connections content with event-scoped,
+  Connections-specific persistence.
+- Preserve URLs, gameplay, loader semantics, and domain validation.
+- Add no generic repository.
+
+#### Issue 5 - Move Wordle content and selection behind PostgreSQL
+
+- Replace repository-backed Wordle content and selection with event-scoped,
+  Wordle-specific persistence.
+- Migrate only the existing ten answers.
+- Preserve URLs, gameplay, availability filtering, and exclusion behavior.
+- Add no generic repository or daily/history system.
+
+#### Issue 6 - Harden M5 database testing and deployment workflow
+
+- Validate clean reset/seed, database lint/tests, and event isolation.
+- Cover anonymous identity/Player creation and reuse in E2E.
+- Preserve existing Connections and Wordle behavior.
+- Document server-only secrets correctly and evaluate anonymous signup abuse
+  controls before broad public launch.
+- Do not claim server-authoritative gameplay.
+
+## M5 issue 1 non-goals and deferred work
+
+Issue 1 does not implement:
 
 - Supabase persistence
-- anonymous player-session persistence
+- Supabase dependencies, schema, migrations, Auth, cookies, or Proxy
+- Event resolution or Player creation
+- Puzzle persistence
+- Attempts or completion history
 - server-authoritative guess submission
 - leaderboard
 - scoring
+- statistics
+- one-play restrictions
 - anti-cheat
 - daily puzzle scheduling
-- guest identity/profile flows
+- guest-facing display-name/profile onboarding
 - cocktail-hour team/social mode
 - personalized Wordle answers not supplied by the couple
 - allowed-guess dictionaries and invalid-word rejection
 - daily Wordle scheduling and no-repeat puzzle history
 - generic multi-game engine
 
-These should be handled in later issues once concrete requirements justify
-them.
+Still unresolved for later implementation/design:
+
+- Exact Supabase SSR cookie/session details
+- Whether any operation genuinely requires a privileged server-only client
+- Exact initial RLS policy syntax
+- Exact local/hosted Supabase CI workflow details
+- Future leaderboard scoring and replay-eligibility rules
+- Cross-device recovery and account linking
+- Anonymous-user cleanup, CAPTCHA, and rate-limit approach
+- Final shared multi-event deployment model
 
 ## Existing ADR decisions
 
@@ -798,6 +902,8 @@ The current ADR set includes:
 - ADR 0002: PostgreSQL via Supabase
 - ADR 0003: anonymous player sessions
 - ADR 0004: server-authoritative gameplay
+- ADR 0005: Supabase anonymous Auth with event-scoped Players
+- ADR 0006: Event as the persistent ownership boundary
 
 Do not create a new ADR for small refactors. Add one only when an issue makes a
 durable architectural decision that warrants preserving the reasoning.
@@ -832,7 +938,6 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Complete the full local validation gate and merge M4 Issue 4. M5 is the next
-design step: resolve the initial event-ownership, trusted event-context, and
-anonymous-session relationship decisions before implementing persistence. Do
-not begin M5 backend or security infrastructure as part of this M4 branch.
+Validate and merge the M5 Issue 1 documentation and ADRs. Then begin M5 Issue
+2 by establishing local Supabase tooling and the minimum Event/Player schema
+foundation. Do not add the application Auth flow until Issue 3.
