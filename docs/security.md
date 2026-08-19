@@ -10,23 +10,28 @@ JavaScript. That exposure is an accepted limitation for prototype play, but it
 is not suitable for future trusted competition.
 
 The product currently operates as one implicit wedding/event. Multi-tenancy is
-not being implemented now. Before M5 adds persistence, `Event` must become an
-explicit ownership concept so that globally owned data is not an accidental
-property of the first backend.
+not being implemented now. M5 will introduce `Event` as an explicit ownership
+concept so that globally owned data is not an accidental property of the first
+backend.
 
 ## Trust-Boundary Overview
 
 ```text
 Untrusted browser
-  -> Next.js/server boundary
-     -> game-authoritative application logic
-        -> future event-scoped data and storage
+  -> Supabase anonymous Auth cookies
+     -> Next.js/server boundary
+        -> verified identity + trusted Event + event-scoped Player
+           -> game-specific data access
+              -> event-scoped PostgreSQL storage
 ```
 
 - The browser supplies actions and selectors, but is not authoritative for
   identity, authorization, game outcomes, or scores.
-- The Next.js server establishes trusted context, validates input, authorizes
-  access, and controls what data crosses back to the browser.
+- Next.js Proxy may refresh and propagate Auth cookies but does not authorize
+  application operations.
+- Server-side application/data-access code verifies identity, establishes
+  trusted Event context, validates input, authorizes access, and controls what
+  data crosses back to the browser.
 - Game-specific authoritative logic evaluates actions and derives results when
   persistence or competition requires trusted outcomes.
 - Future storage enforces event ownership for both reads and writes, with
@@ -37,9 +42,10 @@ Untrusted browser
 1. The server establishes trusted event context. Client-provided event IDs,
    slugs, route parameters, cookies, or body values may select resources but do
    not establish authorization by themselves.
-2. Persisted event-owned data has explicit event scope, including puzzles,
-   content, sessions, players, attempts, scores, leaderboards, reaction assets,
-   and administrative permissions.
+2. Persisted event-owned application data has explicit event scope, including
+   puzzles, content, Players, attempts, scores, leaderboards, reaction assets,
+   and administrative permissions. Provider-managed Auth identity/session data
+   remains separate from event participation.
 3. Session identity and authorization are separate. A valid anonymous session
    does not authorize access to every event or to administrative actions.
 4. When results become authoritative or competitive, the browser submits
@@ -65,12 +71,24 @@ The current one-wedding product does not require multi-tenant behavior. It does
 require explicit ownership in the first persistent model so that a future
 deployment choice does not depend on invisible global assumptions.
 
-## Anonymous Sessions
+## Anonymous Identity and Players
 
-An anonymous session represents a server-recognized browser or player identity.
-Identity and event authorization remain separate concerns. The exact
-relationship between sessions and events, including cross-event behavior, is a
-M5 design decision and is deliberately not fixed here.
+Supabase Auth anonymous sign-in provides the browser/device-bound identity and
+managed session. The application does not create a duplicate custom Session
+table.
+
+An event-scoped Player represents that identity's participation in one Event.
+Identity and event authorization remain separate: a valid Auth identity does
+not authorize every Event or any administrative action.
+
+Player bootstrap is silent in M5 and does not require a display name. Identity
+also remains separate from attempts, completion, scoring, and leaderboard
+eligibility. Recognizing a returning browser must not block replay or require
+developers to clear cookies after testing a puzzle.
+
+Anonymous-user accumulation and signup abuse are production concerns. CAPTCHA,
+rate-limit protection, and cleanup must be evaluated before broad public guest
+launch, but are not implemented by M5 Issue 1.
 
 ## Server-Authoritative Gameplay
 
@@ -88,9 +106,9 @@ boundary until disclosure is appropriate.
 ## Identifiers
 
 Current puzzle IDs are public prototype lookup identifiers. Opaque IDs can make
-casual discovery harder, but do not grant access. Internal persistence IDs and
-public route identifiers may later differ, and their global or event-scoped
-semantics must be chosen before existing IDs become durable database identity.
+casual discovery harder, but do not grant access. M5 scopes public puzzle IDs
+by Event and game and keeps them conceptually distinct from internal database
+identifiers. Current public URLs do not need to change.
 
 ## Personalized Reaction Assets
 
@@ -114,18 +132,23 @@ server configuration. Privileged database credentials, service-role keys,
 session-signing material, payment secrets, and administrative credentials must
 remain server-only and must not be committed to source control.
 
-## Decisions Required Before M5 Persistence
+## Accepted M5 Direction
 
-- Model `Event` as a first-class persistent owner.
-- Choose the initial trusted event-resolution mechanism.
-- Define identifier scope and the relationship between internal IDs and public
-  route identifiers.
-- Decide the anonymous-session and event relationship.
-- Define event ownership for attempts, results, and leaderboards.
-- Separate public puzzle data from private solution data.
-- Define event-scoped game and content availability.
-- Assign responsibilities between application authorization and database
-  defense-in-depth enforcement.
+- Model `Event` as a first-class persistent owner while operating one current
+  wedding.
+- Resolve the current Event from server-owned configuration such as
+  `CURRENT_EVENT_SLUG`.
+- Use Supabase anonymous Auth identity plus a separate event-scoped Player.
+- Scope public puzzle identifiers by Event and game while keeping them separate
+  from internal database IDs.
+- Persist Event, Player, Connections content, and Wordle content in M5 through
+  game-specific persistence.
+- Use authenticated request-scoped access and RLS by default. Do not require a
+  privileged Supabase client without a concrete operation that needs it.
+- Keep application authorization in server-side code with database policies
+  and constraints as defense in depth.
+- Treat complete puzzle solutions sent to current client gameplay as a
+  transitional M5 limitation; M6 owns authoritative play and answer protection.
 
 ## Safely Deferred Decisions
 
@@ -140,3 +163,8 @@ remain server-only and must not be committed to source control.
 - Exact rate limits
 - Final row-level-security policy syntax
 - Final data-retention policy
+- Exact Supabase SSR cookie/session integration
+- Whether any operation requires a privileged server-only Supabase client
+- Cross-device recovery and account-linking behavior
+- Future attempt, scoring, and replay-eligibility rules
+- Final anonymous-user cleanup and CAPTCHA approach

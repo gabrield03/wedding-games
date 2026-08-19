@@ -4,8 +4,8 @@ A mobile-first web platform for personalized wedding games, built as a meaningfu
 
 ## Project Status
 
-**M4 - Multi-Game Architecture & Product Readiness** is the current milestone.
-M3 and the immediate post-M3 Wordle corrections are complete.
+**M5 - Backend Foundation & Anonymous Sessions** is the current milestone. M4
+is complete.
 
 The application includes a game-selection home page and two complete playable
 games at:
@@ -73,6 +73,10 @@ does not use a universal game-engine, repository, or game-registry abstraction.
 components. Game content, domains, controllers, boards, loaders, and routes
 remain game-specific.
 
+The approved M5 direction uses Supabase anonymous Auth identity, a separate
+event-scoped Player, and a server-configured current Event. M5 preserves replay
+and keeps attempts, scoring, and server-authoritative gameplay deferred.
+
 See [`docs/architecture.md`](docs/architecture.md) for the broader system
 direction and [`docs/adr/`](docs/adr/) for accepted architectural decisions.
 
@@ -114,10 +118,10 @@ https://wedding-games-ten.vercel.app/
 - **M1 - Connections Prototype:** complete
 - **M2 - Production Game Structure:** complete
 - **M3 - Wordle Prototype:** complete
-- **M4 - Multi-Game Architecture & Product Readiness:** implementation complete
-- **Later milestones:** backend persistence, anonymous sessions,
-  server-authoritative competitive play, answer protection, scoring,
-  leaderboards, and additional games
+- **M4 - Multi-Game Architecture & Product Readiness:** complete
+- **M5 - Backend Foundation & Anonymous Sessions:** in progress
+- **Later milestones:** server-authoritative competitive play, answer
+  protection, scoring, leaderboards, and additional games
 
 Shared game infrastructure will be generalized only after multiple game
 implementations demonstrate a concrete shared need.
