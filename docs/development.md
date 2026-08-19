@@ -255,6 +255,27 @@ Start the local Supabase stack:
 npm.cmd run db:start
 ```
 
+Copy `.env.example` to the ignored `.env.local` file. Use the current local
+project URL, publishable key, and secret key reported by the Supabase CLI; do
+not commit those working credentials:
+
+```powershell
+npx.cmd supabase status -o env
+```
+
+The application variables are:
+
+```text
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+SUPABASE_SECRET_KEY
+CURRENT_EVENT_SLUG=current-wedding
+```
+
+Only the URL and publishable key are browser-safe. The secret key and current
+Event slug remain server-only. Local anonymous Auth is enabled through the
+committed Supabase configuration.
+
 Reset the disposable local database, replay every migration, and apply the
 seed:
 
@@ -303,10 +324,14 @@ current Event, and `isolation-test`, a test-only boundary used to verify
 isolation behavior. It creates no Auth users or Players. Local/test seed data
 is not a hosted production bootstrap process.
 
-The current schema includes Event and event-scoped Player foundations only.
-Application anonymous sign-in, Auth cookies, trusted Event resolution,
-automatic Player bootstrap, puzzle persistence, and hosted Supabase linking
-remain deferred. No service-role or secret application client is used.
+The current schema and application include Event ownership, event-scoped
+Players, cookie-backed anonymous Auth, trusted current-Event resolution, and
+automatic idempotent Player bootstrap for game routes. An isolated server-only
+secret client may select Events and insert/select Players; normal clients keep
+the restrictive Issue 2 RLS posture.
+
+Hosted Supabase and Vercel environment setup remain the required second phase
+of M5 Issue 3. Puzzle persistence remains deferred to Issues 4 and 5.
 
 ## Code Quality
 
@@ -513,7 +538,7 @@ Build Application
 ```
 
 Database reset, lint, pgTAP tests, and generated-type drift checks remain local
-requirements during M5 Issue 2. CI database workflow hardening is intentionally
+requirements during M5. CI database workflow hardening is intentionally
 deferred to M5 Issue 6; the current workflow does not start Supabase or require
 hosted Supabase credentials.
 

@@ -1,6 +1,6 @@
 begin;
 
-select plan(11);
+select plan(16);
 
 select ok(
   not has_table_privilege('anon', 'public.players', 'select'),
@@ -21,6 +21,26 @@ select ok(
 select ok(
   not has_table_privilege('authenticated', 'public.events', 'select'),
   'authenticated users cannot select Events'
+);
+select ok(
+  has_table_privilege('service_role', 'public.events', 'select'),
+  'service role can resolve Events'
+);
+select ok(
+  has_table_privilege('service_role', 'public.players', 'select'),
+  'service role can select Players during bootstrap'
+);
+select ok(
+  has_table_privilege('service_role', 'public.players', 'insert'),
+  'service role can insert Players during bootstrap'
+);
+select ok(
+  not has_table_privilege('service_role', 'public.players', 'update'),
+  'service role cannot update Players'
+);
+select ok(
+  not has_table_privilege('service_role', 'public.players', 'delete'),
+  'service role cannot delete Players'
 );
 select ok(
   (

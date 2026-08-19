@@ -84,8 +84,17 @@ It is not the application's authoritative authorization boundary.
 Authorization remains the responsibility of server-side application and
 data-access code, supported by database policies and constraints.
 
-Exact cookie names, attributes, refresh behavior, and helper APIs will be
-selected from the current Supabase SSR and Next.js APIs during implementation.
+M5 Issue 3 implements the cookie lifecycle with `@supabase/ssr`. A narrowly
+matched Next.js Proxy refreshes cookies for game and Player-bootstrap routes
+only. A games-level client component reuses or creates the anonymous session,
+then calls a server Route Handler which verifies identity with `getClaims()`.
+
+Because authenticated clients cannot read Events or insert Players, Issue 3
+also introduces an isolated server-only Supabase secret client for trusted
+Event resolution and Player insert/select. This elevated, RLS-bypassing
+credential is a narrow exception rather than the default data-access pattern.
+The endpoint accepts no client identity/Event/Player selectors and returns no
+internal IDs.
 
 ## Replay and Gameplay
 
@@ -190,8 +199,6 @@ ADR-0003 remains unchanged as the historical record of the earlier decision.
 
 ## Deferred Decisions
 
-- Exact Supabase SSR cookie/session implementation
-- Whether any operation requires a privileged server-only Supabase client
 - Exact RLS policies
 - Cross-device recovery or account linking
 - Display names and other Player profile fields

@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-08-18
+Last updated: 2026-08-19
 
 ## Current milestone
 
@@ -52,9 +52,13 @@ M5 Issue 1, designing backend ownership and the anonymous identity/Player
 model, is complete and merged.
 
 M5 Issue 2, establishing local Supabase tooling and the Event/Player schema
-foundation, is the current issue. Its implementation, database validation, and
-fast application validation are complete on the branch; the full pre-merge
-gate and merge remain pending.
+foundation, is complete and merged.
+
+M5 Issue 3, adding trusted Event resolution and anonymous Player bootstrap, is
+the current issue. Its local implementation, database validation, manual
+session/bootstrap verification, and fast application gate are complete.
+Hosted Supabase/Vercel integration remains a required second phase before
+Issue 3 is complete.
 
 ## Product direction
 
@@ -835,8 +839,7 @@ as historical context.
 
 #### Issue 2 - Establish Supabase tooling and event-owned schema foundation
 
-Status: Implemented and locally validated; full pre-merge gate and merge
-pending.
+Status: Complete and merged.
 
 - Add local Supabase development tooling.
 - Add reproducible migrations, deterministic seed data, generated database
@@ -869,12 +872,53 @@ Implemented on the current branch:
 
 #### Issue 3 - Add trusted event resolution and anonymous player bootstrap
 
+Status: Locally implemented and validated; hosted deployment phase pending.
+
 - Integrate Supabase anonymous Auth with Next.js.
 - Resolve the current Event only from trusted server configuration.
 - Silently create or reuse the event-scoped Player without a display-name form.
 - Reuse identity/Player for the same browser without adding replay limits.
 - Use Proxy only for Auth cookie/token refresh, not authorization.
-- Add no custom Session table or required privileged client.
+- Add no custom Session table; isolate privileged access to the two operations
+  that the restrictive client RLS posture cannot perform.
+
+Implemented locally on the current branch:
+
+- Added Supabase browser/server SSR clients plus a separate plain
+  `@supabase/supabase-js` secret-key client isolated behind `server-only`.
+- Enabled local anonymous Auth and added placeholder-only environment setup.
+- Scoped Next.js Proxy to game routes and the Player-bootstrap endpoint for
+  cookie/token refresh only.
+- Added a games-level single-flight browser bootstrap that reuses or creates
+  an anonymous Auth session and remains retryable after failure.
+- Added `POST /api/player/bootstrap`, which derives identity only from verified
+  claims, resolves the Event only from `CURRENT_EVENT_SLUG`, and returns no
+  internal IDs.
+- Added conflict-ignore Player insertion followed by exact-pair selection,
+  backed by `unique(event_id, auth_user_id)`.
+- Added explicit `service_role` Event `SELECT` and Player `SELECT`/`INSERT`
+  grants without Player `UPDATE` or `DELETE`.
+- Kept the elevated RLS-bypassing secret credential as a narrow server-only
+  exception rather than a default persistence pattern.
+- Preserved existing gameplay when the transitional bootstrap is unavailable.
+
+Still required before Issue 3 closure:
+
+- Create/link the hosted Supabase project, apply migrations, seed the real
+  current Event, and enable hosted anonymous Auth.
+- Configure public and server-only Supabase/Event variables in Vercel.
+- Verify the deployed preview flow before merge.
+
+Local validation completed:
+
+- Clean database reset replayed both migrations and deterministic seed data.
+- Database lint reported no schema warnings.
+- Both pgTAP files passed with 39 assertions.
+- A real local anonymous Auth session survived client recreation, two
+  bootstrap requests returned `204`, one matching Player existed, and direct
+  authenticated Event access remained denied.
+- Format, format check, lint, typecheck, and all 111 unit/component tests
+  passed.
 
 #### Issue 4 - Move Connections content behind PostgreSQL
 
@@ -925,9 +969,6 @@ Issue 1 does not implement:
 
 Still unresolved for later implementation/design:
 
-- Exact Supabase SSR cookie/session details
-- Whether any operation genuinely requires a privileged server-only client
-- Exact initial RLS policy syntax
 - Exact local/hosted Supabase CI workflow details
 - Future leaderboard scoring and replay-eligibility rules
 - Cross-device recovery and account linking
@@ -980,9 +1021,8 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Run the remaining full pre-merge gate, including Playwright and the production
-build, then merge M5 Issue 2. After merge, begin M5 Issue 3 by designing and
-implementing trusted Event resolution, Supabase anonymous Auth integration,
-and silent Player creation/reuse. Issue 3 must choose the narrow trusted
-Player-bootstrap mechanism; Issue 2 does not preselect a privileged client or
-weaken its conservative RLS posture.
+Finish the M5 Issue 3 local validation and review, then complete the separate
+hosted Supabase/Vercel configuration phase. Apply migrations, create the hosted
+current Event, enable anonymous Auth, configure public/server-only variables,
+and verify the preview deployment before marking Issue 3 complete or beginning
+Issue 4.

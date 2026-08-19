@@ -79,9 +79,10 @@ remain game-specific.
 The approved M5 direction uses Supabase anonymous Auth identity, a separate
 event-scoped Player, and a server-configured current Event. M5 preserves replay
 and keeps attempts, scoring, and server-authoritative gameplay deferred.
-The current implementation is local-only: application Auth, trusted Event
-resolution, Player bootstrap, hosted Supabase, and puzzle persistence have not
-yet been integrated.
+The current local implementation establishes cookie-backed anonymous Auth,
+trusted Event resolution, and silent idempotent Player bootstrap for game
+routes. Hosted Supabase/Vercel configuration and puzzle persistence remain
+pending.
 
 See [`docs/architecture.md`](docs/architecture.md) for the broader system
 direction and [`docs/adr/`](docs/adr/) for accepted architectural decisions.

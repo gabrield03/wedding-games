@@ -256,10 +256,14 @@ application's authorization boundary. Server-side application/data-access code
 verifies identity, resolves the trusted Event, and authorizes operations;
 database constraints and RLS provide defense in depth.
 
-Normal access should use the authenticated anonymous user's identity and RLS.
-A privileged server-only Supabase client is not a required architecture
-component and should be introduced only when a concrete operation cannot use
-normal scoped access.
+Normal access uses the authenticated anonymous user's identity and RLS. M5
+Issue 3 adds one narrow exception: an isolated server-only client using an
+elevated Supabase secret key resolves the configured Event and inserts/selects
+the corresponding Player. Normal authenticated access cannot perform those
+operations because Events have no client read access and Players have no
+client insert access. The secret key bypasses RLS and is not generally
+least-privileged; its blast radius is reduced through server-only storage,
+isolated usage, explicit table grants, and trusted server-derived inputs.
 
 M5 will persist Event, Player, Connections content, and Wordle content.
 Connections and Wordle retain separate persistence models and loaders. M5 may
@@ -293,17 +297,41 @@ identity, and a creation timestamp. `unique(event_id, auth_user_id)` permits
 one Auth identity to participate in multiple Events while preventing duplicate
 Players within one Event.
 
-Both public tables have RLS enabled. Events have no direct client access in
-this foundation. Authenticated identities may select only their own Player
-rows and cannot directly insert, update, or delete Players. This deliberately
-does not implement trusted Event resolution or Player bootstrap. Issue 3 must
-choose the narrow bootstrap mechanism after identity and trusted Event context
-are established; a privileged server client remains possible only if that
-design demonstrates a concrete need.
+Both public tables have RLS enabled. Events have no direct client access.
+Authenticated identities may select only their own Player rows and cannot
+directly insert, update, or delete Players.
+
+### Implemented M5 Identity Bootstrap
+
+M5 Issue 3 adds a games-scoped, non-blocking application bootstrap:
+
+```text
+/games layout client bootstrap
+  -> reuse or create Supabase anonymous Auth session
+  -> POST /api/player/bootstrap with cookie-backed session
+  -> verify JWT claims through a request-scoped server client
+  -> resolve CURRENT_EVENT_SLUG through the isolated secret client
+  -> conflict-safe insert and exact-pair select of Player
+```
+
+Next.js Proxy runs only for `/games/:path*` and `/api/player/bootstrap`. It
+refreshes and propagates Supabase Auth cookies but does not resolve Events,
+create Players, or authorize application operations. The bootstrap endpoint
+accepts no Event, Auth-user, or Player selector and returns no internal IDs.
+The database's `unique(event_id, auth_user_id)` constraint remains the
+concurrency and idempotency backstop.
+
+The games remain client-playable if this transitional bootstrap is
+temporarily unavailable because M5 has not made persistence authoritative.
+Future persisted operations must verify identity and Event authorization at
+their own server boundary rather than trusting bootstrap completion in the
+browser.
 
 The schema is reproducible through committed Supabase migrations, deterministic
 local/test seed data, pgTAP tests, and generated TypeScript database types.
-Hosted Supabase deployment and application data access are not part of Issue 2.
+Issue 3 is implemented against the local stack first. Hosted Supabase and
+Vercel environment configuration are a required second phase before Issue 3
+is complete.
 
 ## Architectural Goals
 
@@ -664,9 +692,6 @@ Current testing commands and responsibilities are maintained in
 
 The following decisions are intentionally unresolved:
 
-- Exact Supabase SSR cookie/session integration details
-- Whether a concrete operation requires a privileged server-only client
-- Exact initial RLS policy syntax
 - Whether player identity should eventually connect to the wedding guest list
 - Cross-device recovery and account-linking behavior
 - Future leaderboard scoring and replay-eligibility rules
