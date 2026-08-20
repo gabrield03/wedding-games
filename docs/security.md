@@ -145,6 +145,9 @@ remain server-only and must not be committed to source control.
   game-specific persistence.
 - Use authenticated request-scoped access and RLS by default. Do not require a
   privileged Supabase client without a concrete operation that needs it.
+- Treat the Issue 3 secret-key client as a narrow exception for trusted Event
+  resolution and Player insert/select only. The credential is elevated and
+  RLS-bypassing, not generally least-privileged.
 - Keep application authorization in server-side code with database policies
   and constraints as defense in depth.
 - Treat complete puzzle solutions sent to current client gameplay as a
@@ -166,12 +169,34 @@ The local PostgreSQL foundation now makes Event ownership explicit:
   `auth_user_id = auth.uid()`.
 - Client roles cannot insert, update, or delete Players.
 
-This posture intentionally does not bootstrap Players. Issue 3 must determine
-how a verified anonymous identity and trusted server-resolved Event produce or
-reuse a Player. Normal authenticated access, a narrowly scoped database
-function/policy, narrowly privileged server access, or another justified
-mechanism remain candidates. Issue 2 neither introduces nor permanently rules
-out privileged access.
+## Implemented Issue 3 Trust Boundary
+
+Issue 3 retains the Issue 2 client restrictions and adds a narrow server-side
+bootstrap path:
+
+- A browser client may create or reuse only its Supabase anonymous Auth
+  session using the public project URL and publishable key.
+- Next.js Proxy refreshes Auth cookies only on game and bootstrap routes. It
+  performs no Event resolution, Player creation, or authorization.
+- `POST /api/player/bootstrap` derives `auth_user_id` exclusively from verified
+  Supabase claims and accepts no identity/Event/Player selector from the
+  browser.
+- A server-only resolver derives `event_id` exclusively from
+  `CURRENT_EVENT_SLUG` and returns only the Event ID and slug.
+- An isolated plain `@supabase/supabase-js` client uses
+  `SUPABASE_SECRET_KEY` only to select Events and insert/select Players.
+- The endpoint returns `204` without internal IDs. Invalid identity returns
+  `401`; configuration/database failures return a safe `503`.
+- Conflict-ignore followed by exact-pair selection and
+  `unique(event_id, auth_user_id)` make repeated/concurrent bootstrap
+  idempotent.
+
+The secret key remains an elevated RLS-bypassing backend credential. Explicit
+`service_role` grants limit these tables to Event `SELECT` and Player
+`SELECT`/`INSERT`, but those grants do not make the credential itself generally
+least-privileged. Protection depends on server-only storage, module isolation,
+trusted inputs, narrow operations, and never exposing the key through browser
+code, responses, logs, or committed files.
 
 The local seed's `isolation-test` Event exists only to exercise ownership and
 RLS assumptions. It is not a second production wedding. No credentials,
@@ -190,8 +215,6 @@ service-role keys, Auth users, or Players are committed as seed data.
 - Exact rate limits
 - Final row-level-security policy syntax
 - Final data-retention policy
-- Exact Supabase SSR cookie/session integration
-- Whether any operation requires a privileged server-only Supabase client
 - Cross-device recovery and account-linking behavior
 - Future attempt, scoring, and replay-eligibility rules
 - Final anonymous-user cleanup and CAPTCHA approach
