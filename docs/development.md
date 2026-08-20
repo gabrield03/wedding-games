@@ -326,28 +326,32 @@ local current Event, and `isolation-test`, a test-only boundary used to verify
 isolation behavior. It creates no Auth users or Players. The ordered
 `current-wedding-connections.sql` data file then upserts the existing
 production Connections puzzle for `current-wedding` only and fails clearly if
-that Event is missing. Local/test reset data is not an implicit hosted
-production bootstrap process.
+that Event is missing. `current-wedding-wordle.sql` runs next and upserts the
+existing ten Wordle puzzles for that same Event only. Neither content file
+adds production data to `isolation-test`. Local/test reset data is not an
+implicit hosted production bootstrap process.
 
 The current schema and application include Event ownership, event-scoped
-Players and Connections puzzles, cookie-backed anonymous Auth, trusted
-current-Event resolution, and automatic idempotent Player bootstrap for game
-routes. An isolated server-only secret client may select Events and
-Connections puzzles and insert/select Players; normal clients keep the
-restrictive RLS posture.
+Players and both game-specific puzzle tables, cookie-backed anonymous Auth,
+trusted current-Event resolution, and automatic idempotent Player bootstrap
+for game routes. An isolated server-only secret client may select Events,
+Connections puzzles, and Wordle puzzles and insert/select Players; normal
+clients keep the restrictive RLS posture.
 
 For a linked hosted project, first review and apply migrations with the pinned
 project CLI, ensure the real `current-wedding` Event exists, and then apply the
-versioned Connections data file explicitly:
+versioned game-content files explicitly:
 
 ```powershell
 npx.cmd supabase db push --linked --dry-run
 npx.cmd supabase db push --linked
 npx.cmd supabase db query --linked --file supabase/data/current-wedding-connections.sql
+npx.cmd supabase db query --linked --file supabase/data/current-wedding-wordle.sql
 ```
 
 Do not use local reset seed behavior as a hosted content-deployment mechanism.
-Issue 4 implementation does not run these hosted commands automatically.
+Each production content file is applied explicitly after its local review; the
+Issue 5 implementation does not run these hosted commands automatically.
 
 ## Code Quality
 

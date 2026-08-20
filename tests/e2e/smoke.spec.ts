@@ -1,9 +1,11 @@
 import { expect, test } from "@playwright/test";
 
 import { developmentConnectionsPuzzle } from "../fixtures/connections";
+import { wedding01WordlePuzzle } from "../fixtures/wordle";
 
 const connectionsPuzzleId = developmentConnectionsPuzzle.id;
 const connectionsPuzzlePath = `/games/connections/${connectionsPuzzleId}`;
+const directWordlePuzzlePath = `/games/wordle/${wedding01WordlePuzzle.id}`;
 const wordlePuzzlePathPattern = /\/games\/wordle\/wedding-(?:0[1-9]|10)$/;
 
 test("player can navigate from the home page to Connections", async ({
@@ -74,9 +76,9 @@ test("player can navigate from the home page to Wordle", async ({ page }) => {
 });
 
 test("direct Wordle puzzle URL remains playable", async ({ page }) => {
-  await page.goto("/games/wordle/wedding-01");
+  await page.goto(directWordlePuzzlePath);
 
-  await expect(page).toHaveURL("/games/wordle/wedding-01");
+  await expect(page).toHaveURL(directWordlePuzzlePath);
   await expect(page.getByRole("heading", { name: "Wordle" })).toBeVisible();
   await expect(
     page.getByRole("group", { name: "Current guess is empty" }),

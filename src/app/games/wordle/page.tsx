@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 
-import { selectRandomWordlePuzzleId } from "@/content/wordle/puzzles";
+import { selectRandomWordlePuzzleId } from "@/content/wordle/selectRandomWordlePuzzleId";
 
 export default async function WordleEntryPage({
   searchParams,
@@ -10,7 +10,7 @@ export default async function WordleEntryPage({
 
   const { exclude } = await searchParams;
   const excludedPuzzleId = typeof exclude === "string" ? exclude : undefined;
-  const puzzleId = selectRandomWordlePuzzleId(excludedPuzzleId);
+  const puzzleId = await selectRandomWordlePuzzleId(excludedPuzzleId);
 
   redirect(`/games/wordle/${puzzleId}`);
 }

@@ -61,12 +61,15 @@ the M5 Event and server infrastructure where ownership requires it:
 
 /games/wordle entry route
   -> wait for an incoming request
-  -> select a local puzzle ID, optionally excluding the previous puzzle
+  -> resolve CURRENT_EVENT_SLUG on the server
+  -> load current-Event Wordle public IDs from PostgreSQL
+  -> select an ID, optionally excluding the previous puzzle
   -> redirect to /games/wordle/[puzzleId]
 
 /games/wordle/[puzzleId] route
   -> getWordlePuzzle
-     -> local Wordle content
+     -> resolve CURRENT_EVENT_SLUG on the server
+     -> event-scoped wordle_puzzles row in PostgreSQL
      -> Wordle domain validation and types
   -> GamePageShell
   -> WordleGameBoard
@@ -81,16 +84,16 @@ remains a game-specific view, each hook coordinates only its game's React
 interaction state, and both domains contain framework-independent rules.
 
 Application puzzle content is separate from stable test fixtures. Connections
-production content now lives in PostgreSQL, while Wordle remains local until
-its separate persistence issue. The home page links explicitly to the
-Connections puzzle and the request-time Wordle selection route. Two games and
-two game-specific loaders do not justify a generic game registry, repository
-framework, or universal game engine.
+and Wordle production content now live in separate event-owned PostgreSQL
+tables. The home page links explicitly to the Connections puzzle and the
+request-time Wordle selection route. Two games and two game-specific loaders
+do not justify a generic game registry, repository framework, or universal
+game engine.
 
 The Wordle board receives only an opaque Next Word destination from its dynamic
 route. The content layer owns random puzzle-ID selection, the entry route owns
 request-time execution and redirects, and the Wordle controller and domain
-remain unaware of both routing and the local puzzle collection.
+remain unaware of both routing and persisted content.
 
 Wordle evaluation currently remains client-side, and the validated puzzle
 answer is passed to the client game. Server-authoritative attempts and stronger
@@ -270,13 +273,13 @@ client insert access. The secret key bypasses RLS and is not generally
 least-privileged; its blast radius is reduced through server-only storage,
 isolated usage, explicit table grants, and trusted server-derived inputs.
 
-M5 persists Event, Player, and Connections content so far; Wordle persistence
-remains a separate game-specific issue. The Connections loader uses the
-trusted current Event and an exact `(event_id, public_id)` lookup, then decodes
-the stored JSON and applies the existing domain validator. Only a genuinely
-absent row becomes `null`. M5 may continue sending full puzzle solutions to
-the current client gameplay as an explicit transition; M6 owns authoritative
-attempts and answer protection.
+M5 persists Event, Player, Connections content, and Wordle content. Both game
+loaders resolve the trusted current Event and query by exact
+`(event_id, public_id)` ownership. Connections decodes its JSONB aggregate;
+Wordle maps typed columns. Both apply their existing domain validators, and
+only genuinely absent direct-lookups become `null`. M5 continues sending full
+puzzle solutions to current client gameplay as an explicit transition; M6
+owns authoritative attempts and answer protection.
 
 These decisions are recorded in
 [`ADR-0005`](adr/0005-use-supabase-anonymous-auth-with-event-scoped-players.md)
@@ -367,6 +370,31 @@ requires the configured Event row to exist, and upserts only that Event's
 existing production puzzle. Unit/component fixtures and E2E expectations stay
 independent from the server-only production loader.
 
+### Implemented M5 Wordle Persistence
+
+M5 Issue 5 adds an event-owned, typed `wordle_puzzles` table:
+
+```text
+public.events
+    |
+    | wordle_puzzles.event_id (on delete cascade)
+    v
+public.wordle_puzzles
+    -> internal UUID primary key
+    -> event-scoped public_id used by existing URLs
+    -> canonical five-letter uppercase answer
+```
+
+The table has RLS enabled with no browser access; the isolated secret client
+has `SELECT` only. Direct loading uses an exact trusted-Event/public-ID lookup.
+The request-time selector fetches only the current Event's public IDs and
+chooses in application code, excluding the previous puzzle when an alternative
+exists and retaining no played history.
+
+The ordered current-wedding data file upserts the existing ten answers only
+after the base Event seed and Connections content. Test fixtures remain
+independent from both server-only production content boundaries.
+
 ## Architectural Goals
 
 The architecture should:
@@ -445,8 +473,8 @@ The architecture should not attempt to create a universal abstraction for all po
 
 ### Persistence Layer
 
-PostgreSQL now contains the local Event and Player schema foundation. Game
-content and gameplay records remain unpersisted.
+PostgreSQL now contains the Event and Player foundation plus event-owned
+Connections and Wordle content. Gameplay records remain unpersisted.
 
 Expected domain entities include:
 
@@ -454,7 +482,6 @@ Expected domain entities include:
 Event
 Player
 
-Planned during M5:
 Connections Puzzle
 Wordle Puzzle
 
