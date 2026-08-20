@@ -4,14 +4,14 @@
 
 This document records the security model that must guide persistence work for
 Wedding Games. The application now has a database, anonymous Auth/Player
-bootstrap API, and event-scoped Connections content, but it has no
+bootstrap API, and event-scoped Connections and Wordle content, but it has no
 administrative operations, uploads, or authoritative persisted results.
 Connections solutions and Wordle answers are still delivered to browser
 JavaScript. That exposure is an accepted limitation for prototype play, but it
 is not suitable for future trusted competition.
 
 The product currently operates as one implicit wedding/event. Multi-tenancy is
-not being implemented now. M5 will introduce `Event` as an explicit ownership
+not being implemented now. M5 introduced `Event` as an explicit ownership
 concept so that globally owned data is not an accidental property of the first
 backend.
 
@@ -89,7 +89,9 @@ developers to clear cookies after testing a puzzle.
 
 Anonymous-user accumulation and signup abuse are production concerns. CAPTCHA,
 rate-limit protection, and cleanup must be evaluated before broad public guest
-launch, but are not implemented by M5 Issue 1.
+launch, but are not implemented by M5. The higher anonymous-signup allowance in
+the committed local Supabase configuration exists only for cross-browser tests
+and retries; it does not establish hosted policy.
 
 ## Server-Authoritative Gameplay
 
@@ -132,6 +134,18 @@ Values delivered to browser JavaScript are public, even if they originate from
 server configuration. Privileged database credentials, service-role keys,
 session-signing material, payment secrets, and administrative credentials must
 remain server-only and must not be committed to source control.
+
+Local development and CI use only credentials created by the disposable local
+Supabase stack. GitHub Actions masks its ephemeral local secret before making
+it available to later E2E/build steps and does not receive the hosted Supabase
+secret key, hosted database password, or Vercel secrets. `.env.local` remains
+ignored, while `.env.example` contains placeholders only.
+
+The local publishable key and URL are browser-safe. The local secret key has
+elevated access even though the database is disposable and must not be copied
+into shared logs, artifacts, or browser code. Hosted migration/content
+operations remain manual and use developer-controlled linked-project
+credentials outside CI.
 
 ## Accepted M5 Direction
 

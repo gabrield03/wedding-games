@@ -395,6 +395,39 @@ The ordered current-wedding data file upserts the existing ten answers only
 after the base Event seed and Connections content. Test fixtures remain
 independent from both server-only production content boundaries.
 
+### Implemented M5 Database Workflow Boundary
+
+The repository is the durable source of truth for the M5 database foundation:
+
+```text
+supabase/migrations
+  -> schema and grants
+
+supabase/seed.sql
+  -> deterministic local/test Events only
+
+supabase/data
+  -> version-controlled current-wedding game content
+
+supabase/tests/database
+  -> schema, ownership, grant, isolation, and content assertions
+
+src/types/database.generated.ts
+  -> committed TypeScript contract generated from the local public schema
+```
+
+Local development and CI reconstruct the database from migrations followed by
+the configured seed/data order. Database lint, pgTAP, and generated-type drift
+are separate validation boundaries. Unit/component tests remain database
+independent, while real-browser E2E uses the running local stack for
+PostgreSQL-backed puzzle routes and anonymous Player bootstrap.
+
+Hosted deployment is intentionally separate. Linked schema migrations and
+current-wedding content files are applied explicitly after review; the general
+local seed and `isolation-test` Event are never production deployment inputs.
+GitHub Actions validates only against ephemeral local Supabase and does not
+automate hosted database changes.
+
 ## Architectural Goals
 
 The architecture should:

@@ -279,7 +279,7 @@ Event slug remain server-only. Local anonymous Auth is enabled through the
 committed Supabase configuration.
 
 Reset the disposable local database, replay every migration, and apply the
-seed:
+configured seed/data files:
 
 ```powershell
 npm.cmd run db:reset
@@ -288,8 +288,10 @@ npm.cmd run db:reset
 Lint the local database schema:
 
 ```powershell
-npx.cmd supabase db lint --local --level warning
+npm.cmd run db:lint
 ```
+
+Database warnings remain visible, but only actual lint errors fail validation.
 
 Run the pgTAP database tests:
 
@@ -303,6 +305,24 @@ Regenerate the TypeScript database types after any migration change:
 npm.cmd run db:types
 ```
 
+Verify that the committed generated types match the local public schema
+without modifying the file:
+
+```powershell
+npm.cmd run db:types:check
+```
+
+Run the complete local database validation sequence from a stopped or running
+stack:
+
+```powershell
+npm.cmd run db:validate
+```
+
+This starts Supabase if necessary, performs one clean reset, lints the schema,
+runs pgTAP, and checks generated-type drift. It leaves the local stack running
+for development or application testing.
+
 Stop the local stack when it is no longer needed:
 
 ```powershell
@@ -315,11 +335,19 @@ The reproducibility sequence is:
 start local Supabase
   -> reset the database
   -> replay migrations
-  -> apply deterministic seed data
+  -> apply deterministic local/test Event seed data
+  -> apply current-wedding Connections content
+  -> apply current-wedding Wordle content
   -> lint the schema
   -> run database tests
-  -> regenerate database types
+  -> verify generated database types
 ```
+
+Reproducibility means the same schema, Event slugs, public puzzle IDs, puzzle
+content, row counts, and Event isolation are reconstructed from repository
+state. Generated internal UUIDs and timestamps do not need to remain identical
+between resets. One clean reset is sufficient for normal validation; resetting
+twice adds little evidence because each reset begins from an empty database.
 
 The base seed creates exactly two Events: `current-wedding`, representing the
 local current Event, and `isolation-test`, a test-only boundary used to verify
@@ -338,20 +366,90 @@ for game routes. An isolated server-only secret client may select Events,
 Connections puzzles, and Wordle puzzles and insert/select Players; normal
 clients keep the restrictive RLS posture.
 
-For a linked hosted project, first review and apply migrations with the pinned
-project CLI, ensure the real `current-wedding` Event exists, and then apply the
-versioned game-content files explicitly:
+The configured anonymous-signup rate in `supabase/config.toml` is intentionally
+set for local cross-browser and retry-heavy testing. It does not configure or
+approve the hosted guest-launch abuse policy.
+
+### Schema Migration Workflow
+
+Create a future migration with the pinned project CLI:
 
 ```powershell
+npx.cmd supabase migration new <descriptive-name>
+```
+
+Then:
+
+1. Edit and review the generated SQL.
+2. Start local Supabase and run a clean reset/replay.
+3. Run database lint and pgTAP.
+4. Regenerate `src/types/database.generated.ts` with `npm.cmd run db:types`.
+5. Confirm `npm.cmd run db:types:check` passes.
+6. Run application validation, E2E, and the production build.
+7. Inspect the linked migration state.
+8. Run a linked dry run and confirm that only expected migrations are listed.
+9. Push the migration explicitly.
+10. Recheck linked migration state and verify the hosted schema/state.
+
+The linked commands are deliberately explicit rather than npm aliases:
+
+```powershell
+npx.cmd supabase migration list --linked
 npx.cmd supabase db push --linked --dry-run
 npx.cmd supabase db push --linked
+npx.cmd supabase migration list --linked
+```
+
+Use a linked schema diff only when investigating unexpected hosted drift after
+the expected migration history has been reconciled:
+
+```powershell
+npx.cmd supabase db diff --linked --schema public
+```
+
+Do not automate linked migration pushes in GitHub Actions. They require an
+intentional review of the target project and expected migration list.
+
+### Production Content Update Workflow
+
+Connections and Wordle production content remain version-controlled SQL. To
+change either game:
+
+1. Edit only the appropriate file under `supabase/data/`.
+2. Perform a clean local reset, which applies all configured files in order.
+3. Reapply the changed content file once against the populated local database
+   to verify hosted-style idempotency.
+4. Run database and application validation.
+5. Ensure any required schema migration is already present in the hosted
+   project.
+6. Apply only the changed content file explicitly to the linked project.
+7. Verify the hosted Event scope, public IDs, row counts, and content.
+8. Verify the Vercel Preview as appropriate.
+
+For example, local reapplication and hosted application use the same reviewed
+file with an explicit target:
+
+```powershell
+npx.cmd supabase db query --local --file supabase/data/current-wedding-connections.sql
 npx.cmd supabase db query --linked --file supabase/data/current-wedding-connections.sql
+
+npx.cmd supabase db query --local --file supabase/data/current-wedding-wordle.sql
 npx.cmd supabase db query --linked --file supabase/data/current-wedding-wordle.sql
 ```
 
-Do not use local reset seed behavior as a hosted content-deployment mechanism.
-Each production content file is applied explicitly after its local review; the
-Issue 5 implementation does not run these hosted commands automatically.
+Run only the local/linked pair for the file actually being changed. The full
+block above illustrates both game-specific workflows; it is not one combined
+deployment command.
+
+`ON CONFLICT ... DO UPDATE` updates existing rows but does not delete a row
+that was removed from the source file. An intentional production-content
+deletion must be an explicit, reviewed `DELETE` scoped to the trusted Event and
+public puzzle identity. Never infer deletion from absence in an upsert list.
+
+Do not use `supabase/seed.sql`, `db push --include-seed`, or the
+`isolation-test` Event as part of hosted deployment. Dashboard-only schema or
+content edits are not the normal workflow; repository migrations and content
+SQL remain the source of truth.
 
 ## Code Quality
 
@@ -542,17 +640,21 @@ Install Node.js
     ->
 Install Dependencies with npm ci
     ->
-Start and Reset Local Supabase
+Check Formatting, Lint, and Typecheck
+    ->
+Run Unit/Component Tests
+    ->
+Start Local Supabase
+    ->
+Clean Database Reset and Configured Data Replay
     ->
 Map Local Supabase Status to Application Environment
     ->
-Lint
+Database Lint
     ->
-Check Formatting
+pgTAP Database Tests
     ->
-Type Check
-    ->
-Run Unit Tests
+Generated Database Type Drift Check
     ->
 Install Playwright Browsers
     ->
@@ -561,12 +663,20 @@ Run End-to-End Tests
 Build Application
 ```
 
-CI now starts and resets the local Supabase stack before application
-validation, then maps the CLI's `API_URL`, `PUBLISHABLE_KEY`, and `SECRET_KEY`
-status values to the application's environment variable names. Existing E2E
-and build steps therefore exercise database-backed Connections content without
-hosted credentials. Broader database-test/type-drift hardening remains M5
-Issue 6 work.
+CI uses one branch-protection-compatible `validate` job with distinct steps so
+dependency, application, database, browser, and build failures remain easy to
+identify. It starts and resets the local Supabase stack after DB-independent
+application checks, then maps the CLI's `API_URL`, `PUBLISHABLE_KEY`, and
+`SECRET_KEY` status values to the application's environment variable names.
+The ephemeral local secret is masked before it is written to the GitHub Actions
+environment.
+
+Database lint, pgTAP, and generated-type drift are first-class CI checks. E2E
+and build keep using the same running local stack, so both PostgreSQL-backed
+games and anonymous Player bootstrap are exercised without hosted credentials.
+GitHub Actions does not receive the hosted Supabase secret, hosted database
+password, or Vercel secrets. The runner is ephemeral, so CI does not add a
+separate Supabase stop step.
 
 The `main` branch is protected by a GitHub branch ruleset.
 
