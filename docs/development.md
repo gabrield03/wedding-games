@@ -245,8 +245,10 @@ Ctrl+C
 ## Local Database Setup
 
 Database migrations under `supabase/migrations/` are the schema source of
-truth. `supabase/seed.sql` contains deterministic local/test data applied after
-the migrations. The generated database contract is committed at
+truth. `supabase/seed.sql` contains deterministic local/test Event data, and
+versioned files under `supabase/data/` contain current-event application
+content applied afterward. Their order is declared in `supabase/config.toml`.
+The generated database contract is committed at
 `src/types/database.generated.ts`.
 
 Start the local Supabase stack:
@@ -319,19 +321,33 @@ start local Supabase
   -> regenerate database types
 ```
 
-The seed creates exactly two Events: `current-wedding`, representing the local
-current Event, and `isolation-test`, a test-only boundary used to verify
-isolation behavior. It creates no Auth users or Players. Local/test seed data
-is not a hosted production bootstrap process.
+The base seed creates exactly two Events: `current-wedding`, representing the
+local current Event, and `isolation-test`, a test-only boundary used to verify
+isolation behavior. It creates no Auth users or Players. The ordered
+`current-wedding-connections.sql` data file then upserts the existing
+production Connections puzzle for `current-wedding` only and fails clearly if
+that Event is missing. Local/test reset data is not an implicit hosted
+production bootstrap process.
 
 The current schema and application include Event ownership, event-scoped
-Players, cookie-backed anonymous Auth, trusted current-Event resolution, and
-automatic idempotent Player bootstrap for game routes. An isolated server-only
-secret client may select Events and insert/select Players; normal clients keep
-the restrictive Issue 2 RLS posture.
+Players and Connections puzzles, cookie-backed anonymous Auth, trusted
+current-Event resolution, and automatic idempotent Player bootstrap for game
+routes. An isolated server-only secret client may select Events and
+Connections puzzles and insert/select Players; normal clients keep the
+restrictive RLS posture.
 
-Hosted Supabase and Vercel environment setup remain the required second phase
-of M5 Issue 3. Puzzle persistence remains deferred to Issues 4 and 5.
+For a linked hosted project, first review and apply migrations with the pinned
+project CLI, ensure the real `current-wedding` Event exists, and then apply the
+versioned Connections data file explicitly:
+
+```powershell
+npx.cmd supabase db push --linked --dry-run
+npx.cmd supabase db push --linked
+npx.cmd supabase db query --linked --file supabase/data/current-wedding-connections.sql
+```
+
+Do not use local reset seed behavior as a hosted content-deployment mechanism.
+Issue 4 implementation does not run these hosted commands automatically.
 
 ## Code Quality
 
@@ -522,6 +538,10 @@ Install Node.js
     ->
 Install Dependencies with npm ci
     ->
+Start and Reset Local Supabase
+    ->
+Map Local Supabase Status to Application Environment
+    ->
 Lint
     ->
 Check Formatting
@@ -537,10 +557,12 @@ Run End-to-End Tests
 Build Application
 ```
 
-Database reset, lint, pgTAP tests, and generated-type drift checks remain local
-requirements during M5. CI database workflow hardening is intentionally
-deferred to M5 Issue 6; the current workflow does not start Supabase or require
-hosted Supabase credentials.
+CI now starts and resets the local Supabase stack before application
+validation, then maps the CLI's `API_URL`, `PUBLISHABLE_KEY`, and `SECRET_KEY`
+status values to the application's environment variable names. Existing E2E
+and build steps therefore exercise database-backed Connections content without
+hosted credentials. Broader database-test/type-drift hardening remains M5
+Issue 6 work.
 
 The `main` branch is protected by a GitHub branch ruleset.
 

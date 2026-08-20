@@ -1,21 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { getConnectionsPuzzle } from "../../src/content/connections/getConnectionsPuzzle";
+import { developmentConnectionsPuzzle } from "../fixtures/connections";
 
-const connectionsPuzzleId = "development-puzzle";
+const connectionsPuzzleId = developmentConnectionsPuzzle.id;
 const connectionsPuzzlePath = `/games/connections/${connectionsPuzzleId}`;
-
-async function loadTestPuzzle() {
-  const puzzle = await getConnectionsPuzzle(connectionsPuzzleId);
-
-  if (!puzzle) {
-    throw new Error(
-      `Connections test puzzle not found: ${connectionsPuzzleId}`,
-    );
-  }
-
-  return puzzle;
-}
 
 async function selectTiles(page: Page, labels: string[]) {
   for (const label of labels) {
@@ -32,7 +20,7 @@ async function clearSelection(page: Page) {
 }
 
 test("player can complete and restart a puzzle", async ({ page }) => {
-  const puzzle = await loadTestPuzzle();
+  const puzzle = developmentConnectionsPuzzle;
 
   await page.goto(connectionsPuzzlePath);
 
@@ -61,7 +49,7 @@ test("player can complete and restart a puzzle", async ({ page }) => {
 });
 
 test("player can lose and restart a puzzle", async ({ page }) => {
-  const puzzle = await loadTestPuzzle();
+  const puzzle = developmentConnectionsPuzzle;
 
   await page.goto(connectionsPuzzlePath);
 

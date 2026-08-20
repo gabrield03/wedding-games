@@ -41,7 +41,7 @@ For non-trivial repository work, read `docs/project-status.md` first for the cur
 - Vitest + React Testing Library
 - Playwright
 - Vercel
-- PostgreSQL via Supabase planned for later backend work
+- PostgreSQL via Supabase
 - GitHub Actions CI
 
 ## Current architecture
@@ -53,7 +53,7 @@ For non-trivial repository work, read `docs/project-status.md` first for the cur
 - `src/features/<game>/`
   - Game-specific React UI and interaction controllers
 - `src/content/<game>/`
-  - Game-specific local content and loading boundaries
+  - Game-specific content loading boundaries
 - `src/app/games/<game>/`
   - Explicit game-specific Next.js routes
 - `src/components/GamePageShell.tsx`

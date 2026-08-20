@@ -1,27 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-import { getConnectionsPuzzle } from "../../src/content/connections/getConnectionsPuzzle";
+import { developmentConnectionsPuzzle } from "../fixtures/connections";
 
-const connectionsPuzzleId = "development-puzzle";
+const connectionsPuzzleId = developmentConnectionsPuzzle.id;
 const connectionsPuzzlePath = `/games/connections/${connectionsPuzzleId}`;
 const wordlePuzzlePathPattern = /\/games\/wordle\/wedding-(?:0[1-9]|10)$/;
-
-async function loadConnectionsTestPuzzle() {
-  const puzzle = await getConnectionsPuzzle(connectionsPuzzleId);
-
-  if (!puzzle) {
-    throw new Error(
-      `Connections test puzzle not found: ${connectionsPuzzleId}`,
-    );
-  }
-
-  return puzzle;
-}
 
 test("player can navigate from the home page to Connections", async ({
   page,
 }) => {
-  const puzzle = await loadConnectionsTestPuzzle();
+  const puzzle = developmentConnectionsPuzzle;
 
   await page.goto("/");
 
