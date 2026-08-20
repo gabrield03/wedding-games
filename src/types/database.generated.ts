@@ -9,6 +9,41 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      connections_puzzles: {
+        Row: {
+          created_at: string;
+          event_id: string;
+          groups: Json;
+          id: string;
+          public_id: string;
+          title: string;
+        };
+        Insert: {
+          created_at?: string;
+          event_id: string;
+          groups: Json;
+          id?: string;
+          public_id: string;
+          title: string;
+        };
+        Update: {
+          created_at?: string;
+          event_id?: string;
+          groups?: Json;
+          id?: string;
+          public_id?: string;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "connections_puzzles_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       events: {
         Row: {
           created_at: string;

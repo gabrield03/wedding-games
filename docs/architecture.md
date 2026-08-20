@@ -40,7 +40,8 @@ These technology choices are architectural decisions rather than permanent requi
 
 ## Current Implemented Structure
 
-M2 and M3 establish parallel, game-specific application flows:
+The implemented application keeps parallel, game-specific flows while sharing
+the M5 Event and server infrastructure where ownership requires it:
 
 ```text
 / game hub
@@ -49,7 +50,9 @@ M2 and M3 establish parallel, game-specific application flows:
 
 /games/connections/[puzzleId] route
   -> getConnectionsPuzzle
-     -> local Connections content
+     -> resolve CURRENT_EVENT_SLUG on the server
+     -> event-scoped connections_puzzles row in PostgreSQL
+     -> decode stored JSON
      -> Connections domain validation and types
   -> GamePageShell
   -> ConnectionsGameBoard
@@ -77,9 +80,11 @@ shared page layout and the explicit link back to the game hub. Each board
 remains a game-specific view, each hook coordinates only its game's React
 interaction state, and both domains contain framework-independent rules.
 
-Application puzzle content is separate from stable test fixtures. The home
-page links explicitly to the Connections puzzle and the request-time Wordle
-selection route. Two games do not justify a generic game registry, repository
+Application puzzle content is separate from stable test fixtures. Connections
+production content now lives in PostgreSQL, while Wordle remains local until
+its separate persistence issue. The home page links explicitly to the
+Connections puzzle and the request-time Wordle selection route. Two games and
+two game-specific loaders do not justify a generic game registry, repository
 framework, or universal game engine.
 
 The Wordle board receives only an opaque Next Word destination from its dynamic
@@ -265,10 +270,13 @@ client insert access. The secret key bypasses RLS and is not generally
 least-privileged; its blast radius is reduced through server-only storage,
 isolated usage, explicit table grants, and trusted server-derived inputs.
 
-M5 will persist Event, Player, Connections content, and Wordle content.
-Connections and Wordle retain separate persistence models and loaders. M5 may
-continue sending full puzzle solutions to the current client gameplay as an
-explicit transition; M6 owns authoritative attempts and answer protection.
+M5 persists Event, Player, and Connections content so far; Wordle persistence
+remains a separate game-specific issue. The Connections loader uses the
+trusted current Event and an exact `(event_id, public_id)` lookup, then decodes
+the stored JSON and applies the existing domain validator. Only a genuinely
+absent row becomes `null`. M5 may continue sending full puzzle solutions to
+the current client gameplay as an explicit transition; M6 owns authoritative
+attempts and answer protection.
 
 These decisions are recorded in
 [`ADR-0005`](adr/0005-use-supabase-anonymous-auth-with-event-scoped-players.md)
@@ -329,9 +337,35 @@ browser.
 
 The schema is reproducible through committed Supabase migrations, deterministic
 local/test seed data, pgTAP tests, and generated TypeScript database types.
-Issue 3 is implemented against the local stack first. Hosted Supabase and
-Vercel environment configuration are a required second phase before Issue 3
-is complete.
+The anonymous Auth/Player bootstrap from Issue 3 is complete; each new
+persistence slice is still replayed and validated locally before its explicit
+hosted migration/data deployment.
+
+### Implemented M5 Connections Persistence
+
+M5 Issue 4 adds an event-owned `connections_puzzles` table:
+
+```text
+public.events
+    |
+    | connections_puzzles.event_id (on delete cascade)
+    v
+public.connections_puzzles
+    -> internal UUID primary key
+    -> event-scoped public_id used by existing URLs
+    -> title
+    -> game-specific groups JSONB
+```
+
+`unique(event_id, public_id)` keeps route identifiers local to an Event rather
+than treating them as global database identity. The table has RLS enabled and
+no browser policies or grants. The isolated secret client has `SELECT` only;
+content mutation remains a migration/data-deployment responsibility.
+
+The versioned current-wedding data file is separate from the base Event seed,
+requires the configured Event row to exist, and upserts only that Event's
+existing production puzzle. Unit/component fixtures and E2E expectations stay
+independent from the server-only production loader.
 
 ## Architectural Goals
 

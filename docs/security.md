@@ -3,9 +3,10 @@
 ## Purpose and Current Posture
 
 This document records the security model that must guide persistence work for
-Wedding Games. The current prototype has no database, API, player sessions,
+Wedding Games. The application now has a database, anonymous Auth/Player
+bootstrap API, and event-scoped Connections content, but it has no
 administrative operations, uploads, or authoritative persisted results.
-Connections solutions and Wordle answers are currently delivered to browser
+Connections solutions and Wordle answers are still delivered to browser
 JavaScript. That exposure is an accepted limitation for prototype play, but it
 is not suitable for future trusted competition.
 
@@ -201,6 +202,27 @@ code, responses, logs, or committed files.
 The local seed's `isolation-test` Event exists only to exercise ownership and
 RLS assumptions. It is not a second production wedding. No credentials,
 service-role keys, Auth users, or Players are committed as seed data.
+
+## Implemented Issue 4 Connections Content Boundary
+
+Connections puzzle rows have explicit `event_id` ownership and public IDs that
+are unique only within an Event. The production loader accepts a public puzzle
+ID from the route but establishes Event scope exclusively through the trusted
+server resolver, then queries the exact `(event_id, public_id)` pair. A public
+ID therefore selects within trusted scope; it never establishes scope or
+authorization.
+
+The table has RLS enabled with no `anon` or `authenticated` access. The
+isolated secret client receives only `SELECT` on Connections puzzles; it has no
+content mutation grants. Stored JSON is decoded at the server boundary and
+then checked by the existing Connections domain validator before it reaches
+the UI. Missing rows remain distinct from database failures and invalid stored
+content.
+
+The current board still receives the complete validated solution for
+client-side play. Database storage and opaque/internal identifiers do not make
+that browser-visible answer secret. Server-authoritative attempts and answer
+protection remain M6 work.
 
 ## Safely Deferred Decisions
 

@@ -29,7 +29,9 @@ completed work, and immediate next step.
   interaction polish
 - Responsive, keyboard-accessible interactions and reduced-motion support
 - Dynamic Connections and Wordle puzzle routes
-- Game-specific local puzzle content behind asynchronous loading boundaries
+- Event-scoped Connections content in PostgreSQL behind its existing
+  asynchronous loading boundary
+- Local Wordle answer content behind its game-specific loading boundary
 - Separate production content and automated test fixtures
 - Pure Connections and Wordle domain rules independent from React
 - Game-specific React gameplay controllers
@@ -62,8 +64,8 @@ completed work, and immediate next step.
 - **Styling:** Tailwind CSS
 - **Testing:** Vitest, React Testing Library, and Playwright
 - **Hosting:** Vercel
-- **Database:** PostgreSQL through Supabase, currently established as a local
-  migration and testing foundation
+- **Database:** PostgreSQL through Supabase for Event/Player infrastructure and
+  Connections production content
 - **CI/CD:** GitHub Actions and Vercel previews
 
 ## Architecture
@@ -79,10 +81,10 @@ remain game-specific.
 The approved M5 direction uses Supabase anonymous Auth identity, a separate
 event-scoped Player, and a server-configured current Event. M5 preserves replay
 and keeps attempts, scoring, and server-authoritative gameplay deferred.
-The current local implementation establishes cookie-backed anonymous Auth,
-trusted Event resolution, and silent idempotent Player bootstrap for game
-routes. Hosted Supabase/Vercel configuration and puzzle persistence remain
-pending.
+The current implementation establishes cookie-backed anonymous Auth, trusted
+Event resolution, silent idempotent Player bootstrap for game routes, and
+event-scoped Connections content loaded from PostgreSQL. Wordle content and
+future gameplay persistence remain separate later work.
 
 See [`docs/architecture.md`](docs/architecture.md) for the broader system
 direction and [`docs/adr/`](docs/adr/) for accepted architectural decisions.

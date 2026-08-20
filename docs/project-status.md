@@ -55,10 +55,11 @@ M5 Issue 2, establishing local Supabase tooling and the Event/Player schema
 foundation, is complete and merged.
 
 M5 Issue 3, adding trusted Event resolution and anonymous Player bootstrap, is
-the current issue. Its local implementation, database validation, manual
-session/bootstrap verification, and fast application gate are complete.
-Hosted Supabase/Vercel integration remains a required second phase before
-Issue 3 is complete.
+complete and merged.
+
+M5 Issue 4, moving Connections production content behind event-scoped
+PostgreSQL persistence, is the current issue. Its implementation and requested
+local validation are complete; hosted review and merge remain pending.
 
 ## Product direction
 
@@ -176,7 +177,6 @@ src/
 
   content/
     connections/
-      developmentPuzzle.ts
       getConnectionsPuzzle.ts
     wordle/
       puzzles.ts
@@ -207,10 +207,15 @@ src/
 
 supabase/
   config.toml
+  data/
+    current-wedding-connections.sql
   migrations/
     20260818000000_create_event_player_foundation.sql
+    20260819000000_grant_player_bootstrap_access.sql
+    20260819010000_create_connections_puzzles.sql
   seed.sql
   tests/database/
+    connections_puzzles.test.sql
     event_player_schema.test.sql
     player_rls.test.sql
 
@@ -239,8 +244,9 @@ docs/
 
 ## Current Connections content
 
-`src/content/connections/developmentPuzzle.ts` contains the local application
-puzzle, with wedding/general Connections-style sample groups such as:
+The `current-wedding` Event owns the production Connections puzzle in
+PostgreSQL. The versioned data SQL preserves the existing
+`development-puzzle` public URL and wedding/general sample groups such as:
 
 - Types of cake
 - Types of cats
@@ -248,11 +254,11 @@ puzzle, with wedding/general Connections-style sample groups such as:
 - Contains bow
 
 This content remains useful for exercising more realistic labels and mobile
-wrapping. Unit and component tests now use the stable fixture in
-`tests/fixtures/connections.ts`. The end-to-end tests intentionally reference
-the application puzzle because they exercise the puzzle rendered by the real
-route. Application routes access local Connections content through
-`getConnectionsPuzzle(puzzleId)` rather than importing individual puzzle files.
+wrapping. Unit, component, and E2E expectations use stable independent fixtures
+in `tests/fixtures/connections.ts`. Application routes access production
+Connections content only through `getConnectionsPuzzle(puzzleId)`, which
+resolves the trusted current Event, reads the exact event/public-ID row,
+decodes its JSON, and runs domain validation.
 
 ## Current Wordle content
 
@@ -872,7 +878,7 @@ Implemented on the current branch:
 
 #### Issue 3 - Add trusted event resolution and anonymous player bootstrap
 
-Status: Locally implemented and validated; hosted deployment phase pending.
+Status: Complete and merged.
 
 - Integrate Supabase anonymous Auth with Next.js.
 - Resolve the current Event only from trusted server configuration.
@@ -902,13 +908,6 @@ Implemented locally on the current branch:
   exception rather than a default persistence pattern.
 - Preserved existing gameplay when the transitional bootstrap is unavailable.
 
-Still required before Issue 3 closure:
-
-- Create/link the hosted Supabase project, apply migrations, seed the real
-  current Event, and enable hosted anonymous Auth.
-- Configure public and server-only Supabase/Event variables in Vercel.
-- Verify the deployed preview flow before merge.
-
 Local validation completed:
 
 - Clean database reset replayed both migrations and deterministic seed data.
@@ -922,10 +921,47 @@ Local validation completed:
 
 #### Issue 4 - Move Connections content behind PostgreSQL
 
+Status: Implemented and validated locally; hosted review and merge pending.
+
 - Replace repository-backed production Connections content with event-scoped,
   Connections-specific persistence.
 - Preserve URLs, gameplay, loader semantics, and domain validation.
 - Add no generic repository.
+
+Implemented on the current branch:
+
+- Added event-owned `connections_puzzles` storage with internal UUID identity,
+  event-scoped public IDs, typed columns, JSONB groups, constraints, RLS, and
+  Event-delete cascade behavior.
+- Granted the isolated server-only role Connections `SELECT` only; browser
+  roles have no table access and content mutation remains outside runtime
+  application code.
+- Added ordered, idempotent `current-wedding` content SQL that requires its
+  Event and preserves the existing `development-puzzle` route/content.
+- Moved `getConnectionsPuzzle` to trusted Event resolution and exact
+  `(event_id, public_id)` database lookup while preserving its async/null API,
+  structural decoding, and domain validation.
+- Removed the repository-backed production puzzle module without adding a
+  fallback or generic repository.
+- Kept E2E expected content in an independent fixture rather than importing
+  the server-only production loader.
+- Added focused loader tests and pgTAP coverage for schema, ownership,
+  isolation, constraints, grants, seed data, and cascade behavior.
+- Updated CI to start/reset local Supabase and map actual CLI environment names
+  before the existing application/E2E/build validation.
+
+Local validation completed:
+
+- Clean reset replayed all three migrations, the deterministic Event seed, and
+  the ordered current-wedding Connections content file.
+- Database lint reported no schema errors; all three pgTAP files passed with
+  72 assertions, including after an explicit second content-file application.
+- Generated database types were refreshed from the local schema.
+- All 116 unit/component tests passed, including seven focused loader tests.
+- Format, format check, lint, typecheck, and diff checks passed.
+- Seven targeted Chromium E2E tests passed against real local PostgreSQL
+  content, covering Connections completion/restart, loss/restart, navigation,
+  and missing-puzzle behavior plus the existing smoke flows.
 
 #### Issue 5 - Move Wordle content and selection behind PostgreSQL
 
@@ -1021,8 +1057,7 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Finish the M5 Issue 3 local validation and review, then complete the separate
-hosted Supabase/Vercel configuration phase. Apply migrations, create the hosted
-current Event, enable anonymous Auth, configure public/server-only variables,
-and verify the preview deployment before marking Issue 3 complete or beginning
-Issue 4.
+Finish M5 Issue 4 validation and review, apply the migration and explicit
+current-wedding Connections data file to the linked hosted project in the
+separate deployment step, then verify the preview before merge. M5 Issue 5
+will move Wordle content and selection behind its own PostgreSQL boundary.

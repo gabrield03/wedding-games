@@ -25,6 +25,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Start and seed local Supabase
+        run: |
+          npm run db:start
+          npm run db:reset
+          eval "$(npx supabase status -o env)"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$PUBLISHABLE_KEY"
+            echo "SUPABASE_SECRET_KEY=$SECRET_KEY"
+            echo "CURRENT_EVENT_SLUG=current-wedding"
+          } >> "$GITHUB_ENV"
+
       - name: Lint
         run: npm run lint
 
