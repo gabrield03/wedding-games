@@ -1,10 +1,10 @@
 # Project Status
 
-Last updated: 2026-08-19
+Last updated: 2026-08-20
 
 ## Current milestone
 
-**M5 - Backend Foundation & Anonymous Sessions: in progress**
+**M5 - Backend Foundation & Anonymous Sessions: complete**
 
 M1, the Connections Prototype milestone, is complete.
 
@@ -61,9 +61,25 @@ M5 Issue 4, moving Connections production content behind event-scoped
 PostgreSQL persistence, is complete and merged.
 
 M5 Issue 5, moving Wordle production content and request-time selection behind
-event-scoped PostgreSQL persistence, is the current issue. Its local
-implementation and requested validation are complete; hosted review and merge
-remain pending.
+event-scoped PostgreSQL persistence, is complete and merged.
+
+M5 Issue 6, hardening database testing and deployment workflow, is complete.
+M5 is complete.
+
+M5 delivered the backend foundation for the current single-Event application:
+
+- Persistent Event ownership and trusted server-side current-Event resolution
+- Supabase anonymous Auth with silent, idempotent event-scoped Player bootstrap
+- Event-owned PostgreSQL content for Connections
+- Event-owned PostgreSQL content and server-side puzzle selection for Wordle
+- Deterministic local Supabase reconstruction from migrations, local/test seed,
+  and ordered production-content SQL
+- Database lint and pgTAP validation for constraints, grants, ownership,
+  isolation, and seeded content
+- Automated generated database type-drift protection
+- Database-backed Playwright validation in CI using ephemeral local Supabase
+- A documented manual hosted migration and production-content deployment
+  workflow without hosted credentials in CI
 
 ## Product direction
 
@@ -976,7 +992,7 @@ Local validation completed:
 
 #### Issue 5 - Move Wordle content and selection behind PostgreSQL
 
-Status: Implemented and validated locally; hosted review and merge pending.
+Status: Complete and merged.
 
 - Replace repository-backed Wordle content and selection with event-scoped,
   Wordle-specific persistence.
@@ -1024,12 +1040,72 @@ Local validation completed:
 
 #### Issue 6 - Harden M5 database testing and deployment workflow
 
+Status: Complete.
+
 - Validate clean reset/seed, database lint/tests, and event isolation.
 - Cover anonymous identity/Player creation and reuse in E2E.
 - Preserve existing Connections and Wordle behavior.
 - Document server-only secrets correctly and evaluate anonymous signup abuse
   controls before broad public launch.
 - Do not claim server-authoritative gameplay.
+
+Approved implementation scope:
+
+- Keep one branch-protection-compatible CI `validate` job while separating
+  database startup, reset, lint, pgTAP, type-drift, application, E2E, and build
+  failures into clear steps.
+- Add developer-facing local database lint, generated-type drift, and aggregate
+  validation commands without wrapping hosted operations.
+- Validate generated database types in memory through the pinned local
+  Supabase CLI and installed Prettier.
+- Add one real-browser anonymous Player-bootstrap/reload flow against local
+  Supabase.
+- Raise only the local/test anonymous Auth allowance enough for cross-browser
+  tests and retries; hosted abuse controls remain unresolved before guest
+  launch.
+- Keep clean reset, local/test seed, production content SQL, and explicit
+  hosted migration/content deployment as distinct documented boundaries.
+- Add no new schema, product behavior, persistence records, or generic data
+  abstraction.
+
+Implemented:
+
+- Added explicit local database lint and generated-type drift scripts plus a
+  transparent `db:validate` lifecycle that starts Supabase, performs one clean
+  reset, runs lint/pgTAP, checks types, and leaves the stack running.
+- Added a cross-platform in-memory generated-type checker using the pinned
+  repository CLI and installed asynchronous Prettier API without temporary or
+  second committed type files.
+- Kept one CI `validate` job while separating application checks, Supabase
+  startup, clean reset, local environment mapping, database lint, pgTAP,
+  generated-type drift, E2E, and build into diagnostic steps.
+- Suppressed credential-bearing successful Supabase-start output in CI, masked
+  the ephemeral local secret before `GITHUB_ENV`, and added no hosted secrets.
+- Raised the local/test anonymous signup allowance from 30 to 100 for the
+  cross-browser/retry workload without changing hosted Auth policy.
+- Added a real-browser Player-bootstrap flow that verifies `204`, usable
+  gameplay, a full reload in the same context, another `204`, and continued
+  gameplay across Chromium, Firefox, and WebKit.
+- Documented deterministic reconstruction, migration creation/deployment,
+  explicit idempotent content application, intentional deletion, hosted drift,
+  and local/hosted security boundaries.
+
+Local validation completed:
+
+- One clean database reset replayed all four migrations, both Event seed rows,
+  and both ordered current-wedding game-content files.
+- Database lint reported no errors and all four pgTAP files passed with 104
+  assertions.
+- Generated database types were refreshed and the non-mutating drift check
+  passed.
+- Format, format check, lint, typecheck, and all 127 unit/component tests
+  passed.
+- The focused anonymous Player-bootstrap E2E passed in Chromium, Firefox, and
+  WebKit.
+- The full Playwright suite passed with 30 of 30 tests across the configured
+  browser projects.
+- The production build and final `git diff --check` passed, and final scope
+  review found no unrelated changes.
 
 ## M5 issue 1 non-goals and deferred work
 
@@ -1056,7 +1132,6 @@ Issue 1 does not implement:
 
 Still unresolved for later implementation/design:
 
-- Exact local/hosted Supabase CI workflow details
 - Future leaderboard scoring and replay-eligibility rules
 - Cross-device recovery and account linking
 - Anonymous-user cleanup, CAPTCHA, and rate-limit approach
@@ -1108,7 +1183,4 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Finish M5 Issue 5 validation and review, apply the migration and explicit
-current-wedding Wordle data file to the linked hosted project in the separate
-deployment step, then verify the preview before merge. M5 Issue 6 remains the
-final backend-foundation hardening issue.
+M5 is complete. No next milestone is active in this document.

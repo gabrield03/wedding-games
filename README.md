@@ -4,8 +4,8 @@ A mobile-first web platform for personalized wedding games, built as a meaningfu
 
 ## Project Status
 
-**M5 - Backend Foundation & Anonymous Sessions** is the current milestone. M4
-is complete.
+**M5 - Backend Foundation & Anonymous Sessions** is in its final workflow-
+hardening issue. M4 and M5 Issues 1-5 are complete.
 
 The application includes a game-selection home page and two complete playable
 games at:
@@ -37,6 +37,10 @@ completed work, and immediate next step.
 - Unit, component, and cross-browser end-to-end test coverage
 - Reproducible local Supabase/PostgreSQL migrations, deterministic Event seed
   data, Event-scoped Player schema, row-level security, and pgTAP tests
+- Silent cookie-backed anonymous Auth and idempotent event-scoped Player
+  bootstrap
+- CI validation of clean database reconstruction, database lint, pgTAP, and
+  generated database-type drift using only local Supabase
 
 ## Goals
 
@@ -49,7 +53,6 @@ completed work, and immediate next step.
 ## Planned Features
 
 - Personalized production puzzle content
-- Anonymous player sessions
 - Persistent attempts and scores
 - Server-authoritative competitive gameplay
 - Leaderboards
@@ -113,6 +116,9 @@ Local development setup and commands are documented in
 The project currently uses Vitest for unit testing and Playwright for
 browser-level end-to-end testing. See
 [`docs/development.md`](docs/development.md) for commands and workflow details.
+Database changes are reconstructed and validated locally with
+`npm run db:validate`; generated types are refreshed separately with
+`npm run db:types`.
 
 ## Deployment
 

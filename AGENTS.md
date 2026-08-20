@@ -97,6 +97,11 @@ Codex should run fast validation during implementation:
 - unit/component tests
 - targeted tests relevant to the change
 
+When work changes Supabase migrations, seed/data SQL, grants, or generated
+database types, regenerate types when appropriate and run `npm run db:validate`.
+Keep hosted migration/content deployment manual; detailed commands and safety
+boundaries belong in `docs/development.md`.
+
 Do not routinely run long-running Playwright E2E suites or production builds in the Codex execution environment unless specifically requested.
 
 Before commit or PR, the user will run the full validation gate in their normal local terminal, including:
@@ -127,6 +132,8 @@ Current important scripts include:
 - `npm test`
 - `npm run test:e2e`
 - `npm run test:e2e:ui`
+- `npm run db:validate`
+- `npm run db:types`
 
 Do not treat the known slow-filesystem warning on the `E:` drive as a product defect unless it begins causing actual failures.
 
