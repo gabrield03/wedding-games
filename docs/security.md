@@ -224,6 +224,25 @@ client-side play. Database storage and opaque/internal identifiers do not make
 that browser-visible answer secret. Server-authoritative attempts and answer
 protection remain M6 work.
 
+## Implemented Issue 5 Wordle Content Boundary
+
+Wordle puzzle rows have explicit Event ownership and public IDs unique only
+within an Event. Direct loading derives Event scope from the trusted server
+resolver and queries the exact `(event_id, public_id)` pair. Request-time
+selection also resolves that Event internally and reads only its public puzzle
+IDs. The browser-provided `exclude` value can remove an immediate candidate;
+it cannot select or authorize an Event.
+
+The Wordle table has RLS enabled with no `anon` or `authenticated` access. The
+isolated secret client has `SELECT` only and runtime content mutation remains
+disallowed. Canonical uppercase answer constraints and application domain
+validation prevent malformed persisted answers from reaching gameplay.
+
+The complete answer is still serialized to `WordleGameBoard`. PostgreSQL
+persistence therefore does not hide it, and client-computed outcomes are not
+authoritative. M6 remains responsible for server-side attempt evaluation and
+answer protection.
+
 ## Safely Deferred Decisions
 
 - Multi-event URL structure

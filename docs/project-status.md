@@ -58,8 +58,12 @@ M5 Issue 3, adding trusted Event resolution and anonymous Player bootstrap, is
 complete and merged.
 
 M5 Issue 4, moving Connections production content behind event-scoped
-PostgreSQL persistence, is the current issue. Its implementation and requested
-local validation are complete; hosted review and merge remain pending.
+PostgreSQL persistence, is complete and merged.
+
+M5 Issue 5, moving Wordle production content and request-time selection behind
+event-scoped PostgreSQL persistence, is the current issue. Its local
+implementation and requested validation are complete; hosted review and merge
+remain pending.
 
 ## Product direction
 
@@ -86,7 +90,8 @@ Planned navigation direction:
 
 The root page now serves a simple two-game selection page. Connections links to
 `/games/connections/development-puzzle`; Wordle links to `/games/wordle`, which
-selects and redirects to one of the local puzzles at request time.
+selects and redirects to one of the current Event's PostgreSQL-backed puzzles
+at request time.
 
 Connections and Wordle remain independent game-specific implementations. Do
 not build a generic game platform, registry, repository, or engine until later
@@ -179,8 +184,8 @@ src/
     connections/
       getConnectionsPuzzle.ts
     wordle/
-      puzzles.ts
       getWordlePuzzle.ts
+      selectRandomWordlePuzzleId.ts
 
   domain/
     connections/
@@ -209,19 +214,23 @@ supabase/
   config.toml
   data/
     current-wedding-connections.sql
+    current-wedding-wordle.sql
   migrations/
     20260818000000_create_event_player_foundation.sql
     20260819000000_grant_player_bootstrap_access.sql
     20260819010000_create_connections_puzzles.sql
+    20260819020000_create_wordle_puzzles.sql
   seed.sql
   tests/database/
     connections_puzzles.test.sql
     event_player_schema.test.sql
     player_rls.test.sql
+    wordle_puzzles.test.sql
 
 tests/
   fixtures/
     connections.ts
+    wordle.ts
   unit/
     content/connections/
     content/wordle/
@@ -262,16 +271,18 @@ decodes its JSON, and runs domain validation.
 
 ## Current Wordle content
 
-`src/content/wordle/puzzles.ts` contains ten local wedding-related five-letter
-answers with opaque stable IDs from `wedding-01` through `wedding-10`. The home
-page enters through `/games/wordle`, which chooses from this collection at
-request time without introducing daily scheduling or persistent history.
+The `current-wedding` Event owns ten typed Wordle rows in PostgreSQL with the
+stable public IDs `wedding-01` through `wedding-10`. The home page enters
+through `/games/wordle`, which fetches only that Event's public IDs and chooses
+one at request time without daily scheduling or persistent history.
 
 The collection is an answer bank only. Structurally valid five-letter guesses
 remain playable without dictionary membership or invalid-word rejection.
-Application routes access Wordle content through
-`getWordlePuzzle(puzzleId)`, which validates found content and keeps missing IDs
-distinct from invalid stored puzzles.
+Application routes access Wordle content through `getWordlePuzzle(puzzleId)`,
+which resolves the trusted current Event, maps typed database content, applies
+domain validation, and keeps missing IDs distinct from backend or invalid
+content failures. E2E expectations use the independent fixture in
+`tests/fixtures/wordle.ts`.
 
 ## M2 completed
 
@@ -921,7 +932,7 @@ Local validation completed:
 
 #### Issue 4 - Move Connections content behind PostgreSQL
 
-Status: Implemented and validated locally; hosted review and merge pending.
+Status: Complete and merged.
 
 - Replace repository-backed production Connections content with event-scoped,
   Connections-specific persistence.
@@ -965,11 +976,51 @@ Local validation completed:
 
 #### Issue 5 - Move Wordle content and selection behind PostgreSQL
 
+Status: Implemented and validated locally; hosted review and merge pending.
+
 - Replace repository-backed Wordle content and selection with event-scoped,
   Wordle-specific persistence.
 - Migrate only the existing ten answers.
 - Preserve URLs, gameplay, availability filtering, and exclusion behavior.
 - Add no generic repository or daily/history system.
+
+Implemented on the current branch:
+
+- Added the typed, event-owned `wordle_puzzles` table with internal UUIDs,
+  event-scoped public IDs, canonical uppercase five-letter answers,
+  constraints, RLS, and Event-delete cascade behavior.
+- Granted the isolated server-only role Wordle `SELECT` only; browser roles
+  have no direct access and runtime content mutation remains disallowed.
+- Added ordered, idempotent current-wedding Wordle data SQL preserving all ten
+  existing IDs and answers without adding isolation-test content.
+- Moved direct lookup to trusted Event resolution and exact
+  `(event_id, public_id)` filtering while preserving the async/null API and
+  domain validation.
+- Added a Wordle-specific async selector that fetches only current-Event public
+  IDs, excludes the previous puzzle when alternatives exist, reuses the only
+  puzzle when necessary, and stores no played history.
+- Removed the repository-backed production Wordle array and moved E2E expected
+  content to an independent fixture.
+- Kept `connection()` as the explicit request-time execution boundary and
+  preserved all Wordle gameplay, routes, Next Word behavior, and client answer
+  exposure.
+- Added focused loader, selector, schema, ownership, isolation, grant, and seed
+  tests. Existing Issue 4 CI requires no change.
+
+Local validation completed:
+
+- Clean reset replayed all four migrations, the deterministic Event seed, and
+  both ordered game-content data files.
+- Database lint reported no schema errors; all four pgTAP files passed with
+  104 assertions, including after an explicit second Wordle content-file
+  application.
+- Generated database types were refreshed from the local schema.
+- All 127 unit/component tests passed, including 15 focused Wordle
+  loader/selector tests.
+- Format, format check, lint, typecheck, and diff checks passed.
+- Seven targeted Chromium E2E tests passed against real local PostgreSQL
+  content, covering request-time selection, direct loading, win/loss, answer
+  reveal, Next Word exclusion/fresh state, navigation, and not-found behavior.
 
 #### Issue 6 - Harden M5 database testing and deployment workflow
 
@@ -1057,7 +1108,7 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Finish M5 Issue 4 validation and review, apply the migration and explicit
-current-wedding Connections data file to the linked hosted project in the
-separate deployment step, then verify the preview before merge. M5 Issue 5
-will move Wordle content and selection behind its own PostgreSQL boundary.
+Finish M5 Issue 5 validation and review, apply the migration and explicit
+current-wedding Wordle data file to the linked hosted project in the separate
+deployment step, then verify the preview before merge. M5 Issue 6 remains the
+final backend-foundation hardening issue.

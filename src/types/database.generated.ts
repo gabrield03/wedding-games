@@ -91,6 +91,38 @@ export type Database = {
           },
         ];
       };
+      wordle_puzzles: {
+        Row: {
+          answer: string;
+          created_at: string;
+          event_id: string;
+          id: string;
+          public_id: string;
+        };
+        Insert: {
+          answer: string;
+          created_at?: string;
+          event_id: string;
+          id?: string;
+          public_id: string;
+        };
+        Update: {
+          answer?: string;
+          created_at?: string;
+          event_id?: string;
+          id?: string;
+          public_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "wordle_puzzles_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

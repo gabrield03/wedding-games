@@ -1,20 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { getWordlePuzzle } from "../../src/content/wordle/getWordlePuzzle";
+import { wedding01WordlePuzzle } from "../fixtures/wordle";
 
-const wordlePuzzleId = "wedding-01";
+const wordlePuzzleId = wedding01WordlePuzzle.id;
 const wordlePuzzlePath = `/games/wordle/${wordlePuzzleId}`;
 const wordlePuzzlePathPattern = /\/games\/wordle\/wedding-(?:0[1-9]|10)$/;
-
-async function loadTestPuzzle() {
-  const puzzle = await getWordlePuzzle(wordlePuzzleId);
-
-  if (!puzzle) {
-    throw new Error(`Wordle test puzzle not found: ${wordlePuzzleId}`);
-  }
-
-  return puzzle;
-}
 
 async function enterGuess(page: Page, guess: string) {
   for (const letter of guess) {
@@ -53,7 +43,7 @@ async function navigateToNextWord(page: Page) {
 test("player can win a puzzle and navigate to a fresh next word", async ({
   page,
 }) => {
-  const puzzle = await loadTestPuzzle();
+  const puzzle = wedding01WordlePuzzle;
 
   await page.goto(wordlePuzzlePath);
   await enterGuess(page, puzzle.answer);
@@ -75,7 +65,7 @@ test("player can win a puzzle and navigate to a fresh next word", async ({
 test("player can lose a puzzle, see the answer, and navigate to a fresh next word", async ({
   page,
 }) => {
-  const puzzle = await loadTestPuzzle();
+  const puzzle = wedding01WordlePuzzle;
   const losingGuess = puzzle.answer === "XXXXX" ? "ZZZZZ" : "XXXXX";
 
   await page.goto(wordlePuzzlePath);

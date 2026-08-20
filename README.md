@@ -29,9 +29,8 @@ completed work, and immediate next step.
   interaction polish
 - Responsive, keyboard-accessible interactions and reduced-motion support
 - Dynamic Connections and Wordle puzzle routes
-- Event-scoped Connections content in PostgreSQL behind its existing
-  asynchronous loading boundary
-- Local Wordle answer content behind its game-specific loading boundary
+- Event-scoped Connections and Wordle content in PostgreSQL behind separate
+  game-specific loading boundaries
 - Separate production content and automated test fixtures
 - Pure Connections and Wordle domain rules independent from React
 - Game-specific React gameplay controllers
@@ -65,7 +64,7 @@ completed work, and immediate next step.
 - **Testing:** Vitest, React Testing Library, and Playwright
 - **Hosting:** Vercel
 - **Database:** PostgreSQL through Supabase for Event/Player infrastructure and
-  Connections production content
+  game-specific production content
 - **CI/CD:** GitHub Actions and Vercel previews
 
 ## Architecture
@@ -83,8 +82,9 @@ event-scoped Player, and a server-configured current Event. M5 preserves replay
 and keeps attempts, scoring, and server-authoritative gameplay deferred.
 The current implementation establishes cookie-backed anonymous Auth, trusted
 Event resolution, silent idempotent Player bootstrap for game routes, and
-event-scoped Connections content loaded from PostgreSQL. Wordle content and
-future gameplay persistence remain separate later work.
+event-scoped Connections and Wordle content loaded from PostgreSQL. Wordle
+selection runs server-side within the trusted current Event. Gameplay results
+remain client-computed and unpersisted.
 
 See [`docs/architecture.md`](docs/architecture.md) for the broader system
 direction and [`docs/adr/`](docs/adr/) for accepted architectural decisions.
