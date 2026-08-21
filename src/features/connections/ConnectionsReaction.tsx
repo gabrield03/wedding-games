@@ -2,8 +2,10 @@ import Image from "next/image";
 
 import type { ConnectionsReaction as ConnectionsReactionModel } from "./connectionsReactions";
 
-const TOP_ALIGNED_REACTION_PHOTO =
-  "/images/connections/reactions/correct/correct-3.jpg";
+const TOP_ALIGNED_REACTION_PHOTOS = new Set([
+  "/images/connections/reactions/correct/correct-3.jpg",
+  "/images/connections/reactions/correct/correct-6.PNG",
+]);
 const RIGHT_ALIGNED_REACTION_PHOTO =
   "/images/connections/reactions/incorrect/incorrect-2.JPEG";
 
@@ -57,7 +59,7 @@ export function ConnectionsReaction({ reaction }: ConnectionsReactionProps) {
           fill
           sizes="(max-width: 640px) 96px, 128px"
           className={`object-cover ${
-            reaction.src === TOP_ALIGNED_REACTION_PHOTO
+            TOP_ALIGNED_REACTION_PHOTOS.has(reaction.src)
               ? "object-top"
               : isRightAlignedReaction
                 ? "object-right"

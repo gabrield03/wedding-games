@@ -19,7 +19,7 @@ import {
   type ConnectionsReactionKind,
 } from "./connectionsReactions";
 
-const INTERMEDIATE_REACTION_DURATION_MS = 900;
+const INTERMEDIATE_REACTION_DURATION_MS = 1850;
 
 export type ConnectionsFeedback =
   "incorrect" | "one-away" | "duplicate" | "correct" | null;
@@ -42,9 +42,8 @@ export function useConnectionsGame(puzzle: ConnectionsPuzzle) {
   const reactionOccurrence = useRef(0);
   const reactionTimer = useRef<number | null>(null);
   const correctResolutionTimer = useRef<number | null>(null);
-  const previousReactionPhotos = useRef<
-    Partial<Record<ConnectionsReactionKind, string>>
-  >({});
+  const currentGameReactionUsage = useRef(createReactionUsage());
+  const previousGameReactionUsage = useRef(createReactionUsage());
 
   useEffect(() => {
     return () => {
@@ -65,7 +64,6 @@ export function useConnectionsGame(puzzle: ConnectionsPuzzle) {
       return;
     }
 
-    clearReaction();
     setFeedback(null);
     setSelectedTileIds((currentTileIds) => {
       if (currentTileIds.includes(tileId)) {
@@ -178,6 +176,10 @@ export function useConnectionsGame(puzzle: ConnectionsPuzzle) {
 
   function restart() {
     clearReaction();
+    previousGameReactionUsage.current = copyReactionUsage(
+      currentGameReactionUsage.current,
+    );
+    currentGameReactionUsage.current = createReactionUsage();
     setGameState(createInitialGameState());
     setSelectedTileIds([]);
     setFeedback(null);
@@ -205,10 +207,16 @@ export function useConnectionsGame(puzzle: ConnectionsPuzzle) {
 
     const src = selectConnectionsReactionPhoto(
       kind,
-      previousReactionPhotos.current[kind] ?? null,
+      currentGameReactionUsage.current[kind],
+      previousGameReactionUsage.current[kind],
     );
 
-    previousReactionPhotos.current[kind] = src;
+    if (src === null) {
+      setReaction(null);
+      return;
+    }
+
+    currentGameReactionUsage.current[kind].add(src);
 
     const nextReaction = {
       occurrence: reactionOccurrence.current,
@@ -246,6 +254,28 @@ export function useConnectionsGame(puzzle: ConnectionsPuzzle) {
     shuffleTiles,
     submitGuess,
     restart,
+  };
+}
+
+type ConnectionsReactionUsage = Record<ConnectionsReactionKind, Set<string>>;
+
+function createReactionUsage(): ConnectionsReactionUsage {
+  return {
+    correct: new Set(),
+    incorrect: new Set(),
+    loss: new Set(),
+    win: new Set(),
+  };
+}
+
+function copyReactionUsage(
+  usage: ConnectionsReactionUsage,
+): ConnectionsReactionUsage {
+  return {
+    correct: new Set(usage.correct),
+    incorrect: new Set(usage.incorrect),
+    loss: new Set(usage.loss),
+    win: new Set(usage.win),
   };
 }
 

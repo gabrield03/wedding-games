@@ -32,6 +32,10 @@ function getReaction(kind: "correct" | "incorrect" | "loss" | "win") {
   return document.querySelector(`[data-connections-reaction="${kind}"]`);
 }
 
+function getReactionSrc(kind: "correct" | "incorrect" | "loss" | "win") {
+  return getReaction(kind)?.querySelector("img")?.getAttribute("src");
+}
+
 describe("ConnectionsGameBoard", () => {
   it("renders all 16 puzzle tiles", () => {
     render(<ConnectionsGameBoard puzzle={testConnectionsPuzzle} />);
@@ -169,6 +173,11 @@ describe("ConnectionsGameBoard", () => {
       expect(tile.getAttribute("aria-pressed")).toBe("true");
       expect(tile.className).toContain("tile-shake");
     }
+
+    fireEvent.click(screen.getByRole("button", { name: incorrectLabels[0] }));
+
+    expect(screen.queryByText("Incorrect guess")).toBeNull();
+    expect(getReaction("incorrect")).toBeTruthy();
   });
 
   it("does not consume another mistake for a duplicate guess", () => {
@@ -198,19 +207,60 @@ describe("ConnectionsGameBoard", () => {
     expect(getReaction("incorrect")).toBeNull();
   });
 
-  it("uses the incorrect reaction pool for a one-away guess", () => {
+  it("shares incorrect reaction history between one-away and wrong guesses", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+
     render(<ConnectionsGameBoard puzzle={testConnectionsPuzzle} />);
 
-    submitTiles([
+    const oneAwayLabels = [
       tileLabel(0, 0),
       tileLabel(0, 1),
       tileLabel(0, 2),
       tileLabel(1, 0),
-    ]);
+    ];
+
+    submitTiles(oneAwayLabels);
 
     expect(screen.getByText("One away!")).toBeTruthy();
     expect(getReaction("incorrect")).toBeTruthy();
     expect(getReaction("correct")).toBeNull();
+
+    const oneAwayReactionSrc = getReactionSrc("incorrect");
+
+    for (const label of oneAwayLabels) {
+      fireEvent.click(screen.getByRole("button", { name: label }));
+    }
+
+    submitTiles([
+      tileLabel(0, 0),
+      tileLabel(1, 1),
+      tileLabel(2, 2),
+      tileLabel(3, 3),
+    ]);
+
+    expect(screen.getByText("Incorrect guess")).toBeTruthy();
+    expect(getReactionSrc("incorrect")).not.toBe(oneAwayReactionSrc);
+  });
+
+  it("does not repeat correct reactions within one game", () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, "random").mockReturnValue(0);
+
+    render(<ConnectionsGameBoard puzzle={testConnectionsPuzzle} />);
+
+    const reactionSources: (string | null | undefined)[] = [];
+
+    for (const group of testConnectionsPuzzle.groups.slice(0, 3)) {
+      submitTiles(group.tiles.map((tile) => tile.label));
+      reactionSources.push(getReactionSrc("correct"));
+
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+    }
+
+    expect(reactionSources.every(Boolean)).toBe(true);
+    expect(new Set(reactionSources)).toHaveProperty("size", 3);
   });
 
   it("shows correct feedback before resolving a solved group", () => {
@@ -250,13 +300,21 @@ describe("ConnectionsGameBoard", () => {
     }
 
     act(() => {
-      vi.advanceTimersByTime(600);
+      vi.advanceTimersByTime(700);
+    });
+
+    expect(getReaction("correct")).toBeTruthy();
+
+    act(() => {
+      vi.advanceTimersByTime(850);
     });
 
     expect(getReaction("correct")).toBeNull();
   });
 
-  it("shows a distinct loss reaction and clears it on restart", () => {
+  it("shows a distinct loss reaction and avoids it in the next game", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+
     render(<ConnectionsGameBoard puzzle={testConnectionsPuzzle} />);
 
     const incorrectGuesses = [
@@ -266,26 +324,37 @@ describe("ConnectionsGameBoard", () => {
       [tileLabel(1, 1), tileLabel(1, 3), tileLabel(3, 0), tileLabel(3, 1)],
     ];
 
-    for (const guess of incorrectGuesses) {
-      const selectedTiles = document.querySelectorAll(
-        'button[aria-pressed="true"]',
-      );
+    function loseGame() {
+      let previousGuess: string[] = [];
 
-      for (const tile of selectedTiles) {
-        fireEvent.click(tile);
+      for (const guess of incorrectGuesses) {
+        for (const label of previousGuess) {
+          fireEvent.click(screen.getByRole("button", { name: label }));
+        }
+
+        submitTiles(guess);
+        previousGuess = guess;
       }
-
-      submitTiles(guess);
     }
+
+    loseGame();
 
     expect(screen.getByText("Game over")).toBeTruthy();
     expect(getReaction("loss")).toBeTruthy();
     expect(getReaction("incorrect")).toBeNull();
 
+    const firstLossSrc = getReactionSrc("loss");
+
     fireEvent.click(screen.getByRole("button", { name: "Play Again" }));
 
     expect(getReaction("loss")).toBeNull();
     expect(screen.getByText("Mistakes remaining: 4")).toBeTruthy();
+
+    loseGame();
+
+    expect(screen.getByText("Game over")).toBeTruthy();
+    expect(getReactionSrc("loss")).toBeTruthy();
+    expect(getReactionSrc("loss")).not.toBe(firstLossSrc);
   });
 
   it("shows a win reaction after the final correct guess and clears it on restart", () => {
@@ -306,9 +375,7 @@ describe("ConnectionsGameBoard", () => {
     expect(getReaction("win")).toBeTruthy();
     expect(getReaction("correct")).toBeNull();
 
-    const firstWinSrc = getReaction("win")
-      ?.querySelector("img")
-      ?.getAttribute("src");
+    const firstWinSrc = getReactionSrc("win");
 
     fireEvent.click(screen.getByRole("button", { name: "Play Again" }));
 
@@ -323,9 +390,7 @@ describe("ConnectionsGameBoard", () => {
       });
     }
 
-    const secondWinSrc = getReaction("win")
-      ?.querySelector("img")
-      ?.getAttribute("src");
+    const secondWinSrc = getReactionSrc("win");
 
     expect(firstWinSrc).toBeTruthy();
     expect(secondWinSrc).toBeTruthy();
