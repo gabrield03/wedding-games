@@ -20,6 +20,20 @@ describe("ConnectionsReaction", () => {
     expect(container.querySelector("img")?.className).toContain("object-top");
   });
 
+  it("top-aligns the close correct-6 portrait", () => {
+    const { container } = render(
+      <ConnectionsReaction
+        reaction={{
+          occurrence: 1,
+          kind: "correct",
+          src: "/images/connections/reactions/correct/correct-6.PNG",
+        }}
+      />,
+    );
+
+    expect(container.querySelector("img")?.className).toContain("object-top");
+  });
+
   it("keeps the default centered crop for other intermediate reactions", () => {
     const { container } = render(
       <ConnectionsReaction

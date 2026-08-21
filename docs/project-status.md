@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-08-20
+Last updated: 2026-08-21
 
 ## Current milestone
 
@@ -66,28 +66,42 @@ event-scoped PostgreSQL persistence, is complete and merged.
 M5 Issue 6, hardening database testing and deployment workflow, is complete.
 M5 is complete.
 
-M5.5 added local personalized reaction photos to Connections without changing
-gameplay rules, persistence, authentication, or Wordle. The mini-milestone is
+M5.5 Issue 1 added local personalized reaction photos to Connections without
+changing gameplay rules, persistence, authentication, or Wordle. Issue 1 is
 complete.
+
+M5.5 Issue 2 expands the real photo pools, lengthens intermediate reaction
+presentation, and replaces immediate-repeat avoidance with current-game
+uniqueness plus best-effort immediately-previous-game avoidance. Issue 2 and
+the M5.5 mini-milestone are complete.
 
 Final reaction behavior:
 
 - Correct non-winning groups briefly show a randomly selected celebratory
   solo reaction.
 - Wrong and one-away guesses preserve their distinct gameplay feedback while
-  sharing the playful edge-peek incorrect-reaction pool.
+  sharing the playful edge-peek incorrect-reaction pool and its usage history.
 - Wins show a prominent persistent couple reaction, and losses show a
   distinct persistent loss reaction, until Play Again.
 - Duplicate guesses show no photo reaction.
-- Each pool excludes its immediately previous photo while the mounted game
-  session continues, including across Play Again, while keeping the remaining
-  eligible photos uniformly random.
+- Within one game, each pool strictly excludes every photo already shown from
+  that pool. Wrong and one-away outcomes share one incorrect-pool history.
+- After Play Again, selection first avoids photos used in both the current and
+  immediately previous game, then relaxes only previous-game avoidance when
+  necessary. A truly exhausted current-game pool produces no photo rather than
+  repeating one.
 - Narrow per-image focal-position overrides preserve important subjects where
-  the default crop is insufficient.
-- Intermediate reactions fade upward, and reduced-motion mode retains the
-  reaction duration with opacity-only fading and no transform motion.
+  the default crop is insufficient, including top alignment for `correct-3.jpg`
+  and `correct-6.PNG` plus right alignment/inset handling for
+  `incorrect-2.JPEG`.
+- Intermediate reactions have a longer visible lifetime: they enter quickly,
+  remain settled for roughly one second, and then dissolve while floating
+  upward over approximately 1.8 seconds. Normal tile editing no longer clears
+  them prematurely.
+- Reduced-motion mode retains the same reaction lifetime with opacity-only
+  presentation and no transform motion.
 
-Final validation completed successfully:
+M5.5 Issue 1 final validation completed successfully:
 
 - Format, format check, lint, typecheck, and `git diff --check` passed.
 - All 146 unit/component tests passed, including 28 focused reaction and
@@ -95,6 +109,15 @@ Final validation completed successfully:
 - The full Playwright suite passed with 30 of 30 tests across Chromium,
   Firefox, and WebKit.
 - The production build passed.
+
+M5.5 Issue 2 final validation completed successfully:
+
+- All 33 focused reaction and Connections component tests passed.
+- All 151 unit/component tests passed.
+- Format, format check, lint, typecheck, and `git diff --check` passed.
+- Manual visual verification passed for reaction timing, photo framing, and
+  back-to-back-game rotation.
+- The full Playwright suite and production build passed.
 
 M5 delivered the backend foundation for the current single-Event application:
 
