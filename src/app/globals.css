@@ -80,6 +80,88 @@ body {
   }
 }
 
+@keyframes connections-reaction-correct {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.85);
+  }
+
+  18%,
+  60% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.98);
+  }
+}
+
+@keyframes connections-reaction-incorrect {
+  0% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+
+  18%,
+  60% {
+    opacity: 1;
+    transform: translateX(20%);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(20%) translateY(-20px);
+  }
+}
+
+@keyframes connections-reaction-fade {
+  0%,
+  60% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes connections-reaction-terminal {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.connections-reaction-correct {
+  animation: connections-reaction-correct 850ms ease-in-out both;
+}
+
+.connections-reaction-incorrect {
+  animation: connections-reaction-incorrect 850ms ease-in-out both;
+}
+
+.connections-reaction-terminal {
+  animation: connections-reaction-terminal 300ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .connections-reaction-correct,
+  .connections-reaction-incorrect {
+    animation: connections-reaction-fade 850ms linear both;
+  }
+
+  .connections-reaction-terminal {
+    animation: none;
+  }
+}
+
 @keyframes wordle-row-shake {
   0%,
   100% {

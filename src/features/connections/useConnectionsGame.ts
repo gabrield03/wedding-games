@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   applyGuessResult,
@@ -12,6 +12,14 @@ import {
   CONNECTIONS_GROUP_SIZE,
   type ConnectionsPuzzle,
 } from "@/domain/connections/types";
+
+import {
+  selectConnectionsReactionPhoto,
+  type ConnectionsReaction,
+  type ConnectionsReactionKind,
+} from "./connectionsReactions";
+
+const INTERMEDIATE_REACTION_DURATION_MS = 900;
 
 export type ConnectionsFeedback =
   "incorrect" | "one-away" | "duplicate" | "correct" | null;
@@ -30,6 +38,25 @@ export function useConnectionsGame(puzzle: ConnectionsPuzzle) {
   const [feedback, setFeedback] = useState<ConnectionsFeedback>(null);
   const [correctGuessTileIds, setCorrectGuessTileIds] = useState<string[]>([]);
   const [feedbackAttempt, setFeedbackAttempt] = useState(0);
+  const [reaction, setReaction] = useState<ConnectionsReaction | null>(null);
+  const reactionOccurrence = useRef(0);
+  const reactionTimer = useRef<number | null>(null);
+  const correctResolutionTimer = useRef<number | null>(null);
+  const previousReactionPhotos = useRef<
+    Partial<Record<ConnectionsReactionKind, string>>
+  >({});
+
+  useEffect(() => {
+    return () => {
+      if (reactionTimer.current !== null) {
+        window.clearTimeout(reactionTimer.current);
+      }
+
+      if (correctResolutionTimer.current !== null) {
+        window.clearTimeout(correctResolutionTimer.current);
+      }
+    };
+  }, []);
 
   const isResolvingCorrectGuess = correctGuessTileIds.length > 0;
 
@@ -38,6 +65,7 @@ export function useConnectionsGame(puzzle: ConnectionsPuzzle) {
       return;
     }
 
+    clearReaction();
     setFeedback(null);
     setSelectedTileIds((currentTileIds) => {
       if (currentTileIds.includes(tileId)) {
@@ -101,6 +129,7 @@ export function useConnectionsGame(puzzle: ConnectionsPuzzle) {
     }
 
     if (result.status === "duplicate") {
+      clearReaction();
       setFeedback("duplicate");
       setFeedbackAttempt((current) => current + 1);
       return;
@@ -110,14 +139,24 @@ export function useConnectionsGame(puzzle: ConnectionsPuzzle) {
     const nextGameStatus = getGameStatus(puzzle, nextState);
 
     if (result.status === "correct") {
+      clearReaction();
       setFeedback("correct");
       setCorrectGuessTileIds([...selectedTileIds]);
 
-      window.setTimeout(() => {
+      if (nextGameStatus === "playing") {
+        showReaction("correct");
+      }
+
+      correctResolutionTimer.current = window.setTimeout(() => {
         setGameState(nextState);
         setSelectedTileIds([]);
         setCorrectGuessTileIds([]);
         setFeedback(null);
+        correctResolutionTimer.current = null;
+
+        if (nextGameStatus === "won") {
+          showReaction("win", true);
+        }
       }, 300);
 
       return;
@@ -128,20 +167,67 @@ export function useConnectionsGame(puzzle: ConnectionsPuzzle) {
     if (nextGameStatus !== "playing") {
       setSelectedTileIds([]);
       setFeedback(null);
+      showReaction("loss", true);
       return;
     }
 
     setFeedback(result.oneAway ? "one-away" : "incorrect");
     setFeedbackAttempt((current) => current + 1);
+    showReaction("incorrect");
   }
 
   function restart() {
+    clearReaction();
     setGameState(createInitialGameState());
     setSelectedTileIds([]);
     setFeedback(null);
     setTileOrder(shuffle(tiles.map((tile) => tile.id)));
     setFeedbackAttempt(0);
     setCorrectGuessTileIds([]);
+  }
+
+  function clearReaction() {
+    if (reactionTimer.current !== null) {
+      window.clearTimeout(reactionTimer.current);
+      reactionTimer.current = null;
+    }
+
+    setReaction(null);
+  }
+
+  function showReaction(kind: ConnectionsReactionKind, persistent = false) {
+    if (reactionTimer.current !== null) {
+      window.clearTimeout(reactionTimer.current);
+      reactionTimer.current = null;
+    }
+
+    reactionOccurrence.current += 1;
+
+    const src = selectConnectionsReactionPhoto(
+      kind,
+      previousReactionPhotos.current[kind] ?? null,
+    );
+
+    previousReactionPhotos.current[kind] = src;
+
+    const nextReaction = {
+      occurrence: reactionOccurrence.current,
+      kind,
+      src,
+    };
+
+    setReaction(nextReaction);
+
+    if (!persistent) {
+      reactionTimer.current = window.setTimeout(() => {
+        setReaction((currentReaction) =>
+          currentReaction?.occurrence === nextReaction.occurrence
+            ? null
+            : currentReaction,
+        );
+        reactionTimer.current = null;
+      }, INTERMEDIATE_REACTION_DURATION_MS);
+    }
   }
 
   return {
@@ -153,6 +239,7 @@ export function useConnectionsGame(puzzle: ConnectionsPuzzle) {
     feedback,
     correctGuessTileIds,
     feedbackAttempt,
+    reaction,
     selectionLimit: CONNECTIONS_GROUP_SIZE,
     canSubmit,
     toggleTile,

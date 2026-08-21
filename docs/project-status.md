@@ -4,7 +4,7 @@ Last updated: 2026-08-20
 
 ## Current milestone
 
-**M5 - Backend Foundation & Anonymous Sessions: complete**
+**M5.5 - Personalized Connections Reactions: complete**
 
 M1, the Connections Prototype milestone, is complete.
 
@@ -65,6 +65,36 @@ event-scoped PostgreSQL persistence, is complete and merged.
 
 M5 Issue 6, hardening database testing and deployment workflow, is complete.
 M5 is complete.
+
+M5.5 added local personalized reaction photos to Connections without changing
+gameplay rules, persistence, authentication, or Wordle. The mini-milestone is
+complete.
+
+Final reaction behavior:
+
+- Correct non-winning groups briefly show a randomly selected celebratory
+  solo reaction.
+- Wrong and one-away guesses preserve their distinct gameplay feedback while
+  sharing the playful edge-peek incorrect-reaction pool.
+- Wins show a prominent persistent couple reaction, and losses show a
+  distinct persistent loss reaction, until Play Again.
+- Duplicate guesses show no photo reaction.
+- Each pool excludes its immediately previous photo while the mounted game
+  session continues, including across Play Again, while keeping the remaining
+  eligible photos uniformly random.
+- Narrow per-image focal-position overrides preserve important subjects where
+  the default crop is insufficient.
+- Intermediate reactions fade upward, and reduced-motion mode retains the
+  reaction duration with opacity-only fading and no transform motion.
+
+Final validation completed successfully:
+
+- Format, format check, lint, typecheck, and `git diff --check` passed.
+- All 146 unit/component tests passed, including 28 focused reaction and
+  Connections component tests.
+- The full Playwright suite passed with 30 of 30 tests across Chromium,
+  Firefox, and WebKit.
+- The production build passed.
 
 M5 delivered the backend foundation for the current single-Event application:
 
@@ -216,7 +246,9 @@ src/
   features/
     connections/
       ConnectionsGameBoard.tsx
+      ConnectionsReaction.tsx
       ConnectionTile.tsx
+      connectionsReactions.ts
       useConnectionsGame.ts
     wordle/
       WordleGameBoard.tsx
@@ -265,6 +297,12 @@ docs/
   development.md
   requirements.md
   security.md
+
+public/images/connections/reactions/
+  correct/
+  incorrect/
+  loss/
+  win/
 ```
 
 ## Current Connections content
@@ -1183,4 +1221,4 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-M5 is complete. No next milestone is active in this document.
+M5.5 is complete. No next milestone is active in this document.
