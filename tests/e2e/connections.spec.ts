@@ -40,12 +40,16 @@ test("player can complete and restart a puzzle", async ({ page }) => {
   }
 
   await expect(page.getByText("Puzzle complete!")).toBeVisible();
+  await expect(page.locator('[data-connections-reaction="win"]')).toBeVisible();
   await expect(page.getByRole("button", { name: "Play Again" })).toBeVisible();
 
   await page.getByRole("button", { name: "Play Again" }).click();
 
   await expect(page.locator("button[aria-pressed]")).toHaveCount(16);
   await expect(page.getByText("Mistakes remaining: 4")).toBeVisible();
+  await expect(page.locator('[data-connections-reaction="win"]')).toHaveCount(
+    0,
+  );
 });
 
 test("player can lose and restart a puzzle", async ({ page }) => {
@@ -96,6 +100,9 @@ test("player can lose and restart a puzzle", async ({ page }) => {
   }
 
   await expect(page.getByText("Game over")).toBeVisible();
+  await expect(
+    page.locator('[data-connections-reaction="loss"]'),
+  ).toBeVisible();
 
   for (const group of puzzle.groups) {
     await expect(page.getByText(group.category, { exact: true })).toBeVisible();
@@ -107,4 +114,7 @@ test("player can lose and restart a puzzle", async ({ page }) => {
 
   await expect(page.locator("button[aria-pressed]")).toHaveCount(16);
   await expect(page.getByText("Mistakes remaining: 4")).toBeVisible();
+  await expect(page.locator('[data-connections-reaction="loss"]')).toHaveCount(
+    0,
+  );
 });

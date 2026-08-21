@@ -2,6 +2,7 @@
 
 import type { ConnectionsPuzzle } from "@/domain/connections/types";
 
+import { ConnectionsReaction } from "./ConnectionsReaction";
 import { ConnectionTile } from "./ConnectionTile";
 import { useConnectionsGame } from "./useConnectionsGame";
 
@@ -13,7 +14,7 @@ export function ConnectionsGameBoard({ puzzle }: ConnectionsGameBoardProps) {
   const game = useConnectionsGame(puzzle);
 
   return (
-    <section>
+    <section className="relative isolate">
       <h1 className="text-center text-3xl font-bold">{puzzle.title}</h1>
 
       <p className="mt-2 text-center text-neutral-600">
@@ -33,6 +34,13 @@ export function ConnectionsGameBoard({ puzzle }: ConnectionsGameBoardProps) {
           </div>
         )}
       </div>
+
+      {game.reaction && (
+        <ConnectionsReaction
+          key={game.reaction.occurrence}
+          reaction={game.reaction}
+        />
+      )}
 
       <div className="mt-8">
         <div className="mb-2 h-6 text-center font-semibold" aria-live="polite">
