@@ -1,4 +1,10 @@
-import { cleanup, render, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const browserClientMocks = vi.hoisted(() => ({
@@ -9,7 +15,10 @@ vi.mock("@/lib/supabase/client", () => ({
   getSupabaseBrowserClient: browserClientMocks.getClient,
 }));
 
-import { AnonymousPlayerBootstrap } from "@/app/games/AnonymousPlayerBootstrap";
+import {
+  AnonymousPlayerBootstrap,
+  useAnonymousPlayerBootstrap,
+} from "@/app/games/AnonymousPlayerBootstrap";
 
 function response(status: number) {
   return {
@@ -54,6 +63,29 @@ afterEach(() => {
 });
 
 describe("AnonymousPlayerBootstrap", () => {
+  it("always renders children while exposing pending and ready status", async () => {
+    mockBrowserClient();
+    let resolveBootstrap!: (value: Response) => void;
+    const pendingBootstrap = new Promise<Response>((resolve) => {
+      resolveBootstrap = resolve;
+    });
+    vi.stubGlobal("fetch", vi.fn().mockReturnValue(pendingBootstrap));
+
+    render(
+      <AnonymousPlayerBootstrap>
+        <BootstrapStatus />
+        <p>Game content</p>
+      </AnonymousPlayerBootstrap>,
+    );
+
+    expect(screen.getByText("Game content")).toBeTruthy();
+    expect(screen.getByText("pending")).toBeTruthy();
+
+    resolveBootstrap(response(204));
+
+    await waitFor(() => expect(screen.getByText("ready")).toBeTruthy());
+  });
+
   it("reuses an existing Auth session", async () => {
     const client = mockBrowserClient();
     const fetchMock = vi.fn().mockResolvedValue(response(204));
@@ -170,4 +202,38 @@ describe("AnonymousPlayerBootstrap", () => {
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
   });
+
+  it("exposes error and retry without leaking identity details", async () => {
+    mockBrowserClient();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(response(503))
+      .mockResolvedValueOnce(response(204));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <AnonymousPlayerBootstrap>
+        <BootstrapStatus />
+      </AnonymousPlayerBootstrap>,
+    );
+
+    await waitFor(() => expect(screen.getByText("error")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "Retry bootstrap" }));
+
+    await waitFor(() => expect(screen.getByText("ready")).toBeTruthy());
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });
+
+function BootstrapStatus() {
+  const bootstrap = useAnonymousPlayerBootstrap();
+
+  return (
+    <div>
+      <p>{bootstrap.status}</p>
+      <button type="button" onClick={bootstrap.retry}>
+        Retry bootstrap
+      </button>
+    </div>
+  );
+}

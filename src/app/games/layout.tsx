@@ -7,10 +7,5 @@ type GamesLayoutProps = Readonly<{
 }>;
 
 export default function GamesLayout({ children }: GamesLayoutProps) {
-  return (
-    <>
-      <AnonymousPlayerBootstrap />
-      {children}
-    </>
-  );
+  return <AnonymousPlayerBootstrap>{children}</AnonymousPlayerBootstrap>;
 }

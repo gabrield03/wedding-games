@@ -4,7 +4,7 @@ Last updated: 2026-08-21
 
 ## Current milestone
 
-**M6 - Server-Authoritative Gameplay: in progress (Issue 2 implementation)**
+**M6 - Server-Authoritative Gameplay: in progress (Issue 3 implementation)**
 
 M1, the Connections Prototype milestone, is complete.
 
@@ -81,8 +81,11 @@ Issue 1 is complete. No game attempt persistence or authoritative gameplay
 endpoint was part of this issue.
 
 M6 Issue 2 implements the backend-only authoritative Connections Attempt
-boundary. The current Connections UI remains client-authoritative until the
-separate Issue 3 cutover and solution-hiding work.
+boundary. Issue 2 is complete and merged.
+
+M6 Issue 3 cuts the Connections client over to authoritative Attempts and
+removes the unrevealed solution from the browser boundary. Implementation and
+validation are in progress.
 
 Final reaction behavior:
 
@@ -351,9 +354,10 @@ PostgreSQL. The versioned data SQL preserves the existing
 This content remains useful for exercising more realistic labels and mobile
 wrapping. Unit, component, and E2E expectations use stable independent fixtures
 in `tests/fixtures/connections.ts`. Application routes access production
-Connections content only through `getConnectionsPuzzle(puzzleId)`, which
-resolves the trusted current Event, reads the exact event/public-ID row,
-decodes its JSON, and runs domain validation.
+Connections routes load only public ID and title through
+`getConnectionsPuzzlePreview(puzzleId)`. The authoritative server service uses
+the explicit event-scoped full loaders to decode and validate the complete
+puzzle without serializing it to the browser.
 
 ## Current Wordle content
 
@@ -1211,8 +1215,7 @@ Issue 1 final validation completed successfully:
 
 ## M6 issue 2 - Make Connections gameplay server-authoritative
 
-Issue 2's backend foundation is implemented while validation and merge remain
-in progress:
+Issue 2's backend foundation is complete and merged:
 
 - Added event-, Player-, and puzzle-owned `connections_attempts` persistence
   with composite ownership constraints and a one-active-Attempt partial unique
@@ -1235,10 +1238,8 @@ in progress:
   ownership, active-attempt convergence, state/token sanitization, outcomes,
   terminal behavior, malformed or corrupt data, and concurrency conflicts.
 
-This issue does not modify the Connections page, board, controller, reactions,
-or current client payload. The deployed game still exposes and evaluates its
-solution client-side. M6 Issue 3 will perform the client cutover, handle the
-Player-bootstrap race, and remove browser solution exposure.
+Issue 2 deliberately did not modify the Connections page, board, controller,
+reactions, or client payload. M6 Issue 3 owns that client cutover.
 
 Issue 2 implementation validation completed in the Codex environment:
 
@@ -1248,8 +1249,46 @@ Issue 2 implementation validation completed in the Codex environment:
 - All 37 focused loader, server-service, and Route Handler tests passed.
 - All 188 unit/component tests passed.
 - Format, format check, lint, typecheck, and `git diff --check` passed.
-- Playwright and the production build remain for the user's full local gate
-  before Issue 2 is considered complete and merged.
+- The full local validation gate passed before Issue 2 was merged.
+
+## M6 issue 3 - Cut Connections client over to server-authoritative gameplay
+
+Issue 3 implementation:
+
+- Added a title/public-ID-only Connections preview query for the dynamic route;
+  complete puzzle content remains behind explicit event-scoped server loaders.
+- Exposed anonymous Player bootstrap readiness through a narrow games-layout
+  context that always renders children and leaves Wordle behavior unchanged.
+- Added a Connections-specific browser transport for Attempt initialization,
+  guess submission, fixed error contracts, and sanitized snapshots.
+- Reworked `useConnectionsGame` to store the authoritative server snapshot
+  instead of reconstructing client domain state. Local state is limited to
+  opaque-token selection, visual ordering/shuffle, feedback, timing, request
+  state, and reaction history.
+- Preserved immediate incorrect/one-away/duplicate feedback, delayed correct
+  resolution, terminal reactions, accessibility, reduced motion, and local
+  shuffle behavior without client-side outcome evaluation.
+- Added retryable bootstrap/initialization/request handling, stale/invalid
+  snapshot reconciliation, active/completed refresh resume, and authoritative
+  replay that preserves completed state until success.
+- Extended focused component and E2E coverage to verify authoritative flows and
+  that unrevealed categories, groups, and semantic IDs do not cross initial
+  render or Attempt-response boundaries.
+
+Issue 3 remains in progress until focused and full local validation and merge
+are complete.
+
+Issue 3 implementation validation completed in the Codex environment:
+
+- All 39 focused preview, bootstrap, Proxy, API-client, and Connections board
+  tests passed.
+- All 197 unit/component tests passed.
+- All 12 targeted Connections and Player-bootstrap Playwright tests passed
+  across Chromium, Firefox, and WebKit, including render/API solution-exposure
+  assertions and active/completed resume flows.
+- Format, format check, lint, typecheck, and `git diff --check` passed.
+- The production build and full Playwright suite remain for the user's full
+  local validation gate before Issue 3 is complete.
 
 ## M5 issue 1 non-goals and deferred work
 
@@ -1327,5 +1366,5 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Complete M6 Issue 2 validation and merge. M6 Issue 3 will then cut Connections
-over to the authoritative backend and hide unrevealed solution data.
+Complete M6 Issue 3 validation and merge. Do not begin the next M6 authority
+cutover until this Connections transition is complete.

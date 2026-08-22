@@ -49,15 +49,17 @@ the M5 Event and server infrastructure where ownership requires it:
   -> explicit Wordle entry
 
 /games/connections/[puzzleId] route
-  -> getConnectionsPuzzle
+  -> getConnectionsPuzzlePreview
      -> resolve CURRENT_EVENT_SLUG on the server
-     -> event-scoped connections_puzzles row in PostgreSQL
-     -> decode stored JSON
-     -> Connections domain validation and types
+     -> select only public puzzle ID + title
   -> GamePageShell
   -> ConnectionsGameBoard
+     -> wait for anonymous Player bootstrap readiness
      -> useConnectionsGame
-        -> pure Connections gameplay rules
+        -> Connections Attempt + guess APIs
+           -> trusted current Event + authenticated Player
+           -> Connections-specific Attempt service
+           -> full server-only puzzle loader + pure domain rules
 
 /games/wordle entry route
   -> wait for an incoming request
@@ -484,10 +486,36 @@ latest sanitized snapshot. Duplicate guesses do not mutate state or increment
 the version.
 
 This is deliberately a game-specific backend, not a generic Attempt framework.
-The existing Connections route, controller, board, reactions, and client-side
-solution payload are unchanged in Issue 2. M6 Issue 3 owns client cutover,
-bootstrap-race handling, and solution hiding; until then, deployed Connections
-play remains client-authoritative despite the new backend being available.
+
+## M6 Connections Client Authority Cutover
+
+M6 Issue 3 moves the existing Connections controller onto the authoritative
+Attempt boundary. The dynamic page now loads only a title/public-ID preview;
+the full puzzle remains available only to the server Attempt service. Neither
+the route's React Server Component payload nor client props contain categories,
+groups, group IDs, semantic tile IDs, or unrevealed group structure.
+
+The games layout exposes a narrow anonymous-Player bootstrap readiness context.
+It always renders its children, so Wordle and public page structure are not
+globally blocked. Connections waits for `ready` before starting or resuming an
+Attempt and provides retryable preparing/error states without accepting Event,
+Player, or identity selectors from the browser.
+
+`useConnectionsGame` stores the sanitized `ConnectionsAttemptSnapshot` as its
+only authoritative gameplay state. Selection of opaque tile tokens, visual
+ordering, manual shuffle, feedback, animation timing, request state, and photo
+reaction history remain client presentation concerns. Guess outcomes, mistakes,
+solved groups, terminal status, versions, and legitimate reveals come only from
+the Connections APIs; the browser no longer invokes domain evaluation to decide
+them.
+
+Correct snapshots are installed after the existing short visual confirmation.
+Other outcomes reconcile immediately, while stale/invalid actions install the
+latest supplied snapshot without fabricating an outcome. Network failures keep
+the last authoritative snapshot and selection. Replay keeps the completed game
+visible until the server returns a new Attempt, then rotates reaction history
+once and installs the fresh snapshot. Reloading resumes either the active or
+latest completed Attempt through the same start boundary.
 
 ## Architectural Goals
 
