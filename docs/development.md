@@ -329,6 +329,33 @@ Stop the local stack when it is no longer needed:
 npx.cmd supabase stop
 ```
 
+## Wordle accepted-guess dictionary
+
+The server-only accepted-guess list is committed at
+`src/server/wordle/data/accepted-guesses.json`. Its pinned SCOWL/ESDB source,
+configuration, generated count, hash, and complete upstream notice are recorded
+in `THIRD_PARTY_NOTICES.md`.
+
+Check out the tag and verify the exact pinned commit recorded in
+`THIRD_PARTY_NOTICES.md`, then generate the configured word-list output:
+
+```text
+python -X utf8 ./combine.py create-db ./scowl.db
+python -X utf8 ./scowl word-list 70 A 1 --wo-poses=abbr --categories= |
+  Set-Content -Encoding utf8 scowl-wordle-source.txt
+```
+
+Then deterministically filter, normalize, deduplicate, sort, and write the
+committed JSON file:
+
+```text
+node scripts/generate-wordle-dictionary.mjs scowl-wordle-source.txt
+```
+
+Dictionary updates require explicit review of the pinned revision, resulting
+word count, generated diff, and applicable redistribution notices. Application
+builds and runtime requests must not fetch the upstream word list.
+
 The reproducibility sequence is:
 
 ```text

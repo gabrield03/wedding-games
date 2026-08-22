@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getWordlePuzzle } from "@/content/wordle/getWordlePuzzle";
+import {
+  decodeStoredWordlePuzzle,
+  getWordlePuzzle,
+  getWordlePuzzleForEvent,
+  getWordlePuzzlePreview,
+} from "@/content/wordle/getWordlePuzzle";
 
 import { wedding01WordlePuzzle } from "../../../fixtures/wordle";
 
@@ -29,6 +34,8 @@ const currentEvent = {
 };
 
 const storedPuzzle = {
+  id: "40000000-0000-4000-8000-000000000101",
+  event_id: currentEvent.id,
   public_id: wedding01WordlePuzzle.id,
   answer: wedding01WordlePuzzle.answer,
 };
@@ -51,7 +58,9 @@ describe("getWordlePuzzle", () => {
 
     expect(puzzle).toEqual(wedding01WordlePuzzle);
     expect(mocks.from).toHaveBeenCalledWith("wordle_puzzles");
-    expect(mocks.select).toHaveBeenCalledWith("public_id, answer");
+    expect(mocks.select).toHaveBeenCalledWith(
+      "id, event_id, public_id, answer",
+    );
     expect(mocks.eq).toHaveBeenNthCalledWith(1, "event_id", currentEvent.id);
     expect(mocks.eq).toHaveBeenNthCalledWith(2, "public_id", "wedding-01");
   });
@@ -107,5 +116,59 @@ describe("getWordlePuzzle", () => {
       "Configured Event is unavailable.",
     );
     expect(mocks.from).not.toHaveBeenCalled();
+  });
+});
+
+describe("authoritative Wordle content boundaries", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    mocks.getCurrentEvent.mockResolvedValue(currentEvent);
+    mocks.getPrivilegedSupabaseClient.mockReturnValue({ from: mocks.from });
+    mocks.from.mockReturnValue({ select: mocks.select });
+    mocks.select.mockReturnValue({ eq: mocks.eq });
+    mocks.eq.mockReturnValue({ eq: mocks.eq, maybeSingle: mocks.maybeSingle });
+  });
+
+  it("loads a validated full puzzle through explicit Event scope", async () => {
+    mocks.maybeSingle.mockResolvedValue({ data: storedPuzzle, error: null });
+
+    await expect(
+      getWordlePuzzleForEvent(currentEvent.id, wedding01WordlePuzzle.id),
+    ).resolves.toEqual({
+      databaseId: storedPuzzle.id,
+      eventId: currentEvent.id,
+      puzzle: wedding01WordlePuzzle,
+    });
+    expect(mocks.getCurrentEvent).not.toHaveBeenCalled();
+    expect(mocks.eq).toHaveBeenNthCalledWith(1, "event_id", currentEvent.id);
+  });
+
+  it("decodes and validates an embedded authoritative puzzle row", () => {
+    expect(decodeStoredWordlePuzzle(storedPuzzle)).toEqual({
+      databaseId: storedPuzzle.id,
+      eventId: currentEvent.id,
+      puzzle: wedding01WordlePuzzle,
+    });
+    expect(() =>
+      decodeStoredWordlePuzzle({ ...storedPuzzle, answer: "NO" }),
+    ).toThrow(
+      'Wordle puzzle "wedding-01" failed validation: Puzzle answer must contain exactly 5 letters',
+    );
+  });
+
+  it("projects only the public puzzle ID for the later route cutover", async () => {
+    mocks.maybeSingle.mockResolvedValue({
+      data: { public_id: wedding01WordlePuzzle.id },
+      error: null,
+    });
+
+    await expect(
+      getWordlePuzzlePreview(wedding01WordlePuzzle.id),
+    ).resolves.toEqual({ id: wedding01WordlePuzzle.id });
+    expect(mocks.select).toHaveBeenCalledWith("public_id");
+    expect(mocks.select).not.toHaveBeenCalledWith(
+      expect.stringContaining("answer"),
+    );
   });
 });

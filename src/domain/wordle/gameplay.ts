@@ -89,7 +89,7 @@ export function submitWordleGuess(
     };
   }
 
-  const normalizedGuess = state.currentGuess.toUpperCase();
+  const normalizedGuess = normalizeWordleGuess(state.currentGuess);
   const evaluation = evaluateWordleGuess(answer, normalizedGuess);
 
   return {
@@ -112,10 +112,9 @@ export function evaluateWordleGuess(
   guess: string,
 ): WordleLetterEvaluation[] {
   assertValidWord(answer, "Answer");
-  assertValidWord(guess, "Guess");
 
   const normalizedAnswer = answer.toUpperCase();
-  const normalizedGuess = guess.toUpperCase();
+  const normalizedGuess = normalizeWordleGuess(guess);
   const evaluations: WordleLetterEvaluation[] = [...normalizedGuess].map(
     (letter) => ({
       letter,
@@ -156,6 +155,11 @@ export function evaluateWordleGuess(
   }
 
   return evaluations;
+}
+
+export function normalizeWordleGuess(guess: string): string {
+  assertValidWord(guess, "Guess");
+  return guess.toUpperCase();
 }
 
 function assertValidWord(word: string, label: "Answer" | "Guess"): void {
