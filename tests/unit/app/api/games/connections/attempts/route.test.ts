@@ -27,6 +27,8 @@ const attempt = {
   remainingTiles: [{ id: "50000000-0000-4000-8000-000000000001", label: "A" }],
   version: 0,
 };
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function request(body: unknown) {
   return new Request("http://localhost/api/games/connections/attempts", {
@@ -98,6 +100,9 @@ describe("POST /api/games/connections/attempts", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ attempt });
+    expect(response.headers.get("x-wedding-games-diagnostic-id")).toMatch(
+      uuidPattern,
+    );
     expect(routeMocks.startConnectionsAttempt).toHaveBeenCalledWith({
       player,
       puzzleId: "development-puzzle",
