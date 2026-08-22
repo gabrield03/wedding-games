@@ -333,6 +333,31 @@ snapshot and never falls back to browser evaluation. Explicit replay identifies
 the completed Attempt only as a server-authorized replay source and does not
 clear terminal state until a new Attempt succeeds.
 
+## M6 Wordle Attempt Backend Boundary
+
+The Wordle backend now has game-specific Attempt persistence and server routes
+for start/resume/new lifecycle requests and authoritative guesses. Attempts use
+composite Event/Player and Event/puzzle foreign keys, browser roles have no
+table access, and the privileged service filters every Attempt selector by the
+trusted Event and resolved Player.
+
+Guess requests load the owned Attempt and hidden puzzle through one explicit
+composite-FK relationship query. Persisted guesses are decoded and reevaluated
+through pure Wordle rules before use. Accepted updates are conditional on the
+previous version; a conflict reloads only the owned Attempt and reuses the
+already-loaded puzzle. No client-provided identity, completion, evaluation, or
+answer is trusted.
+
+The accepted-guess dictionary is a licensed, committed server-only data Set.
+Dictionary rejection does not mutate the Attempt or consume a version, and its
+contents are not returned to the browser. Playing snapshots omit the answer,
+wins reveal it only through the submitted winning guess, and losses explicitly
+include the answer required by the existing product behavior.
+
+This backend does not yet remove the answer from the existing Wordle route or
+client props. That exposure remains temporary until the Wordle client cutover;
+the new API itself is sanitized and provides no client-evaluation fallback.
+
 ## Safely Deferred Decisions
 
 - Multi-event URL structure

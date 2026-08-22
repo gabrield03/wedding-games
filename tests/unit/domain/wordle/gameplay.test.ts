@@ -5,6 +5,7 @@ import {
   createInitialWordleGameState,
   evaluateWordleGuess,
   getWordleGameStatus,
+  normalizeWordleGuess,
   removeWordleLetter,
   submitWordleGuess,
   WORDLE_MAX_ATTEMPTS,
@@ -55,6 +56,13 @@ function submitCompleteGuess(
 }
 
 describe("evaluateWordleGuess", () => {
+  it("normalizes structurally valid guesses through the shared domain helper", () => {
+    expect(normalizeWordleGuess("cRaNe")).toBe("CRANE");
+    expect(() => normalizeWordleGuess("GU3SS")).toThrow(
+      "Guess must contain exactly 5 ASCII letters",
+    );
+  });
+
   it("marks every letter correct when the guess matches the answer", () => {
     expectEvaluation("CRANE", "CRANE", [
       "correct",

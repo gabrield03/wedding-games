@@ -1,10 +1,10 @@
 # Project Status
 
-Last updated: 2026-08-21
+Last updated: 2026-08-22
 
 ## Current milestone
 
-**M6 - Server-Authoritative Gameplay: in progress (Issue 3 implementation)**
+**M6 - Server-Authoritative Gameplay: in progress (Wordle backend implementation)**
 
 M1, the Connections Prototype milestone, is complete.
 
@@ -84,8 +84,13 @@ M6 Issue 2 implements the backend-only authoritative Connections Attempt
 boundary. Issue 2 is complete and merged.
 
 M6 Issue 3 cuts the Connections client over to authoritative Attempts and
-removes the unrevealed solution from the browser boundary. Implementation and
-validation are in progress.
+removes the unrevealed solution from the browser boundary. The cutover and its
+post-deployment database round-trip optimization are complete.
+
+M6 Issue 4 adds the server-authoritative Wordle backend, persistent Wordle
+Attempts, and server-only accepted-guess validation. Implementation and
+validation are in progress; the Wordle client cutover remains a separate final
+M6 issue.
 
 Final reaction behavior:
 
@@ -366,8 +371,10 @@ stable public IDs `wedding-01` through `wedding-10`. The home page enters
 through `/games/wordle`, which fetches only that Event's public IDs and chooses
 one at request time without daily scheduling or persistent history.
 
-The collection is an answer bank only. Structurally valid five-letter guesses
-remain playable without dictionary membership or invalid-word rejection.
+The PostgreSQL collection remains an answer bank only. The M6 Wordle backend
+uses a broader committed server-only English dictionary for accepted guesses
+without turning that dictionary into answer content or adding a database
+lookup.
 Application routes access Wordle content through `getWordlePuzzle(puzzleId)`,
 which resolves the trusted current Event, maps typed database content, applies
 domain validation, and keeps missing IDs distinct from backend or invalid
@@ -1275,8 +1282,7 @@ Issue 3 implementation:
   that unrevealed categories, groups, and semantic IDs do not cross initial
   render or Attempt-response boundaries.
 
-Issue 3 remains in progress until focused and full local validation and merge
-are complete.
+Issue 3 and its post-deployment database round-trip optimization are complete.
 
 Issue 3 implementation validation completed in the Codex environment:
 
@@ -1287,8 +1293,44 @@ Issue 3 implementation validation completed in the Codex environment:
   across Chromium, Firefox, and WebKit, including render/API solution-exposure
   assertions and active/completed resume flows.
 - Format, format check, lint, typecheck, and `git diff --check` passed.
-- The production build and full Playwright suite remain for the user's full
-  local validation gate before Issue 3 is complete.
+- The production build and full Playwright suite passed in the subsequent
+  local validation gate.
+
+## M6 issue 4 - Make Wordle gameplay server-authoritative (backend)
+
+Issue 4 backend implementation:
+
+- Added Event-, Player-, and puzzle-owned `wordle_attempts` persistence with
+  canonical submitted guesses, optimistic versions, terminal timestamps,
+  composite ownership constraints, and one active Attempt per Player/puzzle.
+- Reconstructs evaluations and status through existing pure Wordle rules rather
+  than persisting redundant evaluation truth.
+- Added start/resume/new lifecycle behavior, authoritative guess submission,
+  exact conditional updates, conflict reconciliation, and sanitized snapshots.
+- Uses one owned Attempt plus embedded hidden-puzzle read for ordinary guesses,
+  matching the optimized Connections authority pattern.
+- Added a committed 8,585-word server-only accepted-guess Set derived from the
+  pinned SCOWL/ESDB size-70 American-English list with reproducible generation
+  and complete third-party notices.
+- Invalid dictionary words return an unchanged snapshot without consuming an
+  Attempt or version and without issuing a database update.
+- Added Wordle-specific Route Handlers and database/content/domain/service/route
+  tests without changing the existing Wordle client, routes, board, or keyboard.
+
+Issue 4 remains in progress until the complete local validation gate and merge
+are complete. The current Wordle browser still receives and evaluates the
+answer; the final client-cutover issue will remove that exposure and adopt
+these APIs.
+
+Issue 4 implementation validation completed in the Codex environment:
+
+- All 73 focused Wordle domain, content, dictionary, service, validation, and
+  Route Handler tests passed.
+- All 240 unit/component tests passed.
+- The database validation gate passed with clean migration replay, database
+  lint, 201 pgTAP assertions, and generated-type drift verification.
+- Format, format check, lint, typecheck, production build, `git diff --check`,
+  and scope review passed.
 
 ## M5 issue 1 non-goals and deferred work
 
@@ -1366,5 +1408,5 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Complete M6 Issue 3 validation and merge. Do not begin the next M6 authority
-cutover until this Connections transition is complete.
+Complete and merge the Wordle authoritative backend, then begin the separate
+Wordle client cutover. Do not start scoring or leaderboard work.

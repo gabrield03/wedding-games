@@ -517,6 +517,34 @@ visible until the server returns a new Attempt, then rotates reaction history
 once and installs the fresh snapshot. Reloading resumes either the active or
 latest completed Attempt through the same start boundary.
 
+## M6 Wordle Attempt Backend
+
+The Wordle-specific authoritative backend persists only Event, Player, puzzle,
+canonical submitted guesses, optimistic version, and timestamps. Evaluations
+and terminal status are reconstructed from those guesses and the hidden answer
+through the existing pure Wordle domain rules. The database enforces composite
+Event ownership, one active Attempt per Player and puzzle, six-guess bounds,
+and `version = submitted guess count` without introducing a shared Attempt
+table.
+
+An accepted guess follows the optimized authoritative path: trusted current
+Player resolution, one owned Attempt query embedding its Event-consistent
+Wordle puzzle, local state reconstruction and evaluation, then one conditional
+Attempt update scoped by Attempt, Event, Player, and version. Playing snapshots
+contain submitted guesses and evaluations but no answer. Loss snapshots reveal
+the answer; wins expose it only as the all-correct submitted guess.
+
+Guess membership is a separate server content policy. A committed, licensed
+SCOWL-derived static Set validates accepted five-letter English guesses without
+a database request or browser distribution. The Event-owned answer bank remains
+separate, and the authoritative answer is always acceptable even when it is not
+in the general dictionary.
+
+This issue supplies backend capability only. The current Wordle page remains
+client-authoritative and answer-exposing until the following client cutover.
+No generic game service, Attempt repository, or dictionary abstraction is
+introduced.
+
 ## Architectural Goals
 
 The architecture should:

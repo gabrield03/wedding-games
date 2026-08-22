@@ -148,6 +148,57 @@ export type Database = {
           },
         ];
       };
+      wordle_attempts: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          event_id: string;
+          id: string;
+          player_id: string;
+          puzzle_id: string;
+          submitted_guesses: string[];
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          event_id: string;
+          id?: string;
+          player_id: string;
+          puzzle_id: string;
+          submitted_guesses?: string[];
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          event_id?: string;
+          id?: string;
+          player_id?: string;
+          puzzle_id?: string;
+          submitted_guesses?: string[];
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "wordle_attempts_player_fkey";
+            columns: ["event_id", "player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["event_id", "id"];
+          },
+          {
+            foreignKeyName: "wordle_attempts_puzzle_fkey";
+            columns: ["event_id", "puzzle_id"];
+            isOneToOne: false;
+            referencedRelation: "wordle_puzzles";
+            referencedColumns: ["event_id", "id"];
+          },
+        ];
+      };
       wordle_puzzles: {
         Row: {
           answer: string;
