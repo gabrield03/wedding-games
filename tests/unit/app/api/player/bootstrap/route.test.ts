@@ -23,6 +23,8 @@ const event = {
   id: "00000000-0000-4000-8000-000000000001",
   slug: "current-wedding",
 };
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function mockClaims({
   error = null,
@@ -62,6 +64,9 @@ describe("POST /api/player/bootstrap", () => {
 
     expect(response.status).toBe(204);
     expect(await response.text()).toBe("");
+    expect(response.headers.get("x-wedding-games-diagnostic-id")).toMatch(
+      uuidPattern,
+    );
     expect(routeMocks.ensureCurrentPlayer).toHaveBeenCalledWith({
       authUserId,
       eventId: event.id,

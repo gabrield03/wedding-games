@@ -20,6 +20,11 @@ import {
   type ConnectionsGameState,
 } from "@/domain/connections/gameplay";
 import type { ConnectionsPuzzle } from "@/domain/connections/types";
+import {
+  measureLatencyStage,
+  measureLatencyStageSync,
+  setLatencyOutcome,
+} from "@/server/diagnostics/latency";
 import type { CurrentPlayer } from "@/server/players/getCurrentPlayer";
 import { getPrivilegedSupabaseClient } from "@/server/supabase/privileged";
 import type { Json, Tables } from "@/types/database.generated";
@@ -91,87 +96,101 @@ export async function startConnectionsAttempt({
   puzzleId,
   replayFromAttemptId,
 }: StartConnectionsAttemptInput): Promise<StartConnectionsAttemptResult> {
-  const storedPuzzle = await getConnectionsPuzzleForEvent(
-    player.eventId,
-    puzzleId,
+  const storedPuzzle = await measureLatencyStage("puzzleLookup", () =>
+    getConnectionsPuzzleForEvent(player.eventId, puzzleId),
   );
 
   if (!storedPuzzle) {
+    setLatencyOutcome("not_found");
     return { status: "not_found" };
   }
 
   if (replayFromAttemptId) {
-    const replaySource = await loadAttempt({
-      attemptId: replayFromAttemptId,
-      eventId: player.eventId,
-      playerId: player.id,
-      puzzleId: storedPuzzle.databaseId,
-    });
+    const replaySource = await measureLatencyStage("replaySourceLookup", () =>
+      loadAttempt({
+        attemptId: replayFromAttemptId,
+        eventId: player.eventId,
+        playerId: player.id,
+        puzzleId: storedPuzzle.databaseId,
+      }),
+    );
 
     if (!replaySource) {
+      setLatencyOutcome("not_found");
       return { status: "not_found" };
     }
 
-    const decodedReplaySource = decodeAttempt(
-      replaySource,
-      storedPuzzle.puzzle,
+    const decodedReplaySource = measureLatencyStageSync("stateDecode", () =>
+      decodeAttempt(replaySource, storedPuzzle.puzzle),
     );
 
     if (replaySource.completed_at === null) {
+      setLatencyOutcome("replay_not_complete");
       return {
         status: "replay_not_complete",
-        attempt: createSnapshot(decodedReplaySource, storedPuzzle.puzzle),
-      };
-    }
-
-    const activeAttempt = await loadActiveAttempt(
-      player,
-      storedPuzzle.databaseId,
-    );
-
-    if (activeAttempt) {
-      return {
-        status: "ready",
-        attempt: createSnapshot(
-          decodeAttempt(activeAttempt, storedPuzzle.puzzle),
-          storedPuzzle.puzzle,
+        attempt: measureLatencyStageSync("snapshot", () =>
+          createSnapshot(decodedReplaySource, storedPuzzle.puzzle),
         ),
       };
     }
 
+    const activeAttempt = await measureLatencyStage(
+      "activeReplacementLookup",
+      () => loadActiveAttempt(player, storedPuzzle.databaseId),
+    );
+
+    if (activeAttempt) {
+      const decodedActiveAttempt = measureLatencyStageSync("stateDecode", () =>
+        decodeAttempt(activeAttempt, storedPuzzle.puzzle),
+      );
+      setLatencyOutcome("replay_active_resume");
+      return {
+        status: "ready",
+        attempt: measureLatencyStageSync("snapshot", () =>
+          createSnapshot(decodedActiveAttempt, storedPuzzle.puzzle),
+        ),
+      };
+    }
+
+    setLatencyOutcome("replay_created");
     return createAttemptOrRecoverRace(player, storedPuzzle);
   }
 
-  const activeAttempt = await loadActiveAttempt(
-    player,
-    storedPuzzle.databaseId,
+  const activeAttempt = await measureLatencyStage("activeAttemptLookup", () =>
+    loadActiveAttempt(player, storedPuzzle.databaseId),
   );
 
   if (activeAttempt) {
+    const decodedActiveAttempt = measureLatencyStageSync("stateDecode", () =>
+      decodeAttempt(activeAttempt, storedPuzzle.puzzle),
+    );
+    setLatencyOutcome("active_resume");
     return {
       status: "ready",
-      attempt: createSnapshot(
-        decodeAttempt(activeAttempt, storedPuzzle.puzzle),
-        storedPuzzle.puzzle,
+      attempt: measureLatencyStageSync("snapshot", () =>
+        createSnapshot(decodedActiveAttempt, storedPuzzle.puzzle),
       ),
     };
   }
 
-  const latestAttempt = await loadLatestAttempt(
-    player,
-    storedPuzzle.databaseId,
+  const latestAttempt = await measureLatencyStage("latestAttemptLookup", () =>
+    loadLatestAttempt(player, storedPuzzle.databaseId),
   );
 
   if (latestAttempt) {
+    const decodedLatestAttempt = measureLatencyStageSync("stateDecode", () =>
+      decodeAttempt(latestAttempt, storedPuzzle.puzzle),
+    );
+    setLatencyOutcome("completed_resume");
     return {
       status: "ready",
-      attempt: createSnapshot(
-        decodeAttempt(latestAttempt, storedPuzzle.puzzle),
-        storedPuzzle.puzzle,
+      attempt: measureLatencyStageSync("snapshot", () =>
+        createSnapshot(decodedLatestAttempt, storedPuzzle.puzzle),
       ),
     };
   }
 
+  setLatencyOutcome("created");
   return createAttemptOrRecoverRace(player, storedPuzzle);
 }
 
@@ -181,56 +200,78 @@ export async function submitConnectionsGuess({
   tileIds,
   version,
 }: SubmitConnectionsGuessInput): Promise<SubmitConnectionsGuessResult> {
-  const attempt = await loadAttempt({
-    attemptId,
-    eventId: player.eventId,
-    playerId: player.id,
-  });
+  const attempt = await measureLatencyStage("attemptLookup", () =>
+    loadAttempt({
+      attemptId,
+      eventId: player.eventId,
+      playerId: player.id,
+    }),
+  );
 
   if (!attempt) {
+    setLatencyOutcome("not_found");
     return { status: "not_found" };
   }
 
-  const storedPuzzle = await getConnectionsPuzzleByDatabaseIdForEvent(
-    player.eventId,
-    attempt.puzzle_id,
+  const storedPuzzle = await measureLatencyStage("puzzleLookup", () =>
+    getConnectionsPuzzleByDatabaseIdForEvent(player.eventId, attempt.puzzle_id),
   );
 
   if (!storedPuzzle) {
     throw new Error("Failed to resolve the Connections Attempt puzzle.");
   }
 
-  const decodedAttempt = decodeAttempt(attempt, storedPuzzle.puzzle);
-  const currentSnapshot = createSnapshot(decodedAttempt, storedPuzzle.puzzle);
+  const decodedAttempt = measureLatencyStageSync("initialStateDecode", () =>
+    decodeAttempt(attempt, storedPuzzle.puzzle),
+  );
+  const currentSnapshot = measureLatencyStageSync("currentSnapshot", () =>
+    createSnapshot(decodedAttempt, storedPuzzle.puzzle),
+  );
+  const validation = measureLatencyStageSync("versionTokenValidation", () => {
+    if (version !== attempt.version) {
+      return { status: "stale" } as const;
+    }
 
-  if (version !== attempt.version) {
+    const internalTileIds = mapPublicTokensToInternalIds(
+      tileIds,
+      decodedAttempt.tileMap,
+    );
+
+    return internalTileIds
+      ? ({ status: "valid", tileIds: internalTileIds } as const)
+      : ({ status: "invalid" } as const);
+  });
+
+  if (validation.status === "stale") {
+    setLatencyOutcome("stale");
     return { status: "stale", attempt: currentSnapshot };
   }
 
-  const internalTileIds = mapPublicTokensToInternalIds(
-    tileIds,
-    decodedAttempt.tileMap,
-  );
-
-  if (!internalTileIds) {
+  if (validation.status === "invalid") {
+    setLatencyOutcome("invalid_request");
     return { status: "invalid_request" };
   }
 
-  const result = evaluateGuess(
-    storedPuzzle.puzzle,
-    decodedAttempt.state,
-    internalTileIds,
+  const result = measureLatencyStageSync("domainEvaluation", () =>
+    evaluateGuess(
+      storedPuzzle.puzzle,
+      decodedAttempt.state,
+      validation.tileIds,
+    ),
   );
 
   if (result.status === "invalid") {
     if (result.reason === "solved_tile" || result.reason === "game_over") {
+      setLatencyOutcome("invalid_action");
       return { status: "invalid_action", attempt: currentSnapshot };
     }
 
+    setLatencyOutcome("invalid_request");
     return { status: "invalid_request" };
   }
 
   if (result.status === "duplicate") {
+    setLatencyOutcome("duplicate");
     return {
       status: "submitted",
       outcome: "duplicate",
@@ -238,45 +279,64 @@ export async function submitConnectionsGuess({
     };
   }
 
-  const nextState = applyGuessResult(decodedAttempt.state, result);
-  const nextGameStatus = getGameStatus(storedPuzzle.puzzle, nextState);
+  const { nextGameStatus, nextState } = measureLatencyStageSync(
+    "domainApply",
+    () => {
+      const appliedState = applyGuessResult(decodedAttempt.state, result);
+
+      return {
+        nextGameStatus: getGameStatus(storedPuzzle.puzzle, appliedState),
+        nextState: appliedState,
+      };
+    },
+  );
   const now = new Date().toISOString();
-  const { data: updatedAttempt, error } = await getPrivilegedSupabaseClient()
-    .from("connections_attempts")
-    .update({
-      completed_at: nextGameStatus === "playing" ? null : now,
-      incorrect_guesses: nextState.incorrectGuesses,
-      solved_group_ids: nextState.solvedGroupIds,
-      updated_at: now,
-      version: attempt.version + 1,
-    })
-    .eq("id", attempt.id)
-    .eq("event_id", player.eventId)
-    .eq("player_id", player.id)
-    .eq("version", attempt.version)
-    .select(ATTEMPT_COLUMNS)
-    .maybeSingle();
+  const { data: updatedAttempt, error } = await measureLatencyStage(
+    "attemptUpdate",
+    () =>
+      getPrivilegedSupabaseClient()
+        .from("connections_attempts")
+        .update({
+          completed_at: nextGameStatus === "playing" ? null : now,
+          incorrect_guesses: nextState.incorrectGuesses,
+          solved_group_ids: nextState.solvedGroupIds,
+          updated_at: now,
+          version: attempt.version + 1,
+        })
+        .eq("id", attempt.id)
+        .eq("event_id", player.eventId)
+        .eq("player_id", player.id)
+        .eq("version", attempt.version)
+        .select(ATTEMPT_COLUMNS)
+        .maybeSingle(),
+  );
 
   if (error) {
     throw new Error("Failed to update the Connections Attempt.");
   }
 
   if (!updatedAttempt) {
-    const winningAttempt = await loadAttempt({
-      attemptId: attempt.id,
-      eventId: player.eventId,
-      playerId: player.id,
-    });
+    const winningAttempt = await measureLatencyStage("conflictReload", () =>
+      loadAttempt({
+        attemptId: attempt.id,
+        eventId: player.eventId,
+        playerId: player.id,
+      }),
+    );
 
     if (!winningAttempt) {
       throw new Error("Failed to reload the Connections Attempt.");
     }
 
+    const decodedWinningAttempt = measureLatencyStageSync(
+      "conflictStateDecode",
+      () => decodeAttempt(winningAttempt, storedPuzzle.puzzle),
+    );
+    setLatencyOutcome("conflict_stale");
     return {
       status: "stale",
-      attempt: createSnapshot(
-        decodeAttempt(winningAttempt, storedPuzzle.puzzle),
-        storedPuzzle.puzzle,
+      attempt: measureLatencyStageSync("finalSnapshot", () =>
+        createSnapshot(decodedWinningAttempt, storedPuzzle.puzzle),
       ),
     };
   }
@@ -287,13 +347,17 @@ export async function submitConnectionsGuess({
       : result.oneAway
         ? "one_away"
         : "incorrect";
+  const decodedUpdatedAttempt = measureLatencyStageSync(
+    "updatedStateDecode",
+    () => decodeAttempt(updatedAttempt, storedPuzzle.puzzle),
+  );
 
+  setLatencyOutcome(outcome);
   return {
     status: "submitted",
     outcome,
-    attempt: createSnapshot(
-      decodeAttempt(updatedAttempt, storedPuzzle.puzzle),
-      storedPuzzle.puzzle,
+    attempt: measureLatencyStageSync("finalSnapshot", () =>
+      createSnapshot(decodedUpdatedAttempt, storedPuzzle.puzzle),
     ),
   };
 }
@@ -302,46 +366,54 @@ async function createAttemptOrRecoverRace(
   player: CurrentPlayer,
   storedPuzzle: StoredConnectionsPuzzle,
 ): Promise<StartConnectionsAttemptResult> {
-  const tileMap = createTileMap(storedPuzzle.puzzle);
-  const { data, error } = await getPrivilegedSupabaseClient()
-    .from("connections_attempts")
-    .insert({
-      event_id: player.eventId,
-      player_id: player.id,
-      puzzle_id: storedPuzzle.databaseId,
-      tile_map: tileMap,
-    })
-    .select(ATTEMPT_COLUMNS)
-    .single();
+  const tileMap = measureLatencyStageSync("tileMapCreation", () =>
+    createTileMap(storedPuzzle.puzzle),
+  );
+  const { data, error } = await measureLatencyStage("attemptInsert", () =>
+    getPrivilegedSupabaseClient()
+      .from("connections_attempts")
+      .insert({
+        event_id: player.eventId,
+        player_id: player.id,
+        puzzle_id: storedPuzzle.databaseId,
+        tile_map: tileMap,
+      })
+      .select(ATTEMPT_COLUMNS)
+      .single(),
+  );
 
   if (error) {
     if (!isActiveAttemptConflict(error)) {
       throw new Error("Failed to create the Connections Attempt.");
     }
 
-    const activeAttempt = await loadActiveAttempt(
-      player,
-      storedPuzzle.databaseId,
+    const activeAttempt = await measureLatencyStage("raceRecoveryLookup", () =>
+      loadActiveAttempt(player, storedPuzzle.databaseId),
     );
 
     if (!activeAttempt) {
       throw new Error("Failed to recover the active Connections Attempt.");
     }
 
+    const decodedActiveAttempt = measureLatencyStageSync("stateDecode", () =>
+      decodeAttempt(activeAttempt, storedPuzzle.puzzle),
+    );
+    setLatencyOutcome("race_recovered");
     return {
       status: "ready",
-      attempt: createSnapshot(
-        decodeAttempt(activeAttempt, storedPuzzle.puzzle),
-        storedPuzzle.puzzle,
+      attempt: measureLatencyStageSync("snapshot", () =>
+        createSnapshot(decodedActiveAttempt, storedPuzzle.puzzle),
       ),
     };
   }
 
+  const decodedAttempt = measureLatencyStageSync("stateDecode", () =>
+    decodeAttempt(data, storedPuzzle.puzzle),
+  );
   return {
     status: "ready",
-    attempt: createSnapshot(
-      decodeAttempt(data, storedPuzzle.puzzle),
-      storedPuzzle.puzzle,
+    attempt: measureLatencyStageSync("snapshot", () =>
+      createSnapshot(decodedAttempt, storedPuzzle.puzzle),
     ),
   };
 }

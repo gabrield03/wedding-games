@@ -1,5 +1,6 @@
 import "server-only";
 
+import { measureLatencyStage } from "@/server/diagnostics/latency";
 import { getPrivilegedSupabaseClient } from "@/server/supabase/privileged";
 import type { Tables } from "@/types/database.generated";
 
@@ -18,15 +19,17 @@ export async function ensureCurrentPlayer({
   eventId,
 }: EnsureCurrentPlayerInput): Promise<CurrentPlayer> {
   const supabase = getPrivilegedSupabaseClient();
-  const { error: insertError } = await supabase.from("players").upsert(
-    {
-      auth_user_id: authUserId,
-      event_id: eventId,
-    },
-    {
-      ignoreDuplicates: true,
-      onConflict: "event_id,auth_user_id",
-    },
+  const { error: insertError } = await measureLatencyStage("playerUpsert", () =>
+    supabase.from("players").upsert(
+      {
+        auth_user_id: authUserId,
+        event_id: eventId,
+      },
+      {
+        ignoreDuplicates: true,
+        onConflict: "event_id,auth_user_id",
+      },
+    ),
   );
 
   if (insertError) {
@@ -35,12 +38,16 @@ export async function ensureCurrentPlayer({
     });
   }
 
-  const { data, error: selectError } = await supabase
-    .from("players")
-    .select("id, event_id, auth_user_id")
-    .eq("event_id", eventId)
-    .eq("auth_user_id", authUserId)
-    .single();
+  const { data, error: selectError } = await measureLatencyStage(
+    "playerSelect",
+    () =>
+      supabase
+        .from("players")
+        .select("id, event_id, auth_user_id")
+        .eq("event_id", eventId)
+        .eq("auth_user_id", authUserId)
+        .single(),
+  );
 
   if (selectError) {
     throw new Error("Failed to resolve the current Player.", {
