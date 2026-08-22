@@ -27,6 +27,7 @@ describe("Next.js Proxy", () => {
       "/games/:path*",
       "/api/player/bootstrap",
       "/api/games/connections/:path*",
+      "/api/games/wordle/:path*",
     ]);
   });
 

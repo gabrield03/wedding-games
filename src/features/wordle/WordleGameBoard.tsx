@@ -1,19 +1,23 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 
+import type { WordlePuzzlePreview } from "@/contracts/wordle";
 import { WORDLE_MAX_ATTEMPTS } from "@/domain/wordle/gameplay";
 import {
   WORDLE_WORD_LENGTH,
   type WordleLetterStatus,
-  type WordlePuzzle,
 } from "@/domain/wordle/types";
 
 import { WordleKeyboard } from "./WordleKeyboard";
 import { useWordleGame } from "./useWordleGame";
 
 type WordleGameBoardProps = {
-  puzzle: WordlePuzzle;
+  puzzle: WordlePuzzlePreview;
+  startMode: "resume" | "new";
+  initializationRequest: string;
+  canonicalHref: string;
   nextWordHref: string;
 };
 
@@ -24,11 +28,13 @@ type DisplayTile = {
 
 export function WordleGameBoard({
   puzzle,
+  startMode,
+  initializationRequest,
+  canonicalHref,
   nextWordHref,
 }: WordleGameBoardProps) {
-  const game = useWordleGame(puzzle);
+  const game = useWordleGame(puzzle, startMode, initializationRequest);
   const activeRowIndex = game.submittedGuesses.length;
-  const newestSubmittedRowIndex = game.submittedGuesses.length - 1;
   const rows = Array.from({ length: WORDLE_MAX_ATTEMPTS }, (_, rowIndex) => {
     const submittedGuess = game.submittedGuesses[rowIndex];
 
@@ -46,8 +52,17 @@ export function WordleGameBoard({
     return createUnevaluatedRow("");
   });
 
+  useEffect(() => {
+    if (startMode === "new" && game.initializationStatus === "ready") {
+      window.history.replaceState(null, "", canonicalHref);
+    }
+  }, [canonicalHref, game.initializationStatus, startMode]);
+
   return (
-    <section aria-labelledby="wordle-heading">
+    <section
+      aria-labelledby="wordle-heading"
+      aria-busy={game.initializationStatus === "preparing"}
+    >
       <h1 id="wordle-heading" className="text-center text-3xl font-bold">
         Wordle
       </h1>
@@ -56,86 +71,117 @@ export function WordleGameBoard({
         Guess the five-letter word in six attempts.
       </p>
 
-      <div
-        className="mt-4 min-h-6 text-center font-semibold"
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        {game.gameStatus === "won" && <p>You got it!</p>}
-        {game.gameStatus === "lost" && (
-          <p>Game over. The answer was {puzzle.answer.toUpperCase()}.</p>
-        )}
-        {game.gameStatus === "playing" && game.feedback === "incomplete" && (
-          <p>Not enough letters</p>
-        )}
-      </div>
+      {game.initializationStatus === "preparing" && (
+        <p className="mt-8 text-center" role="status" aria-live="polite">
+          Preparing your game…
+        </p>
+      )}
 
-      <div
-        className="mx-auto mt-4 w-full max-w-sm space-y-1.5"
-        role="group"
-        aria-label="Wordle board"
-      >
-        {rows.map((row, rowIndex) => {
-          const isActiveRow = rowIndex === activeRowIndex;
-          const isNewestSubmittedRow = rowIndex === newestSubmittedRowIndex;
-          const shouldShake = isActiveRow && game.feedback === "incomplete";
-
-          return (
-            <div
-              key={
-                isActiveRow
-                  ? `active-${rowIndex}-${game.incompleteAttempt}`
-                  : `row-${rowIndex}`
-              }
-              className={`grid grid-cols-5 gap-1.5 ${shouldShake ? "wordle-row-shake" : ""}`}
-              role="group"
-              aria-label={getRowLabel(
-                row,
-                rowIndex,
-                game.submittedGuesses.length,
-              )}
-              data-wordle-row
-            >
-              {row.map((tile, tileIndex) => (
-                <div
-                  key={tileIndex}
-                  aria-hidden="true"
-                  data-wordle-tile
-                  data-status={tile.status ?? "unsubmitted"}
-                  className={`flex aspect-square items-center justify-center border-2 text-2xl font-bold sm:text-3xl ${getTileStatusClass(tile)} ${isNewestSubmittedRow ? "wordle-tile-reveal" : ""}`}
-                  style={
-                    isNewestSubmittedRow
-                      ? { animationDelay: `${tileIndex * 50}ms` }
-                      : undefined
-                  }
-                >
-                  {tile.letter}
-                </div>
-              ))}
-            </div>
-          );
-        })}
-      </div>
-
-      <WordleKeyboard
-        statuses={game.keyboardStatuses}
-        disabled={game.gameStatus !== "playing"}
-        onLetter={game.addLetter}
-        onBackspace={game.backspace}
-        onEnter={game.submitGuess}
-      />
-
-      {game.gameStatus !== "playing" && (
-        <div className="mt-6 text-center">
-          <Link
-            href={nextWordHref}
-            prefetch={false}
-            className="inline-flex rounded-full border px-5 py-2 font-semibold transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2"
+      {game.initializationStatus === "error" && (
+        <div className="mt-8 text-center" role="alert">
+          <p>{game.initializationError}</p>
+          <button
+            type="button"
+            onClick={game.retryInitialization}
+            className="mt-4 cursor-pointer rounded-full border px-5 py-2 font-semibold transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2"
           >
-            Next Word
-          </Link>
+            Retry
+          </button>
         </div>
+      )}
+
+      {game.initializationStatus === "ready" && (
+        <>
+          <div
+            className="mt-4 min-h-6 text-center font-semibold"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {game.gameStatus === "won" && <p>You got it!</p>}
+            {game.gameStatus === "lost" && game.revealedAnswer && (
+              <p>Game over. The answer was {game.revealedAnswer}.</p>
+            )}
+            {game.gameStatus === "playing" &&
+              game.feedback === "incomplete" && <p>Not enough letters</p>}
+            {game.gameStatus === "playing" &&
+              game.feedback === "invalid-word" && <p>Not in word list.</p>}
+            {game.gameStatus === "playing" && game.feedback === "updated" && (
+              <p>Your game was updated. Review your word and try again.</p>
+            )}
+            {game.feedback === "action-unavailable" && (
+              <p>That action is no longer available.</p>
+            )}
+            {game.requestError && <p>{game.requestError}</p>}
+          </div>
+
+          <div
+            className="mx-auto mt-4 w-full max-w-sm space-y-1.5"
+            role="group"
+            aria-label="Wordle board"
+          >
+            {rows.map((row, rowIndex) => {
+              const isActiveRow = rowIndex === activeRowIndex;
+              const isRevealingRow = rowIndex === game.revealingGuessIndex;
+              const shouldShake = isActiveRow && game.feedback === "incomplete";
+
+              return (
+                <div
+                  key={
+                    isActiveRow
+                      ? `active-${rowIndex}-${game.incompleteAttempt}`
+                      : `row-${rowIndex}`
+                  }
+                  className={`grid grid-cols-5 gap-1.5 ${shouldShake ? "wordle-row-shake" : ""}`}
+                  role="group"
+                  aria-label={getRowLabel(
+                    row,
+                    rowIndex,
+                    game.submittedGuesses.length,
+                  )}
+                  data-wordle-row
+                >
+                  {row.map((tile, tileIndex) => (
+                    <div
+                      key={tileIndex}
+                      aria-hidden="true"
+                      data-wordle-tile
+                      data-status={tile.status ?? "unsubmitted"}
+                      className={`flex aspect-square items-center justify-center border-2 text-2xl font-bold sm:text-3xl ${getTileStatusClass(tile)} ${isRevealingRow ? "wordle-tile-reveal" : ""}`}
+                      style={
+                        isRevealingRow
+                          ? { animationDelay: `${tileIndex * 50}ms` }
+                          : undefined
+                      }
+                    >
+                      {tile.letter}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+
+          <WordleKeyboard
+            statuses={game.keyboardStatuses}
+            disabled={!game.canInteract}
+            onLetter={game.addLetter}
+            onBackspace={game.backspace}
+            onEnter={() => void game.submitGuess()}
+          />
+
+          {game.gameStatus !== "playing" && (
+            <div className="mt-6 text-center">
+              <Link
+                href={nextWordHref}
+                prefetch={false}
+                className="inline-flex rounded-full border px-5 py-2 font-semibold transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2"
+              >
+                Next Word
+              </Link>
+            </div>
+          )}
+        </>
       )}
     </section>
   );

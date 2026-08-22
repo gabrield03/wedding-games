@@ -1,28 +1,642 @@
 import {
+  act,
   cleanup,
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { WordlePuzzle } from "@/domain/wordle/types";
+import type {
+  WordleAttemptSnapshot,
+  WordlePuzzlePreview,
+} from "@/contracts/wordle";
+import type {
+  WordleLetterStatus,
+  WordleSubmittedGuess,
+} from "@/domain/wordle/types";
 import { WordleGameBoard } from "@/features/wordle/WordleGameBoard";
 
-const testPuzzle: WordlePuzzle = {
-  id: "test-wordle-puzzle",
-  answer: "CRANE",
-};
-const nextWordHref = "/games/wordle?exclude=test-wordle-puzzle";
+const controllerMocks = vi.hoisted(() => ({
+  bootstrapRetry: vi.fn(),
+  bootstrapStatus: "ready" as "pending" | "ready" | "error",
+  requestAttempt: vi.fn(),
+  requestGuess: vi.fn(),
+}));
 
-function renderWordleGameBoard(puzzle = testPuzzle) {
-  return render(
-    <WordleGameBoard puzzle={puzzle} nextWordHref={nextWordHref} />,
+vi.mock("@/app/games/AnonymousPlayerBootstrap", () => ({
+  useAnonymousPlayerBootstrap: () => ({
+    status: controllerMocks.bootstrapStatus,
+    retry: controllerMocks.bootstrapRetry,
+  }),
+}));
+vi.mock("@/features/wordle/wordleApiClient", () => ({
+  requestWordleAttempt: controllerMocks.requestAttempt,
+  requestWordleGuess: controllerMocks.requestGuess,
+}));
+
+const puzzle: WordlePuzzlePreview = { id: "test-wordle-puzzle" };
+const canonicalHref = `/games/wordle/${puzzle.id}`;
+const nextWordHref = `/games/wordle?exclude=${puzzle.id}`;
+const initialAttemptId = "60000000-0000-4000-8000-000000000001";
+
+beforeEach(() => {
+  controllerMocks.bootstrapRetry.mockReset();
+  controllerMocks.requestAttempt.mockReset();
+  controllerMocks.requestGuess.mockReset();
+  controllerMocks.bootstrapStatus = "ready";
+  controllerMocks.requestAttempt.mockResolvedValue({
+    status: "ready",
+    attempt: snapshot(),
+  });
+  window.history.replaceState(null, "", "/");
+});
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  vi.useRealTimers();
+});
+
+describe("WordleGameBoard", () => {
+  it("waits for Player bootstrap readiness before initializing", () => {
+    controllerMocks.bootstrapStatus = "pending";
+
+    renderBoard();
+
+    expect(screen.getByRole("heading", { name: "Wordle" })).toBeTruthy();
+    expect(screen.getByText("Preparing your game…")).toBeTruthy();
+    expect(controllerMocks.requestAttempt).not.toHaveBeenCalled();
+  });
+
+  it("shows a bootstrap error and exposes a bounded retry action", () => {
+    controllerMocks.bootstrapStatus = "error";
+
+    renderBoard();
+
+    expect(
+      screen.getByText("We couldn’t prepare your player session."),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(controllerMocks.bootstrapRetry).toHaveBeenCalledTimes(1);
+    expect(controllerMocks.requestAttempt).not.toHaveBeenCalled();
+  });
+
+  it("initializes canonical and selected routes with their explicit modes", async () => {
+    const first = renderBoard();
+    await expectReadyBoard();
+
+    expect(controllerMocks.requestAttempt).toHaveBeenNthCalledWith(1, {
+      puzzleId: puzzle.id,
+      startMode: "resume",
+    });
+
+    controllerMocks.requestAttempt.mockResolvedValueOnce({
+      status: "ready",
+      attempt: snapshot({ attemptId: "attempt-new" }),
+    });
+    first.rerender(
+      board({ startMode: "new", initializationRequest: "request-one" }),
+    );
+
+    await waitFor(() =>
+      expect(controllerMocks.requestAttempt).toHaveBeenNthCalledWith(2, {
+        puzzleId: puzzle.id,
+        startMode: "new",
+      }),
+    );
+  });
+
+  it("reinitializes repeated same-puzzle new-game requests without relying on a component key", async () => {
+    const rendered = renderBoard({
+      startMode: "new",
+      initializationRequest: "request-one",
+    });
+    await expectReadyBoard();
+
+    controllerMocks.requestAttempt.mockResolvedValueOnce({
+      status: "ready",
+      attempt: snapshot({ attemptId: "attempt-two" }),
+    });
+    rendered.rerender(
+      board({ startMode: "new", initializationRequest: "request-two" }),
+    );
+    await waitFor(() =>
+      expect(controllerMocks.requestAttempt).toHaveBeenCalledTimes(2),
+    );
+
+    controllerMocks.requestAttempt.mockResolvedValueOnce({
+      status: "ready",
+      attempt: snapshot({ attemptId: "attempt-three" }),
+    });
+    rendered.rerender(
+      board({ startMode: "new", initializationRequest: "request-three" }),
+    );
+    await waitFor(() =>
+      expect(controllerMocks.requestAttempt).toHaveBeenCalledTimes(3),
+    );
+
+    expect(controllerMocks.requestAttempt).toHaveBeenNthCalledWith(3, {
+      puzzleId: puzzle.id,
+      startMode: "new",
+    });
+  });
+
+  it("canonicalizes a new-game marker only after successful initialization", async () => {
+    let resolveAttempt!: (value: unknown) => void;
+    controllerMocks.requestAttempt.mockReturnValue(
+      new Promise((resolve) => {
+        resolveAttempt = resolve;
+      }),
+    );
+    window.history.replaceState(
+      null,
+      "",
+      `${canonicalHref}?start=new&request=request-one`,
+    );
+    const replaceState = vi.spyOn(window.history, "replaceState");
+
+    renderBoard({ startMode: "new", initializationRequest: "request-one" });
+    expect(replaceState).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveAttempt({ status: "ready", attempt: snapshot() });
+    });
+
+    await waitFor(() =>
+      expect(replaceState).toHaveBeenCalledWith(null, "", canonicalHref),
+    );
+    expect(window.location.pathname).toBe(canonicalHref);
+    expect(window.location.search).toBe("");
+  });
+
+  it("always renders six rows with five tiles after initialization", async () => {
+    await renderReadyBoard();
+
+    const wordleBoard = screen.getByRole("group", { name: "Wordle board" });
+    expect(wordleBoard.querySelectorAll("[data-wordle-row]")).toHaveLength(6);
+    expect(wordleBoard.querySelectorAll("[data-wordle-tile]")).toHaveLength(30);
+  });
+
+  it("shares normalized five-letter input and submission across the on-screen and physical keyboards", async () => {
+    controllerMocks.requestGuess.mockResolvedValueOnce({
+      status: "submitted",
+      attempt: snapshot({
+        guesses: [
+          evaluated("CRANE", [
+            "correct",
+            "present",
+            "absent",
+            "absent",
+            "correct",
+          ]),
+        ],
+      }),
+    });
+    await renderReadyBoard();
+
+    enterOnScreen("cranes");
+    expect(
+      screen.getByRole("group", { name: "Current guess: CRANE" }),
+    ).toBeTruthy();
+    submitOnScreen();
+
+    await waitFor(() =>
+      expect(controllerMocks.requestGuess).toHaveBeenCalledWith(
+        initialAttemptId,
+        { guess: "CRANE", version: 0 },
+      ),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByRole("group", { name: "Current guess is empty" }),
+      ).toBeTruthy(),
+    );
+
+    controllerMocks.requestGuess.mockResolvedValueOnce({
+      status: "submitted",
+      attempt: snapshot({
+        guesses: [
+          evaluated("CRANE", [
+            "correct",
+            "present",
+            "absent",
+            "absent",
+            "correct",
+          ]),
+          evaluated("BLOAT", [
+            "absent",
+            "correct",
+            "present",
+            "absent",
+            "absent",
+          ]),
+        ],
+      }),
+    });
+
+    for (const key of "bloat") {
+      fireEvent.keyDown(window, { key });
+    }
+    fireEvent.keyDown(window, { key: "Enter" });
+
+    await waitFor(() =>
+      expect(controllerMocks.requestGuess).toHaveBeenLastCalledWith(
+        initialAttemptId,
+        { guess: "BLOAT", version: 1 },
+      ),
+    );
+  });
+
+  it("retriggerably shakes an incomplete row without calling the backend", async () => {
+    await renderReadyBoard();
+    enterOnScreen("CRA");
+    submitOnScreen();
+
+    const firstRow = screen.getByRole("group", { name: "Current guess: CRA" });
+    expect(screen.getByText("Not enough letters")).toBeTruthy();
+    expect(firstRow.className).toContain("wordle-row-shake");
+    expect(controllerMocks.requestGuess).not.toHaveBeenCalled();
+
+    submitOnScreen();
+    const secondRow = screen.getByRole("group", { name: "Current guess: CRA" });
+    expect(secondRow).not.toBe(firstRow);
+
+    fireEvent.click(letterKey("N"));
+    expect(screen.queryByText("Not enough letters")).toBeNull();
+  });
+
+  it("does not optimistically clear or evaluate a guess while submission is pending", async () => {
+    let resolveGuess!: (value: unknown) => void;
+    controllerMocks.requestGuess.mockReturnValue(
+      new Promise((resolve) => {
+        resolveGuess = resolve;
+      }),
+    );
+    await renderReadyBoard();
+    enterOnScreen("CRANE");
+    submitOnScreen();
+
+    expect(
+      screen.getByRole("group", { name: "Current guess: CRANE" }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("group", { name: /^Guess 1:/ })).toBeNull();
+    expect(
+      (
+        within(keyboard()).getByRole("button", {
+          name: "Enter",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+
+    await act(async () => {
+      resolveGuess({
+        status: "submitted",
+        attempt: snapshot({
+          guesses: [
+            evaluated("CRANE", [
+              "correct",
+              "present",
+              "absent",
+              "absent",
+              "correct",
+            ]),
+          ],
+        }),
+      });
+    });
+
+    expect(screen.getByRole("group", { name: /^Guess 1:/ })).toBeTruthy();
+  });
+
+  it("reveals only an accepted row and delays its keyboard colors until reveal completion", async () => {
+    vi.useFakeTimers();
+    controllerMocks.requestGuess.mockResolvedValue({
+      status: "submitted",
+      attempt: snapshot({
+        guesses: [
+          evaluated("CRANE", [
+            "correct",
+            "present",
+            "absent",
+            "absent",
+            "correct",
+          ]),
+        ],
+      }),
+    });
+    renderBoard();
+    await act(async () => Promise.resolve());
+    enterOnScreen("CRANE");
+    submitOnScreen();
+    await act(async () => Promise.resolve());
+
+    const submittedRow = screen.getByRole("group", { name: /^Guess 1:/ });
+    const tiles = submittedRow.querySelectorAll("[data-wordle-tile]");
+    expect(
+      Array.from(tiles).every((tile) =>
+        tile.className.includes("wordle-tile-reveal"),
+      ),
+    ).toBe(true);
+    expect(
+      Array.from(tiles, (tile) => (tile as HTMLElement).style.animationDelay),
+    ).toEqual(["0ms", "50ms", "100ms", "150ms", "200ms"]);
+    expect(letterKey("C").getAttribute("aria-label")).toBe("C");
+    expect(
+      (
+        within(keyboard()).getByRole("button", {
+          name: "Enter",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(false);
+
+    act(() => vi.advanceTimersByTime(600));
+
+    expect(letterKey("C").className).toContain("bg-green-700");
+    expect(letterKey("R").className).toContain("bg-amber-500");
+    expect(letterKey("A").className).toContain("bg-neutral-600");
+  });
+
+  it("does not animate historical rows loaded during active or terminal resume", async () => {
+    controllerMocks.requestAttempt.mockResolvedValue({
+      status: "ready",
+      attempt: snapshot({
+        guesses: [
+          evaluated("CRANE", [
+            "correct",
+            "present",
+            "absent",
+            "absent",
+            "correct",
+          ]),
+        ],
+      }),
+    });
+    await renderReadyBoard();
+
+    const tiles = screen
+      .getByRole("group", { name: /^Guess 1:/ })
+      .querySelectorAll("[data-wordle-tile]");
+    expect(
+      Array.from(tiles).every(
+        (tile) => !tile.className.includes("wordle-tile-reveal"),
+      ),
+    ).toBe(true);
+    expect(letterKey("C").className).toContain("bg-green-700");
+  });
+
+  it("preserves an invalid word and authoritative keyboard state until successful editing", async () => {
+    controllerMocks.requestGuess.mockResolvedValue({
+      status: "error",
+      error: "invalid_word",
+      attempt: snapshot(),
+    });
+    await renderReadyBoard();
+    enterOnScreen("QZXQZ");
+    submitOnScreen();
+
+    expect(await screen.findByText("Not in word list.")).toBeTruthy();
+    expect(
+      screen.getByRole("group", { name: "Current guess: QZXQZ" }),
+    ).toBeTruthy();
+    expect(controllerMocks.requestGuess).toHaveBeenCalledWith(
+      initialAttemptId,
+      { guess: "QZXQZ", version: 0 },
+    );
+    expect(letterKey("Q").getAttribute("data-status")).toBe("unused");
+
+    fireEvent.click(
+      within(keyboard()).getByRole("button", { name: "Backspace" }),
+    );
+    expect(screen.queryByText("Not in word list.")).toBeNull();
+    expect(
+      screen.getByRole("group", { name: "Current guess: QZXQ" }),
+    ).toBeTruthy();
+  });
+
+  it("reconciles stale state without animation and preserves a playable typed word", async () => {
+    controllerMocks.requestGuess.mockResolvedValue({
+      status: "error",
+      error: "stale_attempt",
+      attempt: snapshot({
+        guesses: [
+          evaluated("CRANE", [
+            "correct",
+            "present",
+            "absent",
+            "absent",
+            "correct",
+          ]),
+        ],
+      }),
+    });
+    await renderReadyBoard();
+    enterOnScreen("BLOAT");
+    submitOnScreen();
+
+    expect(
+      await screen.findByText(
+        "Your game was updated. Review your word and try again.",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("group", { name: "Current guess: BLOAT" }),
+    ).toBeTruthy();
+    expect(
+      screen
+        .getByRole("group", { name: /^Guess 1:/ })
+        .querySelector(".wordle-tile-reveal"),
+    ).toBeNull();
+  });
+
+  it("preserves the typed word and authoritative snapshot on network failure", async () => {
+    controllerMocks.requestGuess.mockRejectedValue(new Error("offline"));
+    await renderReadyBoard();
+    enterOnScreen("CRANE");
+    submitOnScreen();
+
+    expect(
+      await screen.findByText(
+        "We couldn’t submit that guess. Your word is still here; try again.",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("group", { name: "Current guess: CRANE" }),
+    ).toBeTruthy();
+    expect(
+      (
+        within(keyboard()).getByRole("button", {
+          name: "Enter",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(false);
+  });
+
+  it("renders authoritative win and sixth-attempt win snapshots without a separate answer", async () => {
+    const fiveMisses = Array.from({ length: 5 }, () =>
+      evaluated("BLOAT", ["absent", "absent", "absent", "absent", "absent"]),
+    );
+    controllerMocks.requestAttempt.mockResolvedValue({
+      status: "ready",
+      attempt: snapshot({
+        status: "won",
+        guesses: [
+          ...fiveMisses,
+          evaluated("CRANE", [
+            "correct",
+            "correct",
+            "correct",
+            "correct",
+            "correct",
+          ]),
+        ],
+      }),
+    });
+    await renderReadyBoard();
+
+    expect(screen.getByRole("status").textContent).toBe("You got it!");
+    expect(screen.queryByText(/answer was/i)).toBeNull();
+    expect(screen.getAllByRole("group", { name: /^Guess \d:/ })).toHaveLength(
+      6,
+    );
+    expect(screen.getByRole("link", { name: "Next Word" })).toBeTruthy();
+  });
+
+  it("renders an authoritative loss answer and clears obsolete input on terminal reconciliation", async () => {
+    const loss = snapshot({
+      status: "lost",
+      revealedAnswer: "CRANE",
+      guesses: Array.from({ length: 6 }, () =>
+        evaluated("BLOAT", ["absent", "absent", "absent", "absent", "absent"]),
+      ),
+    });
+    controllerMocks.requestGuess.mockResolvedValue({
+      status: "error",
+      error: "invalid_action",
+      attempt: loss,
+    });
+    await renderReadyBoard();
+    enterOnScreen("BLOAT");
+    submitOnScreen();
+
+    expect(
+      await screen.findByText("Game over. The answer was CRANE."),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("group", { name: "Current guess: BLOAT" }),
+    ).toBeNull();
+    expect(screen.getByRole("link", { name: "Next Word" })).toBeTruthy();
+  });
+
+  it("keeps correct over present over absent keyboard precedence from authoritative evaluations", async () => {
+    controllerMocks.requestAttempt.mockResolvedValue({
+      status: "ready",
+      attempt: snapshot({
+        guesses: [
+          evaluated("ALLEY", [
+            "absent",
+            "present",
+            "absent",
+            "absent",
+            "absent",
+          ]),
+          evaluated("BLOAT", [
+            "absent",
+            "correct",
+            "absent",
+            "absent",
+            "absent",
+          ]),
+          evaluated("SLATE", [
+            "absent",
+            "present",
+            "absent",
+            "absent",
+            "absent",
+          ]),
+        ],
+      }),
+    });
+    await renderReadyBoard();
+
+    const correctL = within(keyboard()).getByRole("button", {
+      name: "L, correct",
+    });
+    expect(correctL.className).toContain("bg-green-700");
+    expect(letterKey("A").className).toContain("bg-neutral-600");
+  });
+
+  it("uses larger mobile touch targets without changing horizontal flex sizing", async () => {
+    await renderReadyBoard();
+
+    const letter = letterKey("Q");
+    const enter = within(keyboard()).getByRole("button", { name: "Enter" });
+    const backspace = within(keyboard()).getByRole("button", {
+      name: "Backspace",
+    });
+
+    for (const key of [letter, enter, backspace]) {
+      expect(key.className).toContain("min-h-14");
+      expect(key.className).toContain("sm:min-h-12");
+      expect(key.className).toContain("touch-manipulation");
+      expect(key.className).toContain("min-w-0");
+    }
+  });
+
+  it("ignores shortcuts and keyboard events from interactive controls", async () => {
+    await renderReadyBoard();
+    fireEvent.keyDown(window, { key: "C", ctrlKey: true });
+    fireEvent.keyDown(window, { key: "A", altKey: true });
+    const enter = within(keyboard()).getByRole("button", { name: "Enter" });
+    enter.focus();
+    fireEvent.keyDown(enter, { key: "Enter" });
+
+    expect(
+      screen.getByRole("group", { name: "Current guess is empty" }),
+    ).toBeTruthy();
+    expect(controllerMocks.requestGuess).not.toHaveBeenCalled();
+  });
+});
+
+function board(
+  overrides: Partial<{
+    startMode: "resume" | "new";
+    initializationRequest: string;
+  }> = {},
+) {
+  const startMode = overrides.startMode ?? "resume";
+
+  return (
+    <WordleGameBoard
+      puzzle={puzzle}
+      startMode={startMode}
+      initializationRequest={overrides.initializationRequest ?? startMode}
+      canonicalHref={canonicalHref}
+      nextWordHref={nextWordHref}
+    />
   );
 }
 
-afterEach(cleanup);
+function renderBoard(
+  overrides: Partial<{
+    startMode: "resume" | "new";
+    initializationRequest: string;
+  }> = {},
+) {
+  return render(board(overrides));
+}
+
+async function renderReadyBoard() {
+  const result = renderBoard();
+  await expectReadyBoard();
+  return result;
+}
+
+async function expectReadyBoard() {
+  return screen.findByRole("group", { name: "Wordle board" });
+}
 
 function keyboard() {
   return screen.getByRole("group", { name: "On-screen keyboard" });
@@ -34,390 +648,45 @@ function letterKey(letter: string) {
   });
 }
 
-function enterWithOnScreenKeyboard(guess: string) {
+function enterOnScreen(guess: string) {
   for (const letter of guess) {
     fireEvent.click(letterKey(letter));
   }
 }
 
-function submitWithOnScreenKeyboard() {
+function submitOnScreen() {
   fireEvent.click(within(keyboard()).getByRole("button", { name: "Enter" }));
 }
 
-describe("WordleGameBoard", () => {
-  it("always renders six rows with five tiles each", () => {
-    renderWordleGameBoard();
-
-    const board = screen.getByRole("group", { name: "Wordle board" });
-
-    expect(board.querySelectorAll("[data-wordle-row]")).toHaveLength(6);
-    expect(board.querySelectorAll("[data-wordle-tile]")).toHaveLength(30);
-  });
-
-  it("renders readable special keys with a compact accessible Backspace control", () => {
-    renderWordleGameBoard();
-
-    const enterKey = within(keyboard()).getByRole("button", { name: "Enter" });
-    const backspaceKey = within(keyboard()).getByRole("button", {
-      name: "Backspace",
-    });
-
-    expect(enterKey.textContent).toBe("Enter");
-    expect(enterKey.className).toContain("bg-neutral-200");
-    expect(enterKey.className).toContain("text-neutral-950");
-    expect(enterKey.className).toContain("text-[9px]");
-    expect(backspaceKey.textContent).toBe("⌫");
-    expect(backspaceKey.getAttribute("aria-label")).toBe("Backspace");
-    expect(backspaceKey.className).toContain("text-neutral-950");
-  });
-
-  it("enters uppercase letters and enforces the five-letter cap", () => {
-    renderWordleGameBoard();
-
-    enterWithOnScreenKeyboard("cranes");
-
-    expect(
-      screen.getByRole("group", { name: "Current guess: CRANE" }),
-    ).toBeTruthy();
-  });
-
-  it("renders theme-aware current letters and instruction text", () => {
-    renderWordleGameBoard();
-
-    enterWithOnScreenKeyboard("C");
-
-    const currentRow = screen.getByRole("group", {
-      name: "Current guess: C",
-    });
-    const tiles = currentRow.querySelectorAll("[data-wordle-tile]");
-
-    expect(tiles[0]!.textContent).toBe("C");
-    expect(tiles[0]!.className).toContain("text-foreground");
-    expect(tiles[0]!.className).toContain("dark:border-neutral-300");
-    expect(tiles[0]!.className).not.toContain("text-white");
-    expect(tiles[0]!.getAttribute("data-status")).toBe("unsubmitted");
-    expect(tiles[1]!.textContent).toBe("");
-    expect(tiles[1]!.className).toContain("border-neutral-300");
-    expect(
-      screen.getByText("Guess the five-letter word in six attempts.").className,
-    ).toContain("dark:text-neutral-400");
-  });
-
-  it("removes the final current letter with Backspace", () => {
-    renderWordleGameBoard();
-
-    enterWithOnScreenKeyboard("CRAN");
-    fireEvent.click(
-      within(keyboard()).getByRole("button", { name: "Backspace" }),
-    );
-
-    expect(
-      screen.getByRole("group", { name: "Current guess: CRA" }),
-    ).toBeTruthy();
-  });
-
-  it("retriggerably shakes an incomplete row and clears the presentation on letter entry", () => {
-    renderWordleGameBoard();
-
-    enterWithOnScreenKeyboard("CRA");
-    submitWithOnScreenKeyboard();
-
-    expect(screen.getByRole("status").textContent).toBe("Not enough letters");
-    const firstShakingRow = screen.getByRole("group", {
-      name: "Current guess: CRA",
-    });
-
-    expect(firstShakingRow.className).toContain("wordle-row-shake");
-    expect(screen.queryByRole("group", { name: /^Guess 1:/ })).toBeNull();
-
-    submitWithOnScreenKeyboard();
-
-    const retriggeredShakingRow = screen.getByRole("group", {
-      name: "Current guess: CRA",
-    });
-
-    expect(retriggeredShakingRow).not.toBe(firstShakingRow);
-    expect(retriggeredShakingRow.className).toContain("wordle-row-shake");
-
-    fireEvent.click(letterKey("N"));
-
-    expect(screen.getByRole("status").textContent).toBe("");
-    const editedRow = screen.getByRole("group", {
-      name: "Current guess: CRAN",
-    });
-
-    expect(editedRow.className).not.toContain("wordle-row-shake");
-  });
-
-  it("clears incomplete feedback on Backspace", () => {
-    renderWordleGameBoard();
-
-    enterWithOnScreenKeyboard("CRA");
-    submitWithOnScreenKeyboard();
-
-    expect(screen.getByText("Not enough letters")).toBeTruthy();
-
-    fireEvent.click(
-      within(keyboard()).getByRole("button", { name: "Backspace" }),
-    );
-
-    expect(screen.queryByText("Not enough letters")).toBeNull();
-    expect(
-      screen.getByRole("group", { name: "Current guess: CR" }),
-    ).toBeTruthy();
-  });
-
-  it("keeps incomplete feedback cleared after a successful submission", () => {
-    renderWordleGameBoard();
-
-    enterWithOnScreenKeyboard("CREA");
-    submitWithOnScreenKeyboard();
-
-    expect(screen.getByText("Not enough letters")).toBeTruthy();
-
-    fireEvent.click(letterKey("M"));
-    submitWithOnScreenKeyboard();
-
-    expect(screen.queryByText("Not enough letters")).toBeNull();
-    expect(
-      screen.getByRole("group", {
-        name: "Guess 1: C correct, R correct, E present, A present, M absent",
-      }),
-    ).toBeTruthy();
-  });
-
-  it("submits stored evaluations, clears input, and updates key statuses", () => {
-    renderWordleGameBoard();
-
-    enterWithOnScreenKeyboard("CREAM");
-    submitWithOnScreenKeyboard();
-
-    expect(
-      screen.getByRole("group", {
-        name: "Guess 1: C correct, R correct, E present, A present, M absent",
-      }),
-    ).toBeTruthy();
-    expect(
-      screen.getByRole("group", { name: "Current guess is empty" }),
-    ).toBeTruthy();
-    const correctKey = within(keyboard()).getByRole("button", {
-      name: "C, correct",
-    });
-    const presentKey = within(keyboard()).getByRole("button", {
-      name: "E, present",
-    });
-    const absentKey = within(keyboard()).getByRole("button", {
-      name: "M, absent",
-    });
-
-    expect(correctKey.className).toContain("bg-neutral-300");
-    expect(presentKey.className).toContain("bg-neutral-300");
-    expect(absentKey.className).toContain("bg-neutral-600");
-  });
-
-  it("reveals only the newest submitted row with staggered tile delays", () => {
-    renderWordleGameBoard();
-
-    enterWithOnScreenKeyboard("CREAM");
-    submitWithOnScreenKeyboard();
-
-    const firstSubmittedRow = screen.getByRole("group", {
-      name: /^Guess 1:/,
-    });
-    const firstRowTiles =
-      firstSubmittedRow.querySelectorAll("[data-wordle-tile]");
-
-    expect(
-      Array.from(firstRowTiles, (tile) => tile.className).every((className) =>
-        className.includes("wordle-tile-reveal"),
-      ),
-    ).toBe(true);
-    expect(
-      Array.from(
-        firstRowTiles,
-        (tile) => (tile as HTMLElement).style.animationDelay,
-      ),
-    ).toEqual(["0ms", "50ms", "100ms", "150ms", "200ms"]);
-
-    enterWithOnScreenKeyboard("BLOAT");
-    submitWithOnScreenKeyboard();
-
-    const olderRowTiles = screen
-      .getByRole("group", { name: /^Guess 1:/ })
-      .querySelectorAll("[data-wordle-tile]");
-    const newestRowTiles = screen
-      .getByRole("group", { name: /^Guess 2:/ })
-      .querySelectorAll("[data-wordle-tile]");
-
-    expect(
-      Array.from(olderRowTiles, (tile) => tile.className).every(
-        (className) => !className.includes("wordle-tile-reveal"),
-      ),
-    ).toBe(true);
-    expect(
-      Array.from(newestRowTiles, (tile) => tile.className).every((className) =>
-        className.includes("wordle-tile-reveal"),
-      ),
-    ).toBe(true);
-  });
-
-  it("keeps the strongest observed keyboard status", () => {
-    renderWordleGameBoard({
-      id: "keyboard-status-puzzle",
-      answer: "APPLE",
-    });
-
-    enterWithOnScreenKeyboard("ALLEY");
-    submitWithOnScreenKeyboard();
-
-    expect(
-      within(keyboard()).getByRole("button", { name: "L, present" }),
-    ).toBeTruthy();
-
-    enterWithOnScreenKeyboard("ZZZLZ");
-    submitWithOnScreenKeyboard();
-
-    expect(
-      within(keyboard()).getByRole("button", { name: "L, correct" }),
-    ).toBeTruthy();
-
-    enterWithOnScreenKeyboard("ALLEY");
-    submitWithOnScreenKeyboard();
-
-    expect(
-      within(keyboard()).getByRole("button", { name: "L, correct" }),
-    ).toBeTruthy();
-  });
-
-  it("uses physical letter, Backspace, and Enter input", () => {
-    renderWordleGameBoard();
-
-    for (const key of ["c", "r", "a"]) {
-      fireEvent.keyDown(window, { key });
-    }
-
-    fireEvent.keyDown(window, { key: "Backspace" });
-
-    for (const key of ["a", "n", "e"]) {
-      fireEvent.keyDown(window, { key });
-    }
-
-    expect(
-      screen.getByRole("group", { name: "Current guess: CRANE" }),
-    ).toBeTruthy();
-
-    fireEvent.keyDown(window, { key: "Enter" });
-
-    expect(
-      screen.getByRole("group", {
-        name: "Guess 1: C correct, R correct, A correct, N correct, E correct",
-      }),
-    ).toBeTruthy();
-
-    for (const button of within(keyboard()).getAllByRole("button")) {
-      expect((button as HTMLButtonElement).disabled).toBe(true);
-    }
-  });
-
-  it("shows a win while keeping the completed board and disabled keyboard visible", () => {
-    renderWordleGameBoard();
-
-    enterWithOnScreenKeyboard("CRANE");
-    submitWithOnScreenKeyboard();
-
-    expect(screen.getByRole("status").textContent).toBe("You got it!");
-    expect(screen.getByRole("group", { name: "Wordle board" })).toBeTruthy();
-    expect(keyboard()).toBeTruthy();
-    const nextWordLink = screen.getByRole("link", { name: "Next Word" });
-
-    expect(nextWordLink.getAttribute("href")).toBe(nextWordHref);
-
-    for (const button of within(keyboard()).getAllByRole("button")) {
-      expect((button as HTMLButtonElement).disabled).toBe(true);
-    }
-
-    fireEvent.keyDown(window, { key: "A" });
-
-    expect(
-      screen.getByRole("group", { name: "Current guess is empty" }),
-    ).toBeTruthy();
-  });
-
-  it("shows a loss and reveals the answer after the sixth unsuccessful guess", () => {
-    renderWordleGameBoard({ id: "loss-puzzle", answer: "APPLE" });
-
-    for (let attempt = 0; attempt < 6; attempt += 1) {
-      enterWithOnScreenKeyboard("CRANE");
-      submitWithOnScreenKeyboard();
-    }
-
-    expect(screen.getByRole("status").textContent).toBe(
-      "Game over. The answer was APPLE.",
-    );
-    expect(screen.getAllByRole("group", { name: /^Guess \d:/ })).toHaveLength(
-      6,
-    );
-    expect(screen.getByRole("group", { name: "Wordle board" })).toBeTruthy();
-    expect(keyboard()).toBeTruthy();
-    const nextWordLink = screen.getByRole("link", { name: "Next Word" });
-
-    expect(nextWordLink.getAttribute("href")).toBe(nextWordHref);
-
-    for (const button of within(keyboard()).getAllByRole("button")) {
-      expect((button as HTMLButtonElement).disabled).toBe(true);
-    }
-
-    fireEvent.keyDown(window, { key: "A" });
-
-    expect(screen.getAllByRole("group", { name: /^Guess \d:/ })).toHaveLength(
-      6,
-    );
-  });
-
-  it("ignores Ctrl, Alt, and Meta keyboard shortcuts", () => {
-    renderWordleGameBoard();
-
-    fireEvent.keyDown(window, { key: "c", ctrlKey: true });
-    fireEvent.keyDown(window, { key: "a", altKey: true });
-    fireEvent.keyDown(window, { key: "r", metaKey: true });
-
-    expect(
-      screen.getByRole("group", { name: "Current guess is empty" }),
-    ).toBeTruthy();
-  });
-
-  it("does not apply a global action for keyboard events on a focused button", () => {
-    renderWordleGameBoard();
-
-    enterWithOnScreenKeyboard("CREAM");
-    const focusedLetterKey = letterKey("C");
-
-    focusedLetterKey.focus();
-    fireEvent.keyDown(focusedLetterKey, { key: "Enter" });
-    fireEvent.click(focusedLetterKey);
-
-    expect(
-      screen.getByRole("group", { name: "Current guess: CREAM" }),
-    ).toBeTruthy();
-    expect(screen.queryByRole("group", { name: /^Guess 1:/ })).toBeNull();
-  });
-
-  it("does not apply global Wordle input to an editable control", () => {
-    render(
-      <>
-        <input aria-label="Separate text input" />
-        <WordleGameBoard puzzle={testPuzzle} nextWordHref={nextWordHref} />
-      </>,
-    );
-
-    const textInput = screen.getByRole("textbox", {
-      name: "Separate text input",
-    });
-
-    fireEvent.keyDown(textInput, { key: "A" });
-
-    expect(
-      screen.getByRole("group", { name: "Current guess is empty" }),
-    ).toBeTruthy();
-  });
-});
+function evaluated(
+  guess: string,
+  statuses: WordleLetterStatus[],
+): WordleSubmittedGuess {
+  return {
+    guess,
+    evaluation: [...guess].map((letter, index) => ({
+      letter,
+      status: statuses[index]!,
+    })),
+  };
+}
+
+function snapshot({
+  attemptId = initialAttemptId,
+  guesses = [],
+  status = "playing",
+  revealedAnswer,
+}: {
+  attemptId?: string;
+  guesses?: WordleSubmittedGuess[];
+  status?: WordleAttemptSnapshot["gameStatus"];
+  revealedAnswer?: string;
+} = {}): WordleAttemptSnapshot {
+  return {
+    attemptId,
+    version: guesses.length,
+    submittedGuesses: guesses,
+    gameStatus: status,
+    ...(revealedAnswer ? { revealedAnswer } : {}),
+  };
+}

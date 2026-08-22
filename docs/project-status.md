@@ -4,7 +4,7 @@ Last updated: 2026-08-22
 
 ## Current milestone
 
-**M6 - Server-Authoritative Gameplay: in progress (Wordle backend implementation)**
+**M6 - Server-Authoritative Gameplay: in progress (final Wordle client cutover)**
 
 M1, the Connections Prototype milestone, is complete.
 
@@ -87,9 +87,14 @@ M6 Issue 3 cuts the Connections client over to authoritative Attempts and
 removes the unrevealed solution from the browser boundary. The cutover and its
 post-deployment database round-trip optimization are complete.
 
-M6 Issue 4 adds the server-authoritative Wordle backend, persistent Wordle
-Attempts, and server-only accepted-guess validation. Implementation and
-validation are in progress; the Wordle client cutover remains a separate final
+M6 Issue 4 added the server-authoritative Wordle backend, persistent Wordle
+Attempts, and server-only accepted-guess validation. Issue 4 is complete and
+merged.
+
+M6 Issue 5 cuts the Wordle client over to authoritative Attempts and removes
+the hidden answer from browser-facing route props and render payloads.
+Implementation and the complete local validation gate are finished. Merge is
+still pending, so Issue 5 and M6 remain in progress. This is the final planned
 M6 issue.
 
 Final reaction behavior:
@@ -1317,10 +1322,7 @@ Issue 4 backend implementation:
 - Added Wordle-specific Route Handlers and database/content/domain/service/route
   tests without changing the existing Wordle client, routes, board, or keyboard.
 
-Issue 4 remains in progress until the complete local validation gate and merge
-are complete. The current Wordle browser still receives and evaluates the
-answer; the final client-cutover issue will remove that exposure and adopt
-these APIs.
+Issue 4 is complete and merged. Issue 5 owns the browser cutover to these APIs.
 
 Issue 4 implementation validation completed in the Codex environment:
 
@@ -1331,6 +1333,43 @@ Issue 4 implementation validation completed in the Codex environment:
   lint, 201 pgTAP assertions, and generated-type drift verification.
 - Format, format check, lint, typecheck, production build, `git diff --check`,
   and scope review passed.
+
+## M6 issue 5 - Cut Wordle client over to server-authoritative gameplay
+
+Issue 5 implementation:
+
+- Changed the dynamic Wordle route to load only a public-ID preview; the route,
+  board, controller, and initial render payload no longer receive the answer.
+- Added a Wordle-specific browser transport with runtime validation for
+  sanitized authoritative Attempt and error snapshots.
+- Reworked `useWordleGame` around `WordleAttemptSnapshot`; only current input,
+  feedback, request state, shake, and reveal timing remain client-local.
+- Gated initialization on anonymous Player readiness and added retryable
+  initialization/submission failures without client-authority fallback.
+- Added explicit resume/new lifecycle handling, unique selected-game request
+  markers for repeated same-puzzle initialization, and successful-only URL
+  canonicalization.
+- Preserved server-accepted row reveal while delaying its authoritative
+  keyboard colors until reveal completion. Restored green correct, amber
+  present, gray absent, and neutral unused key presentation with status
+  precedence.
+- Added invalid-word feedback that preserves editable input and consumes no
+  displayed Attempt, plus larger mobile keyboard touch targets without changing
+  horizontal flex behavior.
+
+Issue 5 implementation validation completed:
+
+- All 39 focused Wordle content, selector, API-client, and board/controller
+  tests passed.
+- All 244 unit/component tests passed.
+- All 27 targeted Wordle Playwright tests passed across Chromium, Firefox, and
+  WebKit.
+- The complete Playwright suite passed all 54 tests: 18 each in Chromium,
+  Firefox, and WebKit.
+- Format, format check, lint, typecheck, production build, `git diff --check`,
+  and scope review passed.
+
+Issue 5 and M6 remain in progress until merge is complete.
 
 ## M5 issue 1 non-goals and deferred work
 
@@ -1408,5 +1447,5 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Complete and merge the Wordle authoritative backend, then begin the separate
-Wordle client cutover. Do not start scoring or leaderboard work.
+Merge the validated final Wordle client authority cutover. Do not begin
+scoring, leaderboards, or another milestone yet.

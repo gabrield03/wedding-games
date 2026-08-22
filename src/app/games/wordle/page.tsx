@@ -11,6 +11,9 @@ export default async function WordleEntryPage({
   const { exclude } = await searchParams;
   const excludedPuzzleId = typeof exclude === "string" ? exclude : undefined;
   const puzzleId = await selectRandomWordlePuzzleId(excludedPuzzleId);
+  const initializationRequest = crypto.randomUUID();
 
-  redirect(`/games/wordle/${puzzleId}`);
+  redirect(
+    `/games/wordle/${encodeURIComponent(puzzleId)}?start=new&request=${initializationRequest}`,
+  );
 }

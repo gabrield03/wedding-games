@@ -4,8 +4,9 @@ A mobile-first web platform for personalized wedding games, built as a meaningfu
 
 ## Project Status
 
-**M5 - Backend Foundation & Anonymous Sessions** is in its final workflow-
-hardening issue. M4 and M5 Issues 1-5 are complete.
+**M6 - Server-Authoritative Gameplay** is in its final Wordle client-cutover
+issue. The authoritative Connections implementation and Wordle backend are
+complete.
 
 The application includes a game-selection home page and two complete playable
 games at:
@@ -25,8 +26,8 @@ completed work, and immediate next step.
 - Complete Connections-style gameplay, including feedback, terminal states,
   and restart behavior
 - Complete Wordle-style gameplay with physical and on-screen keyboards,
-  duplicate-aware evaluation, terminal states, Next Word navigation, and
-  interaction polish
+  server-side accepted-word validation and duplicate-aware evaluation,
+  terminal states, Next Word navigation, and interaction polish
 - Responsive, keyboard-accessible interactions and reduced-motion support
 - Dynamic Connections and Wordle puzzle routes
 - Event-scoped Connections and Wordle content in PostgreSQL behind separate
@@ -39,6 +40,9 @@ completed work, and immediate next step.
   data, Event-scoped Player schema, row-level security, and pgTAP tests
 - Silent cookie-backed anonymous Auth and idempotent event-scoped Player
   bootstrap
+- Event- and Player-owned Connections and Wordle Attempts with authoritative
+  server-side evaluation, optimistic concurrency, and solution-hiding browser
+  boundaries
 - CI validation of clean database reconstruction, database lint, pgTAP, and
   generated database-type drift using only local Supabase
 
@@ -53,8 +57,7 @@ completed work, and immediate next step.
 ## Planned Features
 
 - Personalized production puzzle content
-- Persistent attempts and scores
-- Server-authoritative competitive gameplay
+- Persistent scores
 - Leaderboards
 - Additional game types when concrete requirements justify shared platform
   abstractions
@@ -80,14 +83,12 @@ does not use a universal game-engine, repository, or game-registry abstraction.
 components. Game content, domains, controllers, boards, loaders, and routes
 remain game-specific.
 
-The approved M5 direction uses Supabase anonymous Auth identity, a separate
-event-scoped Player, and a server-configured current Event. M5 preserves replay
-and keeps attempts, scoring, and server-authoritative gameplay deferred.
-The current implementation establishes cookie-backed anonymous Auth, trusted
-Event resolution, silent idempotent Player bootstrap for game routes, and
-event-scoped Connections and Wordle content loaded from PostgreSQL. Wordle
-selection runs server-side within the trusted current Event. Gameplay results
-remain client-computed and unpersisted.
+The current implementation uses Supabase anonymous Auth identity, a separate
+event-scoped Player, and a server-configured current Event. Connections and
+Wordle content and Attempts are persisted independently in PostgreSQL. Both
+games resolve trusted Event/Player ownership and evaluate gameplay on the
+server; browser controllers retain only input and presentation state. Wordle
+selection runs server-side within the trusted current Event.
 
 See [`docs/architecture.md`](docs/architecture.md) for the broader system
 direction and [`docs/adr/`](docs/adr/) for accepted architectural decisions.
