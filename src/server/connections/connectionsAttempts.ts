@@ -7,9 +7,10 @@ import type {
   ConnectionsGuessOutcome,
 } from "@/contracts/connections";
 import {
-  getConnectionsPuzzleByDatabaseIdForEvent,
+  decodeStoredConnectionsPuzzle,
   getConnectionsPuzzleForEvent,
   type StoredConnectionsPuzzle,
+  type StoredConnectionsPuzzleRow,
 } from "@/content/connections/getConnectionsPuzzle";
 import {
   applyGuessResult,
@@ -31,6 +32,8 @@ import type { Json, Tables } from "@/types/database.generated";
 
 const ATTEMPT_COLUMNS =
   "id, event_id, player_id, puzzle_id, tile_map, solved_group_ids, incorrect_guesses, version, created_at, updated_at, completed_at";
+const ATTEMPT_WITH_PUZZLE_COLUMNS =
+  "id, event_id, player_id, puzzle_id, tile_map, solved_group_ids, incorrect_guesses, version, created_at, updated_at, completed_at, puzzle:connections_puzzles!connections_attempts_puzzle_fkey(id, event_id, public_id, title, groups)";
 const ACTIVE_ATTEMPT_INDEX =
   "connections_attempts_one_active_per_player_puzzle_idx";
 const UUID_PATTERN =
@@ -50,6 +53,10 @@ type ConnectionsAttemptRow = Pick<
   | "updated_at"
   | "version"
 >;
+
+type ConnectionsAttemptWithPuzzleRow = ConnectionsAttemptRow & {
+  puzzle: StoredConnectionsPuzzleRow | null;
+};
 
 type StoredTileMapping = {
   token: string;
@@ -200,26 +207,20 @@ export async function submitConnectionsGuess({
   tileIds,
   version,
 }: SubmitConnectionsGuessInput): Promise<SubmitConnectionsGuessResult> {
-  const attempt = await measureLatencyStage("attemptLookup", () =>
-    loadAttempt({
+  const loaded = await measureLatencyStage("attemptPuzzleLookup", () =>
+    loadAttemptWithPuzzle({
       attemptId,
       eventId: player.eventId,
       playerId: player.id,
     }),
   );
 
-  if (!attempt) {
+  if (!loaded) {
     setLatencyOutcome("not_found");
     return { status: "not_found" };
   }
 
-  const storedPuzzle = await measureLatencyStage("puzzleLookup", () =>
-    getConnectionsPuzzleByDatabaseIdForEvent(player.eventId, attempt.puzzle_id),
-  );
-
-  if (!storedPuzzle) {
-    throw new Error("Failed to resolve the Connections Attempt puzzle.");
-  }
+  const { attempt, storedPuzzle } = loaded;
 
   const decodedAttempt = measureLatencyStageSync("initialStateDecode", () =>
     decodeAttempt(attempt, storedPuzzle.puzzle),
@@ -488,6 +489,46 @@ async function loadAttempt({
   }
 
   return data;
+}
+
+async function loadAttemptWithPuzzle({
+  attemptId,
+  eventId,
+  playerId,
+}: {
+  attemptId: string;
+  eventId: string;
+  playerId: string;
+}): Promise<{
+  attempt: ConnectionsAttemptRow;
+  storedPuzzle: StoredConnectionsPuzzle;
+} | null> {
+  const { data, error } = await getPrivilegedSupabaseClient()
+    .from("connections_attempts")
+    .select(ATTEMPT_WITH_PUZZLE_COLUMNS)
+    .eq("id", attemptId)
+    .eq("event_id", eventId)
+    .eq("player_id", playerId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error("Failed to load the Connections Attempt and puzzle.");
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  const { puzzle, ...attempt } = data as ConnectionsAttemptWithPuzzleRow;
+
+  if (!puzzle) {
+    throw new Error("Connections Attempt is missing its authoritative puzzle.");
+  }
+
+  return {
+    attempt,
+    storedPuzzle: decodeStoredConnectionsPuzzle(puzzle),
+  };
 }
 
 function createTileMap(puzzle: ConnectionsPuzzle): StoredTileMapping[] {

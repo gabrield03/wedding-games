@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { StoredConnectionsPuzzleRow } from "@/content/connections/getConnectionsPuzzle";
 import type { ConnectionsPuzzle } from "@/domain/connections/types";
 import type { Json, Tables } from "@/types/database.generated";
 import { testConnectionsPuzzle } from "../../../fixtures/connections";
 
 const contentMocks = vi.hoisted(() => ({
-  byDatabaseId: vi.fn(),
   byPublicId: vi.fn(),
+  decodeStored: vi.fn(),
 }));
 const privilegedMocks = vi.hoisted(() => ({
   getClient: vi.fn(),
@@ -32,7 +33,7 @@ vi.mock("node:crypto", async (importOriginal) => {
   };
 });
 vi.mock("@/content/connections/getConnectionsPuzzle", () => ({
-  getConnectionsPuzzleByDatabaseIdForEvent: contentMocks.byDatabaseId,
+  decodeStoredConnectionsPuzzle: contentMocks.decodeStored,
   getConnectionsPuzzleForEvent: contentMocks.byPublicId,
 }));
 vi.mock("@/server/supabase/privileged", () => ({
@@ -64,6 +65,13 @@ const storedPuzzle = {
   databaseId: puzzleDatabaseId,
   eventId,
   puzzle: testConnectionsPuzzle,
+};
+const storedPuzzleRow: StoredConnectionsPuzzleRow = {
+  event_id: eventId,
+  groups: testConnectionsPuzzle.groups as unknown as Json,
+  id: puzzleDatabaseId,
+  public_id: testConnectionsPuzzle.id,
+  title: testConnectionsPuzzle.title,
 };
 
 function token(index: number) {
@@ -98,10 +106,16 @@ function attemptRow(overrides: Partial<AttemptRow> = {}): AttemptRow {
 
 class FakeAttemptStore {
   attempts: AttemptRow[];
+  embeddedPuzzle: StoredConnectionsPuzzleRow | null = storedPuzzleRow;
   insertRaceAttempt: AttemptRow | null = null;
   insertError: { code: string; details: string; message: string } | null = null;
+  selectQueries: Array<{
+    columns: string;
+    filters: Array<[keyof AttemptRow, unknown]>;
+  }> = [];
   updateRaceAttempt: AttemptRow | null = null;
   updateCount = 0;
+  updateFilters: Array<Array<[keyof AttemptRow, unknown]>> = [];
   nextAttemptId = "60000000-0000-4000-8000-000000000099";
 
   constructor(attempts: AttemptRow[] = []) {
@@ -115,7 +129,7 @@ class FakeAttemptStore {
 
         return {
           insert: (value: AttemptInsert) => new FakeInsertQuery(this, value),
-          select: () => new FakeSelectQuery(this),
+          select: (columns: string) => new FakeSelectQuery(this, columns),
           update: (value: Partial<AttemptRow>) =>
             new FakeUpdateQuery(this, value),
         };
@@ -129,7 +143,10 @@ class FakeSelectQuery {
   private completedAtIsNull = false;
   private descending = false;
 
-  constructor(private readonly store: FakeAttemptStore) {}
+  constructor(
+    private readonly store: FakeAttemptStore,
+    private readonly columns: string,
+  ) {}
 
   eq(key: keyof AttemptRow, value: unknown) {
     this.filters.push([key, value]);
@@ -155,6 +172,10 @@ class FakeSelectQuery {
   }
 
   async maybeSingle() {
+    this.store.selectQueries.push({
+      columns: this.columns,
+      filters: [...this.filters],
+    });
     const attempts = this.store.attempts
       .filter((attempt) =>
         this.filters.every(([key, value]) => attempt[key] === value),
@@ -166,7 +187,13 @@ class FakeSelectQuery {
         this.descending ? second.created_at.localeCompare(first.created_at) : 0,
       );
 
-    return { data: attempts[0] ?? null, error: null };
+    const attempt = attempts[0];
+    const data =
+      attempt && this.columns.includes("puzzle:connections_puzzles!")
+        ? { ...attempt, puzzle: this.store.embeddedPuzzle }
+        : attempt;
+
+    return { data: data ?? null, error: null };
   }
 }
 
@@ -233,6 +260,7 @@ class FakeUpdateQuery {
 
   async maybeSingle() {
     this.store.updateCount += 1;
+    this.store.updateFilters.push([...this.filters]);
     const index = this.store.attempts.findIndex((attempt) =>
       this.filters.every(([key, value]) => attempt[key] === value),
     );
@@ -277,7 +305,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   cryptoMocks.nextToken = 1;
   contentMocks.byPublicId.mockResolvedValue(storedPuzzle);
-  contentMocks.byDatabaseId.mockResolvedValue(storedPuzzle);
+  contentMocks.decodeStored.mockReturnValue(storedPuzzle);
 });
 
 describe("startConnectionsAttempt", () => {
@@ -497,6 +525,27 @@ describe("submitConnectionsGuess", () => {
       },
     });
     expect(store.updateCount).toBe(1);
+    expect(store.selectQueries).toEqual([
+      {
+        columns: expect.stringContaining(
+          "puzzle:connections_puzzles!connections_attempts_puzzle_fkey",
+        ),
+        filters: [
+          ["id", attemptId],
+          ["event_id", eventId],
+          ["player_id", playerId],
+        ],
+      },
+    ]);
+    expect(contentMocks.decodeStored).toHaveBeenCalledWith(storedPuzzleRow);
+    expect(store.updateFilters).toEqual([
+      [
+        ["id", attemptId],
+        ["event_id", eventId],
+        ["player_id", playerId],
+        ["version", 0],
+      ],
+    ]);
     expect(JSON.stringify(result)).not.toContain("group-letters");
     expect(JSON.stringify(result)).not.toContain("letter-a");
     expect(JSON.stringify(result)).not.toContain("Numbers");
@@ -722,5 +771,37 @@ describe("submitConnectionsGuess", () => {
         version: 0,
       }),
     ).resolves.toEqual({ status: "not_found" });
+  });
+
+  it("fails safely when the embedded authoritative puzzle is missing or malformed", async () => {
+    const missingStore = installStore(new FakeAttemptStore([attemptRow()]));
+    missingStore.embeddedPuzzle = null;
+
+    await expect(
+      submitConnectionsGuess({
+        player,
+        attemptId,
+        tileIds: publicTokensForGroup(0),
+        version: 0,
+      }),
+    ).rejects.toThrow(
+      "Connections Attempt is missing its authoritative puzzle.",
+    );
+    expect(contentMocks.decodeStored).not.toHaveBeenCalled();
+
+    vi.clearAllMocks();
+    contentMocks.decodeStored.mockImplementationOnce(() => {
+      throw new Error("Connections puzzle failed validation.");
+    });
+    installStore(new FakeAttemptStore([attemptRow()]));
+
+    await expect(
+      submitConnectionsGuess({
+        player,
+        attemptId,
+        tileIds: publicTokensForGroup(0),
+        version: 0,
+      }),
+    ).rejects.toThrow("Connections puzzle failed validation.");
   });
 });

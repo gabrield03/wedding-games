@@ -7,7 +7,7 @@ import { getCurrentEvent } from "@/server/events/getCurrentEvent";
 import { getPrivilegedSupabaseClient } from "@/server/supabase/privileged";
 import type { Json, Tables } from "@/types/database.generated";
 
-type ConnectionsPuzzleRow = Pick<
+export type StoredConnectionsPuzzleRow = Pick<
   Tables<"connections_puzzles">,
   "event_id" | "groups" | "id" | "public_id" | "title"
 >;
@@ -76,7 +76,7 @@ function decodeConnectionsGroups(
 
 function decodeConnectionsPuzzle(
   puzzleId: string,
-  row: ConnectionsPuzzleRow,
+  row: StoredConnectionsPuzzleRow,
 ): ConnectionsPuzzle {
   const puzzle: ConnectionsPuzzle = {
     id: row.public_id,
@@ -138,36 +138,16 @@ export async function getConnectionsPuzzleForEvent(
     return null;
   }
 
-  return {
-    databaseId: data.id,
-    eventId: data.event_id,
-    puzzle: decodeConnectionsPuzzle(puzzleId, data),
-  };
+  return decodeStoredConnectionsPuzzle(data);
 }
 
-export async function getConnectionsPuzzleByDatabaseIdForEvent(
-  eventId: string,
-  databaseId: string,
-): Promise<StoredConnectionsPuzzle | null> {
-  const { data, error } = await getPrivilegedSupabaseClient()
-    .from("connections_puzzles")
-    .select("id, event_id, public_id, title, groups")
-    .eq("event_id", eventId)
-    .eq("id", databaseId)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error("Failed to load the authoritative Connections puzzle.");
-  }
-
-  if (!data) {
-    return null;
-  }
-
+export function decodeStoredConnectionsPuzzle(
+  row: StoredConnectionsPuzzleRow,
+): StoredConnectionsPuzzle {
   return {
-    databaseId: data.id,
-    eventId: data.event_id,
-    puzzle: decodeConnectionsPuzzle(data.public_id, data),
+    databaseId: row.id,
+    eventId: row.event_id,
+    puzzle: decodeConnectionsPuzzle(row.public_id, row),
   };
 }
 

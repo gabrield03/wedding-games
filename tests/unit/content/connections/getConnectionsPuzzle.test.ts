@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  decodeStoredConnectionsPuzzle,
   getConnectionsPuzzleForEvent,
   getConnectionsPuzzlePreview,
 } from "@/content/connections/getConnectionsPuzzle";
@@ -170,6 +171,24 @@ describe("getConnectionsPuzzleForEvent", () => {
       getConnectionsPuzzleForEvent(currentEvent.id, "development-puzzle"),
     ).rejects.toThrow(
       'Failed to load Connections puzzle "development-puzzle".',
+    );
+  });
+});
+
+describe("decodeStoredConnectionsPuzzle", () => {
+  it("decodes and validates a row already loaded by an authoritative service", () => {
+    expect(decodeStoredConnectionsPuzzle(storedPuzzle)).toEqual({
+      databaseId: storedPuzzle.id,
+      eventId: currentEvent.id,
+      puzzle: developmentConnectionsPuzzle,
+    });
+  });
+
+  it("rejects malformed embedded stored content", () => {
+    expect(() =>
+      decodeStoredConnectionsPuzzle({ ...storedPuzzle, groups: [] }),
+    ).toThrow(
+      'Connections puzzle "development-puzzle" failed validation: Puzzle must contain exactly 4 groups',
     );
   });
 });
