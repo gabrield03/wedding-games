@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   decodeStoredWordlePuzzle,
-  getWordlePuzzle,
   getWordlePuzzleForEvent,
   getWordlePuzzlePreview,
 } from "@/content/wordle/getWordlePuzzle";
@@ -39,85 +38,6 @@ const storedPuzzle = {
   public_id: wedding01WordlePuzzle.id,
   answer: wedding01WordlePuzzle.answer,
 };
-
-describe("getWordlePuzzle", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-
-    mocks.getCurrentEvent.mockResolvedValue(currentEvent);
-    mocks.getPrivilegedSupabaseClient.mockReturnValue({ from: mocks.from });
-    mocks.from.mockReturnValue({ select: mocks.select });
-    mocks.select.mockReturnValue({ eq: mocks.eq });
-    mocks.eq.mockReturnValue({ eq: mocks.eq, maybeSingle: mocks.maybeSingle });
-  });
-
-  it("returns a validated puzzle from the configured Event", async () => {
-    mocks.maybeSingle.mockResolvedValue({ data: storedPuzzle, error: null });
-
-    const puzzle = await getWordlePuzzle("wedding-01");
-
-    expect(puzzle).toEqual(wedding01WordlePuzzle);
-    expect(mocks.from).toHaveBeenCalledWith("wordle_puzzles");
-    expect(mocks.select).toHaveBeenCalledWith(
-      "id, event_id, public_id, answer",
-    );
-    expect(mocks.eq).toHaveBeenNthCalledWith(1, "event_id", currentEvent.id);
-    expect(mocks.eq).toHaveBeenNthCalledWith(2, "public_id", "wedding-01");
-  });
-
-  it("returns null when the puzzle is absent from the configured Event", async () => {
-    mocks.maybeSingle.mockResolvedValue({ data: null, error: null });
-
-    const puzzle = await getWordlePuzzle("does-not-exist");
-
-    expect(puzzle).toBeNull();
-    expect(mocks.eq).toHaveBeenNthCalledWith(1, "event_id", currentEvent.id);
-    expect(mocks.eq).toHaveBeenNthCalledWith(2, "public_id", "does-not-exist");
-  });
-
-  it("does not return a same-ID puzzle that is absent from the trusted Event", async () => {
-    mocks.maybeSingle.mockResolvedValue({ data: null, error: null });
-
-    const puzzle = await getWordlePuzzle("wedding-01");
-
-    expect(puzzle).toBeNull();
-    expect(mocks.eq).toHaveBeenNthCalledWith(1, "event_id", currentEvent.id);
-    expect(mocks.eq).toHaveBeenNthCalledWith(2, "public_id", "wedding-01");
-  });
-
-  it("throws validation errors for malformed stored content", async () => {
-    mocks.maybeSingle.mockResolvedValue({
-      data: { ...storedPuzzle, answer: "FOUR" },
-      error: null,
-    });
-
-    await expect(getWordlePuzzle("wedding-01")).rejects.toThrow(
-      'Wordle puzzle "wedding-01" failed validation: Puzzle answer must contain exactly 5 letters',
-    );
-  });
-
-  it("throws a clear loading error when the database query fails", async () => {
-    mocks.maybeSingle.mockResolvedValue({
-      data: null,
-      error: new Error("provider details"),
-    });
-
-    await expect(getWordlePuzzle("wedding-01")).rejects.toThrow(
-      'Failed to load Wordle puzzle "wedding-01".',
-    );
-  });
-
-  it("propagates current Event resolution failures without querying content", async () => {
-    mocks.getCurrentEvent.mockRejectedValue(
-      new Error("Configured Event is unavailable."),
-    );
-
-    await expect(getWordlePuzzle("wedding-01")).rejects.toThrow(
-      "Configured Event is unavailable.",
-    );
-    expect(mocks.from).not.toHaveBeenCalled();
-  });
-});
 
 describe("authoritative Wordle content boundaries", () => {
   beforeEach(() => {
@@ -157,7 +77,7 @@ describe("authoritative Wordle content boundaries", () => {
     );
   });
 
-  it("projects only the public puzzle ID for the later route cutover", async () => {
+  it("projects only the public puzzle ID for the browser route", async () => {
     mocks.maybeSingle.mockResolvedValue({
       data: { public_id: wedding01WordlePuzzle.id },
       error: null,
@@ -170,5 +90,35 @@ describe("authoritative Wordle content boundaries", () => {
     expect(mocks.select).not.toHaveBeenCalledWith(
       expect.stringContaining("answer"),
     );
+  });
+
+  it("returns null when the public puzzle is absent from the trusted Event", async () => {
+    mocks.maybeSingle.mockResolvedValue({ data: null, error: null });
+
+    await expect(getWordlePuzzlePreview("does-not-exist")).resolves.toBeNull();
+    expect(mocks.eq).toHaveBeenNthCalledWith(1, "event_id", currentEvent.id);
+    expect(mocks.eq).toHaveBeenNthCalledWith(2, "public_id", "does-not-exist");
+  });
+
+  it("fails safely when the public preview query fails", async () => {
+    mocks.maybeSingle.mockResolvedValue({
+      data: null,
+      error: new Error("provider details"),
+    });
+
+    await expect(getWordlePuzzlePreview("wedding-01")).rejects.toThrow(
+      'Failed to load Wordle puzzle "wedding-01".',
+    );
+  });
+
+  it("does not query content when current Event resolution fails", async () => {
+    mocks.getCurrentEvent.mockRejectedValue(
+      new Error("Configured Event is unavailable."),
+    );
+
+    await expect(getWordlePuzzlePreview("wedding-01")).rejects.toThrow(
+      "Configured Event is unavailable.",
+    );
+    expect(mocks.from).not.toHaveBeenCalled();
   });
 });

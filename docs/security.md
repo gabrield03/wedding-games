@@ -354,9 +354,25 @@ contents are not returned to the browser. Playing snapshots omit the answer,
 wins reveal it only through the submitted winning guess, and losses explicitly
 include the answer required by the existing product behavior.
 
-This backend does not yet remove the answer from the existing Wordle route or
-client props. That exposure remains temporary until the Wordle client cutover;
-the new API itself is sanitized and provides no client-evaluation fallback.
+## M6 Wordle Client Trust Boundary
+
+The Wordle page resolves only whether a public puzzle ID exists for the trusted
+current Event. It does not load or serialize the answer into page props,
+initial HTML, or React Server Component payloads. The browser receives the
+answer only as the submitted winning word or the explicit `revealedAnswer` in
+an authoritative loss snapshot.
+
+The client waits for anonymous Player bootstrap readiness and sends only the
+public puzzle ID, requested lifecycle mode, Attempt ID, current version, and
+typed five-letter guess. Identity, ownership, evaluations, dictionary
+membership, completion, and answer data are not accepted from the browser.
+Malformed, transport, or backend failures retain the last authoritative state
+and never fall back to client evaluation.
+
+The selected/new URL marker controls lifecycle intent only. It grants no data
+access and cannot override the trusted Event, Player, Attempt ownership, or
+one-active-Attempt database invariant. Every start and guess still passes
+through the authenticated server boundary.
 
 ## Safely Deferred Decisions
 

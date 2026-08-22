@@ -38,15 +38,6 @@ function mapWordlePuzzle(
   return puzzle;
 }
 
-export async function getWordlePuzzle(
-  puzzleId: string,
-): Promise<WordlePuzzle | null> {
-  const event = await getCurrentEvent();
-  const storedPuzzle = await getWordlePuzzleForEvent(event.id, puzzleId);
-
-  return storedPuzzle?.puzzle ?? null;
-}
-
 export async function getWordlePuzzlePreview(
   puzzleId: string,
 ): Promise<WordlePuzzlePreview | null> {

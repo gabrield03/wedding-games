@@ -42,7 +42,7 @@ export function WordleKeyboard({
                 onClick={() => onLetter(letter)}
                 aria-label={status ? `${letter}, ${status}` : letter}
                 data-status={status ?? "unused"}
-                className={`min-w-0 flex-1 rounded px-1 py-3 text-sm font-bold transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base ${getKeyStatusClass(status)}`}
+                className={`min-h-14 min-w-0 flex-1 touch-manipulation rounded px-1 py-2 text-sm font-bold transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-12 sm:text-base ${getKeyStatusClass(status)}`}
               >
                 {letter}
               </button>
@@ -86,7 +86,7 @@ function ActionKey({
       disabled={disabled}
       onClick={onClick}
       aria-label={accessibleLabel}
-      className={`min-w-0 flex-[2] rounded border border-neutral-400 bg-neutral-200 px-0.5 py-3 font-bold text-neutral-950 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${labelSizeClass}`}
+      className={`min-h-14 min-w-0 flex-[2] touch-manipulation rounded border border-neutral-400 bg-neutral-200 px-0.5 py-2 font-bold text-neutral-950 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-12 ${labelSizeClass}`}
     >
       {label}
     </button>
@@ -95,10 +95,12 @@ function ActionKey({
 
 function getKeyStatusClass(status: WordleLetterStatus | undefined): string {
   switch (status) {
+    case "correct":
+      return "bg-green-700 text-white";
+    case "present":
+      return "bg-amber-500 text-neutral-950";
     case "absent":
       return "bg-neutral-600 text-white";
-    case "correct":
-    case "present":
     default:
       return "bg-neutral-300 text-neutral-950";
   }

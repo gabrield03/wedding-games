@@ -35,5 +35,6 @@ export const config = {
     "/games/:path*",
     "/api/player/bootstrap",
     "/api/games/connections/:path*",
+    "/api/games/wordle/:path*",
   ],
 };

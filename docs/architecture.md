@@ -540,10 +540,35 @@ a database request or browser distribution. The Event-owned answer bank remains
 separate, and the authoritative answer is always acceptable even when it is not
 in the general dictionary.
 
-This issue supplies backend capability only. The current Wordle page remains
-client-authoritative and answer-exposing until the following client cutover.
 No generic game service, Attempt repository, or dictionary abstraction is
 introduced.
+
+## M6 Wordle Client Authority Cutover
+
+The Wordle dynamic page projects only the requested current-Event puzzle's
+public ID. The answer remains inside the server-only content and Attempt
+service boundary and is absent from page props and initial React Server
+Component payloads. The browser starts or resumes play only after anonymous
+Player bootstrap readiness and stores the sanitized `WordleAttemptSnapshot` as
+its authoritative history, evaluations, version, status, and loss reveal.
+
+The current unsubmitted word, feedback, request state, incomplete-row shake,
+and newest-row reveal timing remain presentation concerns. Complete guesses are
+not cleared, evaluated, colored, or committed until the Wordle API accepts
+them. Invalid dictionary words preserve input and consume no Attempt version;
+stale and invalid actions reconcile from server snapshots without local replay
+or fallback.
+
+The `/games/wordle` selector starts a selected puzzle through a temporary
+`start=new` URL plus a unique initialization request marker. That marker makes
+repeated same-puzzle selection explicit even when React preserves route state.
+After authoritative initialization succeeds, the browser replaces the URL with
+the canonical puzzle path. Canonical direct URLs use resume semantics.
+
+Keyboard status remains derived from authoritative evaluations with
+correct-over-present-over-absent precedence. The newest accepted row is
+temporarily excluded from keyboard derivation until its reveal presentation
+finishes, preventing the keyboard from disclosing the evaluation early.
 
 ## Architectural Goals
 
