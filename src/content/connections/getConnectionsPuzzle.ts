@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { ConnectionsPuzzlePreview } from "@/contracts/connections";
 import type { ConnectionsPuzzle } from "@/domain/connections/types";
 import { validateConnectionsPuzzle } from "@/domain/connections/validation";
 import { getCurrentEvent } from "@/server/events/getCurrentEvent";
@@ -9,6 +10,11 @@ import type { Json, Tables } from "@/types/database.generated";
 type ConnectionsPuzzleRow = Pick<
   Tables<"connections_puzzles">,
   "event_id" | "groups" | "id" | "public_id" | "title"
+>;
+
+type ConnectionsPuzzlePreviewRow = Pick<
+  Tables<"connections_puzzles">,
+  "public_id" | "title"
 >;
 
 export type StoredConnectionsPuzzle = {
@@ -89,13 +95,26 @@ function decodeConnectionsPuzzle(
   return puzzle;
 }
 
-export async function getConnectionsPuzzle(
+export async function getConnectionsPuzzlePreview(
   puzzleId: string,
-): Promise<ConnectionsPuzzle | null> {
+): Promise<ConnectionsPuzzlePreview | null> {
   const event = await getCurrentEvent();
-  const storedPuzzle = await getConnectionsPuzzleForEvent(event.id, puzzleId);
+  const { data, error } = await getPrivilegedSupabaseClient()
+    .from("connections_puzzles")
+    .select("public_id, title")
+    .eq("event_id", event.id)
+    .eq("public_id", puzzleId)
+    .maybeSingle();
 
-  return storedPuzzle?.puzzle ?? null;
+  if (error) {
+    throw new Error(`Failed to load Connections puzzle "${puzzleId}".`);
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return decodeConnectionsPuzzlePreview(puzzleId, data);
 }
 
 export async function getConnectionsPuzzleForEvent(
@@ -150,4 +169,17 @@ export async function getConnectionsPuzzleByDatabaseIdForEvent(
     eventId: data.event_id,
     puzzle: decodeConnectionsPuzzle(data.public_id, data),
   };
+}
+
+function decodeConnectionsPuzzlePreview(
+  puzzleId: string,
+  row: ConnectionsPuzzlePreviewRow,
+): ConnectionsPuzzlePreview {
+  if (!row.public_id.trim() || !row.title.trim()) {
+    throw new Error(
+      `Connections puzzle "${puzzleId}" has invalid public content.`,
+    );
+  }
+
+  return { id: row.public_id, title: row.title };
 }

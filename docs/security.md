@@ -4,11 +4,12 @@
 
 This document records the security model that must guide persistence work for
 Wedding Games. The application now has a database, anonymous Auth/Player
-bootstrap API, and event-scoped Connections and Wordle content, but it has no
-administrative operations, uploads, or authoritative persisted results.
-Connections solutions and Wordle answers are still delivered to browser
-JavaScript. That exposure is an accepted limitation for prototype play, but it
-is not suitable for future trusted competition.
+bootstrap API, event-scoped Connections and Wordle content, and authoritative
+Connections Attempts. It still has no administrative operations or uploads.
+Unrevealed Connections solutions now remain server-side, while Wordle answers
+are still delivered to browser JavaScript. Wordle's exposure remains an
+accepted prototype limitation but is not suitable for future trusted
+competition.
 
 The product currently operates as one implicit wedding/event. Multi-tenancy is
 not being implemented now. M5 introduced `Event` as an explicit ownership
@@ -101,10 +102,9 @@ the relevant attempt and puzzle, evaluates the action, and derives completion
 and scoring outcomes. The server must not accept claims such as a final score,
 win, mistake count, or elapsed time as authoritative without verification.
 
-Current client-side Connections solution data and Wordle answer exposure are
-acceptable for prototype play. Future trusted competition requires private
-solution data and authoritative evaluation to remain behind the server
-boundary until disclosure is appropriate.
+Connections now keeps unrevealed solution data and evaluation behind its server
+Attempt boundary. Wordle answer exposure and client evaluation remain accepted
+prototype limitations until Wordle receives its own authority cutover.
 
 ## Identifiers
 
@@ -233,10 +233,10 @@ then checked by the existing Connections domain validator before it reaches
 the UI. Missing rows remain distinct from database failures and invalid stored
 content.
 
-The current board still receives the complete validated solution for
-client-side play. Database storage and opaque/internal identifiers do not make
-that browser-visible answer secret. Server-authoritative attempts and answer
-protection remain M6 work.
+The route now reads only a validated public-ID/title preview for rendering.
+Full validated content is loaded separately by the server-authoritative
+Connections service and is not passed to the board or serialized through the
+route.
 
 ## Implemented Issue 5 Wordle Content Boundary
 
@@ -303,11 +303,35 @@ sanitized state instead of overwriting it. The database partial unique index is
 the final guard against concurrent creation of multiple active Attempts for
 the same Player and puzzle.
 
-The current Connections page still receives the complete solution and still
-evaluates gameplay in the browser. Issue 2 therefore establishes backend
-capability, not solution protection. M6 Issue 3 must cut the UI over and safely
-handle the asynchronous Player-bootstrap race without falling back to client
-authority.
+Issue 2 established backend capability. M6 Issue 3 completes its client
+cutover as described below.
+
+## M6 Connections Client Trust Boundary
+
+The Connections page resolves only whether the requested current-Event puzzle
+exists and its public title. It does not serialize full puzzle JSON,
+categories, group membership, group IDs, or semantic tile IDs to client props
+or React Server Component payloads.
+
+The client waits for the games-level anonymous Player bootstrap to report
+readiness, then starts or resumes play through the Connections Attempt API.
+That context exposes only `pending`, `ready`, `error`, and `retry`; it never
+exposes identity, Player, or Event identifiers. Gameplay does not auto-provision
+a missing Player and has no local-authority fallback.
+
+Client submissions contain only four attempt-specific opaque tile tokens and
+the current authoritative version. Sanitized snapshots disclose labels and
+already-solved groups; incorrect, one-away, and duplicate results reveal no new
+solution structure. Loss may reveal all groups for the established terminal
+experience. Opaque tokens remain selectors rather than authorization, and
+every API request still resolves its trusted Event and Player server-side.
+
+The Connections client treats server snapshots as authoritative and retains
+only presentation state locally. Stale and invalid actions reconcile from the
+server-supplied snapshot. Transport or backend failure retains the last trusted
+snapshot and never falls back to browser evaluation. Explicit replay identifies
+the completed Attempt only as a server-authorized replay source and does not
+clear terminal state until a new Attempt succeeds.
 
 ## Safely Deferred Decisions
 

@@ -1,3 +1,8 @@
+export type ConnectionsPuzzlePreview = {
+  id: string;
+  title: string;
+};
+
 export type PublicConnectionsTile = {
   id: string;
   label: string;

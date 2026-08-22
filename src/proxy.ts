@@ -12,5 +12,9 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/games/:path*", "/api/player/bootstrap"],
+  matcher: [
+    "/games/:path*",
+    "/api/player/bootstrap",
+    "/api/games/connections/:path*",
+  ],
 };

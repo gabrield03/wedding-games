@@ -23,7 +23,11 @@ afterEach(() => {
 
 describe("Next.js Proxy", () => {
   it("is restricted to game and Player-bootstrap routes", () => {
-    expect(config.matcher).toEqual(["/games/:path*", "/api/player/bootstrap"]);
+    expect(config.matcher).toEqual([
+      "/games/:path*",
+      "/api/player/bootstrap",
+      "/api/games/connections/:path*",
+    ]);
   });
 
   it("returns the refreshed-session response", async () => {
