@@ -29,6 +29,8 @@ const currentEvent = {
 };
 
 const storedPuzzle = {
+  event_id: currentEvent.id,
+  id: "40000000-0000-4000-8000-000000000001",
   public_id: developmentConnectionsPuzzle.id,
   title: developmentConnectionsPuzzle.title,
   groups: developmentConnectionsPuzzle.groups,
@@ -52,7 +54,9 @@ describe("getConnectionsPuzzle", () => {
 
     expect(puzzle).toEqual(developmentConnectionsPuzzle);
     expect(mocks.from).toHaveBeenCalledWith("connections_puzzles");
-    expect(mocks.select).toHaveBeenCalledWith("public_id, title, groups");
+    expect(mocks.select).toHaveBeenCalledWith(
+      "id, event_id, public_id, title, groups",
+    );
     expect(mocks.eq).toHaveBeenNthCalledWith(1, "event_id", currentEvent.id);
     expect(mocks.eq).toHaveBeenNthCalledWith(
       2,

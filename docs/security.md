@@ -275,6 +275,40 @@ The asynchronous browser bootstrap can finish after a future gameplay request
 begins. Game-specific authority work must gate or safely retry that condition;
 it must never fall back to accepting client-side outcomes.
 
+## M6 Connections Attempt Boundary
+
+M6 Issue 2 introduces a Connections-only authoritative backend while leaving
+the existing client flow unchanged. Each persisted Attempt carries explicit
+Event, Player, and puzzle ownership. Composite database foreign keys prevent a
+Player or puzzle from being associated through a different Event, and every
+privileged service query additionally filters by the trusted Event and Player.
+Puzzle and Attempt IDs remain selectors rather than authorization.
+
+Browser roles have no direct access to `connections_attempts`; RLS is enabled,
+and the server role receives only `SELECT`, `INSERT`, and `UPDATE`. The
+Connections server service is the narrow privileged boundary for those
+operations. It validates persisted tile mappings and game state before using
+them and treats corruption or database failure as fixed operational errors
+rather than exposing provider details or accepting browser-computed results.
+
+Each Attempt uses opaque public tile tokens mapped server-side to internal
+puzzle tile IDs. Before loss, responses disclose only remaining tile labels and
+already-solved groups. Loss may disclose the remaining groups required by the
+existing terminal experience. Responses never include raw mappings,
+incorrect-guess history, internal semantic IDs, or unrevealed categories.
+
+Guess updates require the currently persisted version and are conditionally
+scoped by Attempt, Event, Player, and version. A race returns the latest
+sanitized state instead of overwriting it. The database partial unique index is
+the final guard against concurrent creation of multiple active Attempts for
+the same Player and puzzle.
+
+The current Connections page still receives the complete solution and still
+evaluates gameplay in the browser. Issue 2 therefore establishes backend
+capability, not solution protection. M6 Issue 3 must cut the UI over and safely
+handle the asynchronous Player-bootstrap race without falling back to client
+authority.
+
 ## Safely Deferred Decisions
 
 - Multi-event URL structure

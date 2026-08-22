@@ -9,6 +9,63 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      connections_attempts: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          event_id: string;
+          id: string;
+          incorrect_guesses: Json;
+          player_id: string;
+          puzzle_id: string;
+          solved_group_ids: string[];
+          tile_map: Json;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          event_id: string;
+          id?: string;
+          incorrect_guesses?: Json;
+          player_id: string;
+          puzzle_id: string;
+          solved_group_ids?: string[];
+          tile_map: Json;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          event_id?: string;
+          id?: string;
+          incorrect_guesses?: Json;
+          player_id?: string;
+          puzzle_id?: string;
+          solved_group_ids?: string[];
+          tile_map?: Json;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "connections_attempts_player_fkey";
+            columns: ["event_id", "player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["event_id", "id"];
+          },
+          {
+            foreignKeyName: "connections_attempts_puzzle_fkey";
+            columns: ["event_id", "puzzle_id"];
+            isOneToOne: false;
+            referencedRelation: "connections_puzzles";
+            referencedColumns: ["event_id", "id"];
+          },
+        ];
+      };
       connections_puzzles: {
         Row: {
           created_at: string;

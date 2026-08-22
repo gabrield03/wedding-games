@@ -459,6 +459,36 @@ M6 uses these Attempt semantics:
 - Connections and Wordle may use different game-specific attempt persistence.
 - No generic Attempt table or framework has been selected.
 
+## M6 Connections Attempt Backend
+
+M6 Issue 2 adds the Connections-specific persistence and request boundary
+needed for authoritative play without cutting the current browser UI over yet.
+`connections_attempts` belongs to one trusted Event, Player, and Connections
+puzzle. Composite foreign keys enforce that the Player and puzzle share the
+Attempt's Event, while a partial unique index permits at most one incomplete
+Attempt for each Player and puzzle.
+
+The server stores Connections domain state together with a stable,
+attempt-specific mapping from opaque public tile tokens to internal puzzle
+tile IDs. Routes return only public tokens, labels, allowed solved-group data,
+mistakes remaining, status, and an optimistic version. Unrevealed categories,
+group membership, semantic tile IDs, and raw persisted state remain behind the
+server boundary until terminal disclosure requires them.
+
+The Connections service uses the existing pure domain evaluator to process
+guesses. Normal start resumes an active Attempt or returns the latest completed
+Attempt; explicit replay of an owned, completed Attempt creates a new one or
+converges on an already-active replay. Conditional updates scoped by Attempt,
+Event, Player, and version prevent lost updates, and stale requests receive the
+latest sanitized snapshot. Duplicate guesses do not mutate state or increment
+the version.
+
+This is deliberately a game-specific backend, not a generic Attempt framework.
+The existing Connections route, controller, board, reactions, and client-side
+solution payload are unchanged in Issue 2. M6 Issue 3 owns client cutover,
+bootstrap-race handling, and solution hiding; until then, deployed Connections
+play remains client-authoritative despite the new backend being available.
+
 ## Architectural Goals
 
 The architecture should:

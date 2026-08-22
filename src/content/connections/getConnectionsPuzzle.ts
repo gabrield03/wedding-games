@@ -8,8 +8,14 @@ import type { Json, Tables } from "@/types/database.generated";
 
 type ConnectionsPuzzleRow = Pick<
   Tables<"connections_puzzles">,
-  "public_id" | "title" | "groups"
+  "event_id" | "groups" | "id" | "public_id" | "title"
 >;
+
+export type StoredConnectionsPuzzle = {
+  databaseId: string;
+  eventId: string;
+  puzzle: ConnectionsPuzzle;
+};
 
 function isRecord(value: Json): value is { [key: string]: Json | undefined } {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -87,10 +93,19 @@ export async function getConnectionsPuzzle(
   puzzleId: string,
 ): Promise<ConnectionsPuzzle | null> {
   const event = await getCurrentEvent();
+  const storedPuzzle = await getConnectionsPuzzleForEvent(event.id, puzzleId);
+
+  return storedPuzzle?.puzzle ?? null;
+}
+
+export async function getConnectionsPuzzleForEvent(
+  eventId: string,
+  puzzleId: string,
+): Promise<StoredConnectionsPuzzle | null> {
   const { data, error } = await getPrivilegedSupabaseClient()
     .from("connections_puzzles")
-    .select("public_id, title, groups")
-    .eq("event_id", event.id)
+    .select("id, event_id, public_id, title, groups")
+    .eq("event_id", eventId)
     .eq("public_id", puzzleId)
     .maybeSingle();
 
@@ -104,5 +119,35 @@ export async function getConnectionsPuzzle(
     return null;
   }
 
-  return decodeConnectionsPuzzle(puzzleId, data);
+  return {
+    databaseId: data.id,
+    eventId: data.event_id,
+    puzzle: decodeConnectionsPuzzle(puzzleId, data),
+  };
+}
+
+export async function getConnectionsPuzzleByDatabaseIdForEvent(
+  eventId: string,
+  databaseId: string,
+): Promise<StoredConnectionsPuzzle | null> {
+  const { data, error } = await getPrivilegedSupabaseClient()
+    .from("connections_puzzles")
+    .select("id, event_id, public_id, title, groups")
+    .eq("event_id", eventId)
+    .eq("id", databaseId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error("Failed to load the authoritative Connections puzzle.");
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return {
+    databaseId: data.id,
+    eventId: data.event_id,
+    puzzle: decodeConnectionsPuzzle(data.public_id, data),
+  };
 }
