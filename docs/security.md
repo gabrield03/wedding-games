@@ -257,6 +257,24 @@ persistence therefore does not hide it, and client-computed outcomes are not
 authoritative. M6 remains responsible for server-side attempt evaluation and
 answer protection.
 
+## M6 Gameplay Request Identity Boundary
+
+M6 Issue 1 adds a zero-argument, server-only `getCurrentPlayer()` boundary for
+future authoritative gameplay requests. It verifies the request's Supabase
+identity before resolving the server-configured Event, then queries the exact
+event-scoped Player through the authenticated request client and existing RLS.
+The browser cannot supply the Event ID, Player ID, or Auth user ID.
+
+Unauthenticated requests and authenticated requests missing an event-scoped
+Player are distinct resolution outcomes. Event/configuration failures and
+Player database failures remain operational failures and must not expose raw
+provider details. The boundary does not auto-provision Players and does not use
+the privileged client for normal Player lookup.
+
+The asynchronous browser bootstrap can finish after a future gameplay request
+begins. Game-specific authority work must gate or safely retry that condition;
+it must never fall back to accepting client-side outcomes.
+
 ## Safely Deferred Decisions
 
 - Multi-event URL structure

@@ -428,6 +428,37 @@ local seed and `isolation-test` Event are never production deployment inputs.
 GitHub Actions validates only against ephemeral local Supabase and does not
 automate hosted database changes.
 
+## M6 Trusted Gameplay Request Boundary
+
+M6 Issue 1 establishes one server-only boundary for resolving the Player
+making an authenticated gameplay request. `getCurrentPlayer()` accepts no
+identity or ownership arguments. It verifies the request's Supabase claims,
+then resolves the trusted current Event, and finally selects the exact
+`(event_id, auth_user_id)` Player through the request-scoped client and its
+existing RLS policy. The privileged client remains limited to the existing
+current-Event resolver and Player bootstrap; normal Player lookup does not use
+elevated access or create a missing Player.
+
+The resolution explicitly distinguishes a resolved Player, an unauthenticated
+request, and an authenticated request with no Player in the configured Event.
+Event/configuration failures and Player-query failures remain operational
+errors. Future authoritative game endpoints must handle those failures without
+falling back to browser-computed correctness.
+
+Player bootstrap currently begins in a browser effect, so a future gameplay
+request could arrive before bootstrap finishes. The game-authority issues must
+gate or safely retry that transition. The lookup boundary deliberately does
+not solve the race by provisioning through privileged access.
+
+M6 uses these Attempt semantics:
+
+- One playthrough of one puzzle is one Attempt.
+- Replay creates another Attempt and remains unrestricted.
+- Attempt identity is separate from Player identity.
+- Attempt completion is separate from future score or leaderboard eligibility.
+- Connections and Wordle may use different game-specific attempt persistence.
+- No generic Attempt table or framework has been selected.
+
 ## Architectural Goals
 
 The architecture should:

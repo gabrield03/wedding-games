@@ -20,7 +20,9 @@
     "db:test": "supabase test db",
     "db:types": "supabase gen types typescript --local --schema public > src/types/database.generated.ts && prettier --write src/types/database.generated.ts",
     "db:types:check": "node scripts/check-database-types.mjs",
-    "db:validate": "npm run db:start && npm run db:reset && npm run db:lint && npm run db:test && npm run db:types:check"
+    "db:validate": "npm run db:start && npm run db:reset && npm run db:lint && npm run db:test && npm run db:types:check",
+    "gate": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run test:e2e && npm run build && git diff --check",
+    "check-scope": "git diff --stat HEAD && git diff --name-only HEAD && git ls-files --others --exclude-standard"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

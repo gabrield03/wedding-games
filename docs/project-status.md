@@ -4,7 +4,7 @@ Last updated: 2026-08-21
 
 ## Current milestone
 
-**M5.5 - Personalized Connections Reactions: complete**
+**M6 - Server-Authoritative Gameplay: in progress (Issue 1 complete)**
 
 M1, the Connections Prototype milestone, is complete.
 
@@ -74,6 +74,11 @@ M5.5 Issue 2 expands the real photo pools, lengthens intermediate reaction
 presentation, and replaces immediate-repeat avoidance with current-game
 uniqueness plus best-effort immediately-previous-game avoidance. Issue 2 and
 the M5.5 mini-milestone are complete.
+
+M6 Issue 1 establishes the trusted server-side request boundary that resolves
+the authenticated, event-scoped Player for future authoritative gameplay.
+Issue 1 is complete. No game attempt persistence or authoritative gameplay
+endpoint was part of this issue.
 
 Final reaction behavior:
 
@@ -1168,6 +1173,38 @@ Local validation completed:
 - The production build and final `git diff --check` passed, and final scope
   review found no unrelated changes.
 
+## M6 issue 1 - Establish trusted gameplay request boundary
+
+Issue 1 adds a zero-argument, server-only `getCurrentPlayer()` resolver. It
+verifies Supabase claims before resolving the trusted configured Event, then
+queries the exact `(event_id, auth_user_id)` Player through the request-scoped
+client and existing RLS. It returns only the Player ID and Event ID and
+distinguishes `resolved`, `unauthenticated`, and `player_missing` outcomes.
+Normal lookup does not use privileged access and does not auto-provision a
+missing Player.
+
+The async browser bootstrap may not finish before a future authoritative
+gameplay request begins. Connections and Wordle authority work must gate or
+safely retry that condition without falling back to client-computed outcomes.
+
+M6 records these initial Attempt semantics without selecting a schema or
+shared framework:
+
+- One playthrough of one puzzle is one Attempt.
+- Replay creates another Attempt and remains unrestricted.
+- Attempt identity is separate from Player identity.
+- Completion is separate from future score or leaderboard eligibility.
+- Connections and Wordle may use different game-specific attempt persistence.
+- No generic Attempt table or framework has been selected.
+
+Issue 1 final validation completed successfully:
+
+- `npm run gate` passed.
+- All 158 unit/component tests passed.
+- The full Playwright suite passed with 30 of 30 tests.
+- The production build and `git diff --check` passed.
+- `npm run check-scope` confirmed the expected Issue 1 scope.
+
 ## M5 issue 1 non-goals and deferred work
 
 Issue 1 does not implement:
@@ -1244,4 +1281,4 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-M5.5 is complete. No next milestone is active in this document.
+Begin M6 Issue 2: server-authoritative Connections.
