@@ -4,7 +4,7 @@ Last updated: 2026-08-21
 
 ## Current milestone
 
-**M6 - Server-Authoritative Gameplay: in progress (Issue 1 complete)**
+**M6 - Server-Authoritative Gameplay: in progress (Issue 2 implementation)**
 
 M1, the Connections Prototype milestone, is complete.
 
@@ -79,6 +79,10 @@ M6 Issue 1 establishes the trusted server-side request boundary that resolves
 the authenticated, event-scoped Player for future authoritative gameplay.
 Issue 1 is complete. No game attempt persistence or authoritative gameplay
 endpoint was part of this issue.
+
+M6 Issue 2 implements the backend-only authoritative Connections Attempt
+boundary. The current Connections UI remains client-authoritative until the
+separate Issue 3 cutover and solution-hiding work.
 
 Final reaction behavior:
 
@@ -1205,6 +1209,48 @@ Issue 1 final validation completed successfully:
 - The production build and `git diff --check` passed.
 - `npm run check-scope` confirmed the expected Issue 1 scope.
 
+## M6 issue 2 - Make Connections gameplay server-authoritative
+
+Issue 2's backend foundation is implemented while validation and merge remain
+in progress:
+
+- Added event-, Player-, and puzzle-owned `connections_attempts` persistence
+  with composite ownership constraints and a one-active-Attempt partial unique
+  index.
+- Persisted solved-group and incorrect-guess state plus a stable,
+  attempt-specific opaque tile-token mapping. Stored state is decoded and
+  validated before domain use.
+- Added a Connections-specific server service for normal start/resume,
+  explicit replay, authoritative guess evaluation through the existing pure
+  domain rules, terminal completion, and sanitized snapshots.
+- Added optimistic versions and conditional Event/Player/version updates.
+  Stale requests and lost update races return the latest sanitized snapshot;
+  duplicate guesses do not mutate state or increment versions.
+- Added `POST /api/games/connections/attempts` and
+  `POST /api/games/connections/attempts/[attemptId]/guesses`, both gated by the
+  trusted current-Player boundary and returning fixed safe error contracts.
+- Kept browser roles out of Attempt storage with RLS enabled. The server role
+  has only the runtime `SELECT`, `INSERT`, and `UPDATE` grants.
+- Added database, server-service, loader, and Route Handler coverage for
+  ownership, active-attempt convergence, state/token sanitization, outcomes,
+  terminal behavior, malformed or corrupt data, and concurrency conflicts.
+
+This issue does not modify the Connections page, board, controller, reactions,
+or current client payload. The deployed game still exposes and evaluates its
+solution client-side. M6 Issue 3 will perform the client cutover, handle the
+Player-bootstrap race, and remove browser solution exposure.
+
+Issue 2 implementation validation completed in the Codex environment:
+
+- A clean local database reset applied the new migration successfully.
+- Database lint passed, and all five pgTAP files passed with 153 assertions.
+- Generated database types were refreshed and the drift check passed.
+- All 37 focused loader, server-service, and Route Handler tests passed.
+- All 188 unit/component tests passed.
+- Format, format check, lint, typecheck, and `git diff --check` passed.
+- Playwright and the production build remain for the user's full local gate
+  before Issue 2 is considered complete and merged.
+
 ## M5 issue 1 non-goals and deferred work
 
 Issue 1 does not implement:
@@ -1281,4 +1327,5 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Begin M6 Issue 2: server-authoritative Connections.
+Complete M6 Issue 2 validation and merge. M6 Issue 3 will then cut Connections
+over to the authoritative backend and hide unrevealed solution data.
