@@ -8,6 +8,12 @@ export const STRANDS_PUZZLE_IDS = [
 
 export type StrandsPuzzleId = (typeof STRANDS_PUZZLE_IDS)[number];
 
+export function isStrandsPuzzleId(
+  puzzleId: string,
+): puzzleId is StrandsPuzzleId {
+  return STRANDS_PUZZLE_IDS.some((id) => id === puzzleId);
+}
+
 export function getNextStrandsPuzzleId(
   puzzleId: string,
 ): StrandsPuzzleId | null {
