@@ -53,8 +53,8 @@ const EXPECTED_PUZZLES = [
       "BEIGNET",
       "OYSTERS",
       "VOODOO",
-      "MARDIGRAS",
-      "BAYOU",
+      "JAMBALAYA",
+      "GUMBO",
     ],
   },
 ] as const;
