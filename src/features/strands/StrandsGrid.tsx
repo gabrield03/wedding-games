@@ -12,6 +12,7 @@ import type { StrandsAnswer, StrandsPuzzle } from "@/domain/strands/types";
 type StrandsGridProps = {
   puzzle: StrandsPuzzle;
   selectedPath: number[];
+  hintedPath: number[];
   foundWords: string[];
   disabled: boolean;
   onSelectTile: (tileIndex: number) => boolean;
@@ -72,6 +73,7 @@ const SPANGRAM_VISUAL = {
 export function StrandsGrid({
   puzzle,
   selectedPath,
+  hintedPath,
   foundWords,
   disabled,
   onSelectTile,
@@ -79,6 +81,7 @@ export function StrandsGrid({
 }: StrandsGridProps) {
   const [focusedTileIndex, setFocusedTileIndex] = useState(0);
   const selectedTiles = new Set(selectedPath);
+  const hintedTiles = new Set(hintedPath);
   const foundAnswers = getFoundAnswerVisuals(puzzle, foundWords);
   const foundTileVisuals = new Map<number, FoundAnswerVisual>();
   const gestureRef = useRef<PointerGesture | null>(null);
@@ -312,6 +315,7 @@ export function StrandsGrid({
       >
         {Array.from(puzzle.grid.letters).map((letter, tileIndex) => {
           const selected = selectedTiles.has(tileIndex);
+          const hinted = hintedTiles.has(tileIndex);
           const foundVisual = foundTileVisuals.get(tileIndex);
           const interactive = !foundVisual && !disabled;
           const row = Math.floor(tileIndex / puzzle.grid.columns) + 1;
@@ -321,6 +325,7 @@ export function StrandsGrid({
               ? `, found in spangram ${foundVisual.answer.word}`
               : `, found in theme word ${foundVisual.answer.word}`
             : "";
+          const hintedLabel = hinted && !foundVisual ? ", hinted" : "";
 
           return (
             <button
@@ -330,7 +335,7 @@ export function StrandsGrid({
               }}
               type="button"
               role="gridcell"
-              aria-label={`${letter}, row ${row}, column ${column}${foundLabel}${selected ? ", selected" : ""}`}
+              aria-label={`${letter}, row ${row}, column ${column}${foundLabel}${hintedLabel}${selected ? ", selected" : ""}`}
               aria-rowindex={row}
               aria-colindex={column}
               aria-selected={selected}
@@ -338,6 +343,7 @@ export function StrandsGrid({
               tabIndex={tileIndex === focusedTileIndex ? 0 : -1}
               data-strands-tile={tileIndex}
               data-strands-claimed={foundVisual ? "true" : "false"}
+              data-strands-hinted={hinted && !foundVisual ? "true" : "false"}
               onFocus={() => setFocusedTileIndex(tileIndex)}
               onKeyDown={(event) =>
                 handleTileKeyDown(event, tileIndex, interactive)
@@ -347,7 +353,9 @@ export function StrandsGrid({
                   ? foundVisual.tileClass
                   : selected
                     ? "border-sky-600 bg-sky-600 text-white ring-2 ring-sky-200"
-                    : "border-neutral-300 bg-background text-foreground hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
+                    : hinted
+                      ? "border-2 border-dashed border-neutral-500 bg-background text-foreground ring-2 ring-neutral-200 dark:border-neutral-400 dark:ring-neutral-800"
+                      : "border-neutral-300 bg-background text-foreground hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
               } ${interactive ? "cursor-pointer active:scale-95" : "cursor-default"}`}
             >
               {letter}

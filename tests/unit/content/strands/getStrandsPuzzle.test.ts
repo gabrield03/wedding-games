@@ -20,7 +20,7 @@ const EXPECTED_PUZZLES = [
   },
   {
     id: "wedding-02",
-    themeClue: "Our Travels",
+    themeClue: "Places we've been",
     spangram: "OURTRAVELS",
     themeWords: ["KYOTO", "ROME", "FLORENCE", "NAPLES", "VANCOUVER", "CANCUN"],
   },
@@ -32,7 +32,7 @@ const EXPECTED_PUZZLES = [
   },
   {
     id: "wedding-04",
-    themeClue: "Special Occasions",
+    themeClue: "An expensive dinner",
     spangram: "OMAKASE",
     themeWords: [
       "NIGIRI",

@@ -79,6 +79,29 @@ describe("validateStrandsPuzzle", () => {
     );
   });
 
+  it("rejects answer paths that geometrically cross themselves", () => {
+    const puzzle = structuredClone(testStrandsPuzzle);
+    puzzle.themeWords[0]!.path = [0, 7, 6, 1, 2, 3];
+
+    expect(validateStrandsPuzzle(puzzle)).toContain(
+      "Theme word ABCDEF path must not geometrically cross itself",
+    );
+  });
+
+  it("rejects geometric crossings between different answer paths", () => {
+    const puzzle = structuredClone(testStrandsPuzzle);
+    puzzle.themeWords[0]!.path = [0, 7, 2, 3, 4, 5];
+    puzzle.themeWords[1]!.path = [6, 1, 8, 9, 10, 11];
+
+    const letters = [...puzzle.grid.letters];
+    [letters[1], letters[7]] = [letters[7]!, letters[1]!];
+    puzzle.grid.letters = letters.join("");
+
+    expect(validateStrandsPuzzle(puzzle)).toContain(
+      "Answer paths ABCDEF and GHIJKL must not geometrically cross",
+    );
+  });
+
   it("rejects answers that can be spelled through multiple valid paths", () => {
     const puzzle = structuredClone(testStrandsPuzzle);
     puzzle.themeWords[2]!.word = "MNOPQR";

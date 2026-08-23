@@ -263,19 +263,10 @@ function isStructurallyValidPath(
 }
 
 function pathsMatch(storedPath: StrandsPath, selectedPath: StrandsPath) {
-  if (storedPath.length !== selectedPath.length) {
-    return false;
-  }
-
-  const forward = storedPath.every(
-    (tileIndex, index) => tileIndex === selectedPath[index],
+  return (
+    storedPath.length === selectedPath.length &&
+    storedPath.every((tileIndex, index) => tileIndex === selectedPath[index])
   );
-  const reverse = storedPath.every(
-    (tileIndex, index) =>
-      tileIndex === selectedPath[selectedPath.length - 1 - index],
-  );
-
-  return forward || reverse;
 }
 
 function assertTileIndexes(path: StrandsPath) {

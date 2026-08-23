@@ -11,6 +11,23 @@ import {
 const UPPERCASE_ASCII_PATTERN = /^[A-Z]+$/;
 const MULTIPLE_PATH_LIMIT = 2;
 
+type LabeledAnswer = {
+  answer: StrandsAnswer;
+  label: "Theme word" | "Spangram";
+};
+
+type GridPoint = {
+  row: number;
+  column: number;
+};
+
+type PathSegment = {
+  answer: LabeledAnswer;
+  segmentIndex: number;
+  start: GridPoint;
+  end: GridPoint;
+};
+
 export function validateStrandsPuzzle(puzzle: StrandsPuzzle): string[] {
   const errors: string[] = [];
 
@@ -48,7 +65,7 @@ export function validateStrandsPuzzle(puzzle: StrandsPuzzle): string[] {
 
   const usedWords = new Set<string>();
   const usedTiles = new Map<number, string>();
-  const answers = [
+  const answers: LabeledAnswer[] = [
     ...puzzle.themeWords.map((answer) => ({
       answer,
       label: "Theme word" as const,
@@ -76,6 +93,8 @@ export function validateStrandsPuzzle(puzzle: StrandsPuzzle): string[] {
   }
 
   if (hasValidGridShape(puzzle)) {
+    validatePathCrossings(puzzle, answers, errors);
+
     for (const { answer, label } of answers) {
       validateUniqueAnswerPath(puzzle, answer, label, errors);
     }
@@ -167,6 +186,119 @@ function validateAnswer(
       usedTiles.set(tileIndex, answer.word);
     }
   }
+}
+
+function validatePathCrossings(
+  puzzle: StrandsPuzzle,
+  answers: LabeledAnswer[],
+  errors: string[],
+) {
+  const segments = answers.flatMap((answer) => getPathSegments(puzzle, answer));
+  const reportedCrossings = new Set<string>();
+
+  for (let firstIndex = 0; firstIndex < segments.length; firstIndex += 1) {
+    const first = segments[firstIndex]!;
+
+    for (
+      let secondIndex = firstIndex + 1;
+      secondIndex < segments.length;
+      secondIndex += 1
+    ) {
+      const second = segments[secondIndex]!;
+      const sameAnswer = first.answer === second.answer;
+
+      if (
+        sameAnswer &&
+        Math.abs(first.segmentIndex - second.segmentIndex) <= 1
+      ) {
+        continue;
+      }
+
+      if (!segmentsCrossInTheirInteriors(first, second)) {
+        continue;
+      }
+
+      if (sameAnswer) {
+        const key = `self:${first.answer.answer.word}`;
+        if (!reportedCrossings.has(key)) {
+          errors.push(
+            `${first.answer.label} ${first.answer.answer.word} path must not geometrically cross itself`,
+          );
+          reportedCrossings.add(key);
+        }
+        continue;
+      }
+
+      const words = [
+        first.answer.answer.word,
+        second.answer.answer.word,
+      ].sort();
+      const key = `between:${words.join(":")}`;
+      if (!reportedCrossings.has(key)) {
+        errors.push(
+          `Answer paths ${words[0]} and ${words[1]} must not geometrically cross`,
+        );
+        reportedCrossings.add(key);
+      }
+    }
+  }
+}
+
+function getPathSegments(
+  puzzle: StrandsPuzzle,
+  answer: LabeledAnswer,
+): PathSegment[] {
+  if (!hasValidTileIndexes(answer.answer.path)) {
+    return [];
+  }
+
+  return answer.answer.path.slice(1).map((endTileIndex, index) => ({
+    answer,
+    segmentIndex: index,
+    start: tileIndexToPoint(answer.answer.path[index]!, puzzle.grid.columns),
+    end: tileIndexToPoint(endTileIndex, puzzle.grid.columns),
+  }));
+}
+
+function hasValidTileIndexes(path: number[]): boolean {
+  return path.every(
+    (tileIndex) =>
+      Number.isInteger(tileIndex) &&
+      tileIndex >= 0 &&
+      tileIndex < STRANDS_TILE_COUNT,
+  );
+}
+
+function tileIndexToPoint(tileIndex: number, columns: number): GridPoint {
+  return {
+    row: Math.floor(tileIndex / columns),
+    column: tileIndex % columns,
+  };
+}
+
+function segmentsCrossInTheirInteriors(
+  first: PathSegment,
+  second: PathSegment,
+): boolean {
+  const firstStartSide = orientation(first.start, first.end, second.start);
+  const firstEndSide = orientation(first.start, first.end, second.end);
+  const secondStartSide = orientation(second.start, second.end, first.start);
+  const secondEndSide = orientation(second.start, second.end, first.end);
+
+  return (
+    firstStartSide * firstEndSide < 0 && secondStartSide * secondEndSide < 0
+  );
+}
+
+function orientation(
+  start: GridPoint,
+  end: GridPoint,
+  point: GridPoint,
+): number {
+  return (
+    (end.column - start.column) * (point.row - start.row) -
+    (end.row - start.row) * (point.column - start.column)
+  );
 }
 
 function validateUniqueAnswerPath(
