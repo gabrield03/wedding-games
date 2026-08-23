@@ -568,7 +568,7 @@ describe("WordleGameBoard", () => {
     expect(letterKey("A").className).toContain("bg-neutral-600");
   });
 
-  it("uses larger mobile touch targets without changing horizontal flex sizing", async () => {
+  it("uses practical responsive touch targets without changing horizontal flex sizing", async () => {
     await renderReadyBoard();
 
     const letter = letterKey("Q");
@@ -578,8 +578,8 @@ describe("WordleGameBoard", () => {
     });
 
     for (const key of [letter, enter, backspace]) {
-      expect(key.className).toContain("min-h-14");
-      expect(key.className).toContain("sm:min-h-12");
+      expect(key.className).toContain("min-h-[52px]");
+      expect(key.className).toContain("sm:min-h-14");
       expect(key.className).toContain("touch-manipulation");
       expect(key.className).toContain("min-w-0");
     }
