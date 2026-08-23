@@ -10,7 +10,7 @@ export const bigDayStrandsPuzzle: StrandsPuzzle = {
   grid: {
     rows: 8,
     columns: 6,
-    letters: "CEWRECERETPEMONDIOBYIDGNOUNUESQUGVSTETDSEIVOWAYL",
+    letters: "CEWRECERETPEMONDIOBYIDGNOUNEUSQUGVSTETDSEIVOWAYL",
   },
   themeWords: [
     {
@@ -27,7 +27,7 @@ export const bigDayStrandsPuzzle: StrandsPuzzle = {
     },
     {
       word: "GUESTS",
-      path: [22, 27, 28, 29, 35, 34],
+      path: [22, 28, 27, 34, 35, 29],
     },
     {
       word: "VOWS",
@@ -50,20 +50,20 @@ export const travelsStrandsPuzzle: StrandsPuzzle = {
   grid: {
     rows: 8,
     columns: 6,
-    letters: "VAEVKYERNOUOCNCOTEREVEMSFORALOULTUCRORPNSNNALEAC",
+    letters: "VAEVOTERNOUONCCKYROEVEOSRLRALMUFTUCEORPNSNNALEAC",
   },
   themeWords: [
     {
       word: "KYOTO",
-      path: [4, 5, 11, 16, 15],
+      path: [15, 16, 11, 5, 4],
     },
     {
       word: "ROME",
-      path: [35, 29, 22, 17],
+      path: [17, 22, 29, 35],
     },
     {
       word: "FLORENCE",
-      path: [24, 31, 25, 18, 19, 13, 12, 6],
+      path: [31, 25, 18, 24, 19, 12, 13, 6],
     },
     {
       word: "NAPLES",
@@ -90,7 +90,7 @@ export const hotPotStrandsPuzzle: StrandsPuzzle = {
   grid: {
     rows: 8,
     columns: 6,
-    letters: "IPHSSTMRBHHIMOASGFLLOIELHFRNDOOETHSOETOFNUBPOTUM",
+    letters: "SHMPAHRIHBOLMOSSTLFIOPELTBRODOHETHSOEGNFNUFIOTUM",
   },
   themeWords: [
     {
@@ -99,7 +99,7 @@ export const hotPotStrandsPuzzle: StrandsPuzzle = {
     },
     {
       word: "FISHBALL",
-      path: [17, 11, 4, 9, 8, 14, 19, 18],
+      path: [18, 19, 14, 8, 9, 4, 11, 17],
     },
     {
       word: "NOODLES",
@@ -107,7 +107,7 @@ export const hotPotStrandsPuzzle: StrandsPuzzle = {
     },
     {
       word: "SHRIMP",
-      path: [3, 2, 7, 0, 6, 1],
+      path: [0, 1, 6, 7, 2, 3],
     },
     {
       word: "TOFU",
@@ -115,12 +115,12 @@ export const hotPotStrandsPuzzle: StrandsPuzzle = {
     },
     {
       word: "BEEF",
-      path: [42, 36, 31, 25],
+      path: [25, 31, 36, 42],
     },
   ],
   spangram: {
     word: "HOTPOTNIGHT",
-    path: [24, 30, 37, 43, 38, 32, 27, 21, 16, 10, 5],
+    path: [5, 10, 16, 21, 27, 32, 38, 43, 37, 30, 24],
   },
 };
 
@@ -130,16 +130,16 @@ export const sushiStrandsPuzzle: StrandsPuzzle = {
   grid: {
     rows: 8,
     columns: 6,
-    letters: "LOMISSLPLIHAASAMONSCRINEWIGIASAMAKTOOSIOIRABROON",
+    letters: "LOSASHLPOIMIANMLASSCRINEWIIGASAMAKROOSIOIRABTOON",
   },
   themeWords: [
     {
       word: "NIGIRI",
-      path: [22, 21, 26, 25, 20, 27],
+      path: [22, 21, 27, 26, 20, 25],
     },
     {
       word: "SASHIMI",
-      path: [4, 11, 5, 10, 3, 2, 9],
+      path: [2, 3, 4, 5, 11, 10, 9],
     },
     {
       word: "SCALLOP",
@@ -147,11 +147,11 @@ export const sushiStrandsPuzzle: StrandsPuzzle = {
     },
     {
       word: "SALMON",
-      path: [13, 14, 8, 15, 16, 17],
+      path: [17, 16, 15, 14, 8, 13],
     },
     {
       word: "OTORO",
-      path: [35, 34, 39, 44, 45],
+      path: [45, 44, 39, 34, 35],
     },
     {
       word: "WASABI",
