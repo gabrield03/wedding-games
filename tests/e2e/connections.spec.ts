@@ -65,7 +65,9 @@ test("player can complete without the Connections board shifting, refresh, and a
   ).attempt;
 
   await expectConnectionsGameToBeUsable(page);
-  const initialBoardBox = await page.locator("[data-connections-board]").boundingBox();
+  const initialBoardBox = await page
+    .locator("[data-connections-board]")
+    .boundingBox();
   expect(initialBoardBox).not.toBeNull();
 
   for (const [index, group] of puzzle.groups.entries()) {
@@ -91,14 +93,16 @@ test("player can complete without the Connections board shifting, refresh, and a
       `[data-connections-group-tier="${groupTiers[index]}"]`,
     );
     await expect(solvedGroup).toBeVisible();
-    const boardBox = await page.locator("[data-connections-board]").boundingBox();
+    const boardBox = await page
+      .locator("[data-connections-board]")
+      .boundingBox();
     expect(boardBox).not.toBeNull();
-    expect(Math.abs(boardBox!.height - initialBoardBox!.height)).toBeLessThanOrEqual(
-      1,
-    );
-    expect(Math.abs(boardBox!.width - initialBoardBox!.width)).toBeLessThanOrEqual(
-      1,
-    );
+    expect(
+      Math.abs(boardBox!.height - initialBoardBox!.height),
+    ).toBeLessThanOrEqual(1);
+    expect(
+      Math.abs(boardBox!.width - initialBoardBox!.width),
+    ).toBeLessThanOrEqual(1);
   }
 
   await expect(page.getByText("Puzzle complete!")).toBeVisible();
@@ -211,9 +215,9 @@ test("player can resume an active game, lose, and authoritatively replay", async
     } else {
       expect(payload.attempt.gameStatus).toBe("lost");
       expect(payload.attempt.displayedGroups).toHaveLength(4);
-      expect(payload.attempt.displayedGroups.map((group) => group.tier)).toEqual(
-        groupTiers,
-      );
+      expect(
+        payload.attempt.displayedGroups.map((group) => group.tier),
+      ).toEqual(groupTiers);
     }
   }
 
@@ -254,7 +258,9 @@ async function clearSelection(page: Page) {
 }
 
 async function expectConnectionsGameToBeUsable(page: Page) {
-  await expect(page.getByRole("heading", { name: "Connections" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Connections" }),
+  ).toBeVisible();
   await expect(page.getByText(puzzle.title, { exact: true })).toHaveCount(0);
   await expect(page.locator("button[aria-pressed]")).toHaveCount(16);
   await expect(page.getByRole("button", { name: "Shuffle" })).toBeEnabled();

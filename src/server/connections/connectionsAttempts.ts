@@ -706,8 +706,7 @@ function createSnapshot(
       : [];
   const displayedGroups = puzzle.groups.flatMap((group, groupIndex) => {
     const visible =
-      gameStatus === "lost" ||
-      attempt.state.solvedGroupIds.includes(group.id);
+      gameStatus === "lost" || attempt.state.solvedGroupIds.includes(group.id);
 
     if (!visible) {
       return [];
