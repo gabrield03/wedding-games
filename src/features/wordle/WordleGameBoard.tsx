@@ -60,7 +60,7 @@ export function WordleGameBoard({
 
   return (
     <section
-      className="w-full min-w-0"
+      className="mx-auto w-[40rem] max-w-[calc(100vw-2rem)] min-w-0"
       aria-labelledby="wordle-heading"
       aria-busy={game.initializationStatus === "preparing"}
     >
