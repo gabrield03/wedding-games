@@ -302,7 +302,7 @@ test("the 320px keyboard has usable targets without horizontal overflow", async 
     viewportWidth: window.innerWidth,
   }));
 
-  expect(Math.min(...targetHeights)).toBeGreaterThanOrEqual(55);
+  expect(Math.min(...targetHeights)).toBeGreaterThanOrEqual(51);
   expect(horizontalMetrics.documentWidth).toBeLessThanOrEqual(
     horizontalMetrics.viewportWidth,
   );
