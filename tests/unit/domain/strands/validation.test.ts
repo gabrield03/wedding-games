@@ -79,6 +79,18 @@ describe("validateStrandsPuzzle", () => {
     );
   });
 
+  it("rejects answers that can be spelled through multiple valid paths", () => {
+    const puzzle = structuredClone(testStrandsPuzzle);
+    puzzle.themeWords[2]!.word = "MNOPQR";
+    const letters = Array.from(puzzle.grid.letters);
+    letters[17] = "R";
+    puzzle.grid.letters = letters.join("");
+
+    expect(validateStrandsPuzzle(puzzle)).toContain(
+      "Theme word MNOPQR has multiple valid paths that spell MNOPQR",
+    );
+  });
+
   it("rejects overlapping answers and incomplete grid coverage", () => {
     const puzzle = structuredClone(testStrandsPuzzle);
     puzzle.themeWords[1]!.path = [...puzzle.themeWords[0]!.path];
