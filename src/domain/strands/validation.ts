@@ -193,7 +193,9 @@ function validateUniqueAnswerPath(
   if (pathCount === 0) {
     errors.push(`${answerLabel} has no valid path that spells ${answer.word}`);
   } else if (pathCount > 1) {
-    errors.push(`${answerLabel} has multiple valid paths that spell ${answer.word}`);
+    errors.push(
+      `${answerLabel} has multiple valid paths that spell ${answer.word}`,
+    );
   }
 }
 
@@ -219,7 +221,11 @@ function countSpellingPaths(
     visited.add(tileIndex);
     const nextLetter = word[wordIndex + 1];
 
-    for (let candidateIndex = 0; candidateIndex < letters.length; candidateIndex += 1) {
+    for (
+      let candidateIndex = 0;
+      candidateIndex < letters.length;
+      candidateIndex += 1
+    ) {
       if (
         visited.has(candidateIndex) ||
         letters[candidateIndex] !== nextLetter ||

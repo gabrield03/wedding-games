@@ -16,7 +16,5 @@ export function getNextStrandsPuzzleId(
     return null;
   }
 
-  return STRANDS_PUZZLE_IDS[
-    (currentIndex + 1) % STRANDS_PUZZLE_IDS.length
-  ]!;
+  return STRANDS_PUZZLE_IDS[(currentIndex + 1) % STRANDS_PUZZLE_IDS.length]!;
 }

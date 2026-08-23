@@ -34,7 +34,15 @@ const EXPECTED_PUZZLES = [
     id: "wedding-04",
     themeClue: "Special Occasions",
     spangram: "OMAKASE",
-    themeWords: ["NIGIRI", "SASHIMI", "SCALLOP", "SALMON", "OTORO", "WASABI", "NORI"],
+    themeWords: [
+      "NIGIRI",
+      "SASHIMI",
+      "SCALLOP",
+      "SALMON",
+      "OTORO",
+      "WASABI",
+      "NORI",
+    ],
   },
 ] as const;
 
@@ -72,7 +80,10 @@ describe("getStrandsPuzzle", () => {
       expect(usedTiles).toHaveLength(STRANDS_TILE_COUNT);
       expect(new Set(usedTiles)).toEqual(
         new Set(
-          Array.from({ length: STRANDS_TILE_COUNT }, (_, tileIndex) => tileIndex),
+          Array.from(
+            { length: STRANDS_TILE_COUNT },
+            (_, tileIndex) => tileIndex,
+          ),
         ),
       );
 
