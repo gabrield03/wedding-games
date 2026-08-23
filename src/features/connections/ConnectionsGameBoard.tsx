@@ -1,6 +1,9 @@
 "use client";
 
-import type { ConnectionsPuzzlePreview } from "@/contracts/connections";
+import type {
+  ConnectionsGroupTier,
+  ConnectionsPuzzlePreview,
+} from "@/contracts/connections";
 
 import { ConnectionsReaction } from "./ConnectionsReaction";
 import { ConnectionTile } from "./ConnectionTile";
@@ -10,15 +13,22 @@ type ConnectionsGameBoardProps = {
   puzzle: ConnectionsPuzzlePreview;
 };
 
+const GROUP_TIER_CLASSES: Record<ConnectionsGroupTier, string> = {
+  yellow: "bg-yellow-300",
+  green: "bg-lime-500",
+  blue: "bg-blue-300",
+  purple: "bg-purple-400",
+};
+
 export function ConnectionsGameBoard({ puzzle }: ConnectionsGameBoardProps) {
   const game = useConnectionsGame(puzzle);
 
   return (
     <section
-      className="relative isolate"
+      className="relative isolate mx-auto w-[28rem] max-w-[calc(100vw-2rem)] min-w-0"
       aria-busy={game.initializationStatus === "preparing"}
     >
-      <h1 className="text-center text-3xl font-bold">{puzzle.title}</h1>
+      <h1 className="text-center text-3xl font-bold">Connections</h1>
 
       <p className="mt-2 text-center text-neutral-600">
         Find groups of four related items.
@@ -87,52 +97,55 @@ export function ConnectionsGameBoard({ puzzle }: ConnectionsGameBoardProps) {
               {game.requestError && <p>{game.requestError}</p>}
             </div>
 
-            <div className="space-y-2">
-              {game.displayedGroups.map((group) => (
-                <div
-                  key={group.category}
-                  className="rounded-lg border border-neutral-400 bg-neutral-400 p-2 text-neutral-950"
-                >
-                  <p className="mb-2 text-center font-bold">{group.category}</p>
+            <div
+              className="grid grid-cols-4 gap-1 sm:gap-2"
+              data-connections-board
+            >
+              {game.displayedGroups.map((group) => {
+                const groupState =
+                  game.gameStatus === "lost" ? "Revealed" : "Solved";
 
-                  <div className="grid grid-cols-4 gap-1 sm:gap-2">
-                    {group.tiles.map((tile) => (
-                      <div
-                        key={tile.id}
-                        className="min-h-16 min-w-0 rounded-lg bg-neutral-300 px-1 py-3 text-center text-xs font-semibold break-words text-neutral-950 sm:min-h-20 sm:px-3 sm:py-4 sm:text-base"
-                      >
-                        {tile.label}
-                      </div>
-                    ))}
+                return (
+                  <div
+                    key={group.category}
+                    role="group"
+                    aria-label={`${groupState} group: ${group.category}`}
+                    data-connections-solved-group
+                    data-connections-group-tier={group.tier}
+                    className={`col-span-4 flex h-16 min-w-0 flex-col items-center justify-center rounded-lg px-2 py-1 text-center text-neutral-950 sm:h-20 sm:px-4 ${GROUP_TIER_CLASSES[group.tier]}`}
+                  >
+                    <p className="w-full text-[11px] leading-tight font-bold break-words sm:text-sm">
+                      {group.category}
+                    </p>
+                    <p className="mt-0.5 w-full text-[9px] leading-tight break-words sm:text-xs">
+                      {group.tiles.map((tile) => tile.label).join(", ")}
+                    </p>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
-              {game.gameStatus === "playing" && (
-                <div className="grid grid-cols-4 gap-1 sm:gap-2">
-                  {game.orderedTiles.map((tile) => {
-                    const selected = game.selectedTileIds.includes(tile.id);
-                    const shaking =
-                      selected &&
-                      (game.feedback === "incorrect" ||
-                        game.feedback === "one-away" ||
-                        game.feedback === "duplicate");
-                    const correct = game.correctGuessTileIds.includes(tile.id);
+              {game.gameStatus === "playing" &&
+                game.orderedTiles.map((tile) => {
+                  const selected = game.selectedTileIds.includes(tile.id);
+                  const shaking =
+                    selected &&
+                    (game.feedback === "incorrect" ||
+                      game.feedback === "one-away" ||
+                      game.feedback === "duplicate");
+                  const correct = game.correctGuessTileIds.includes(tile.id);
 
-                    return (
-                      <ConnectionTile
-                        key={`${tile.id}-${shaking ? game.feedbackAttempt : 0}`}
-                        tile={tile}
-                        selected={selected}
-                        shaking={shaking}
-                        correct={correct}
-                        disabled={!game.canInteract}
-                        onToggle={game.toggleTile}
-                      />
-                    );
-                  })}
-                </div>
-              )}
+                  return (
+                    <ConnectionTile
+                      key={`${tile.id}-${shaking ? game.feedbackAttempt : 0}`}
+                      tile={tile}
+                      selected={selected}
+                      shaking={shaking}
+                      correct={correct}
+                      disabled={!game.canInteract}
+                      onToggle={game.toggleTile}
+                    />
+                  );
+                })}
             </div>
           </div>
 

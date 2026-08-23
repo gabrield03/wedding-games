@@ -11,8 +11,6 @@ const wordlePuzzlePathPattern = /\/games\/wordle\/wedding-(?:0[1-9]|10)$/;
 test("player can navigate from the home page to Connections", async ({
   page,
 }) => {
-  const puzzle = developmentConnectionsPuzzle;
-
   await page.goto("/");
 
   await expect(page).toHaveTitle(/Wedding Games/);
@@ -31,7 +29,9 @@ test("player can navigate from the home page to Connections", async ({
     .click();
 
   await expect(page).toHaveURL(connectionsPuzzlePath);
-  await expect(page.getByRole("heading", { name: puzzle.title })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Connections" }),
+  ).toBeVisible();
 
   const backLink = page.getByRole("link", {
     name: "Back to games",

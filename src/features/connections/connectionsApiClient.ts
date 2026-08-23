@@ -155,8 +155,18 @@ function isRevealedGroup(value: unknown) {
   return (
     isRecord(value) &&
     typeof value.category === "string" &&
+    isGroupTier(value.tier) &&
     Array.isArray(value.tiles) &&
     value.tiles.every(isPublicTile)
+  );
+}
+
+function isGroupTier(value: unknown) {
+  return (
+    value === "yellow" ||
+    value === "green" ||
+    value === "blue" ||
+    value === "purple"
   );
 }
 

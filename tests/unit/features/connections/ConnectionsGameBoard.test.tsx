@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
   ConnectionsAttemptSnapshot,
+  ConnectionsGroupTier,
   ConnectionsPuzzlePreview,
 } from "@/contracts/connections";
 import { ConnectionsGameBoard } from "@/features/connections/ConnectionsGameBoard";
@@ -37,6 +38,12 @@ const puzzle: ConnectionsPuzzlePreview = {
   title: testConnectionsPuzzle.title,
 };
 const initialAttemptId = "60000000-0000-4000-8000-000000000001";
+const groupTiers: readonly ConnectionsGroupTier[] = [
+  "yellow",
+  "green",
+  "blue",
+  "purple",
+];
 
 beforeEach(() => {
   controllerMocks.bootstrapRetry.mockReset();
@@ -56,12 +63,13 @@ afterEach(() => {
 });
 
 describe("ConnectionsGameBoard", () => {
-  it("always renders public page content while waiting for Player readiness", () => {
+  it("always renders player-facing page content while waiting for Player readiness", () => {
     controllerMocks.bootstrapStatus = "pending";
 
     render(<ConnectionsGameBoard puzzle={puzzle} />);
 
-    expect(screen.getByRole("heading", { name: puzzle.title })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Connections" })).toBeTruthy();
+    expect(screen.queryByText(puzzle.title)).toBeNull();
     expect(screen.getByText("Preparing your game…")).toBeTruthy();
     expect(controllerMocks.requestAttempt).not.toHaveBeenCalled();
   });
@@ -108,7 +116,7 @@ describe("ConnectionsGameBoard", () => {
     expect(controllerMocks.bootstrapRetry).toHaveBeenCalledTimes(1);
   });
 
-  it("renders a resumed completed Attempt and its terminal reaction", async () => {
+  it("renders a resumed completed Attempt with all four distinct group tiers", async () => {
     controllerMocks.requestAttempt.mockResolvedValue({
       status: "ready",
       attempt: snapshot({
@@ -123,6 +131,11 @@ describe("ConnectionsGameBoard", () => {
     expect(await screen.findByText("Puzzle complete!")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Play Again" })).toBeTruthy();
     expect(getReaction("win")).toBeTruthy();
+    expect(
+      [...document.querySelectorAll("[data-connections-group-tier]")].map(
+        (element) => element.getAttribute("data-connections-group-tier"),
+      ),
+    ).toEqual(groupTiers);
   });
 
   it("preserves selection semantics, the four-tile cap, and manual shuffle", async () => {
@@ -225,7 +238,7 @@ describe("ConnectionsGameBoard", () => {
     expect(getReaction("incorrect")).toBeNull();
   });
 
-  it("delays installation of a correct authoritative snapshot for 300ms", async () => {
+  it("replaces a correct four-tile row with one fixed-height solved panel", async () => {
     vi.useFakeTimers();
     controllerMocks.requestGuess.mockResolvedValue({
       status: "submitted",
@@ -255,13 +268,24 @@ describe("ConnectionsGameBoard", () => {
     ).toBeNull();
 
     act(() => vi.advanceTimersByTime(1));
-    expect(
-      screen.getByText(testConnectionsPuzzle.groups[0]!.category),
-    ).toBeTruthy();
+    const solvedGroup = screen.getByRole("group", {
+      name: `Solved group: ${testConnectionsPuzzle.groups[0]!.category}`,
+    });
+
+    expect(solvedGroup.getAttribute("data-connections-group-tier")).toBe(
+      "yellow",
+    );
+    expect(solvedGroup.className).toContain("col-span-4");
+    expect(solvedGroup.className).toContain("h-16");
+    for (const tileLabel of solvedLabels) {
+      expect(solvedGroup.textContent).toContain(tileLabel);
+      expect(screen.queryByRole("button", { name: tileLabel })).toBeNull();
+    }
+    expect(screen.getAllByRole("button", { pressed: false })).toHaveLength(12);
     expect(screen.queryByText("Correct!")).toBeNull();
   });
 
-  it("shows authoritative final win and loss snapshots with persistent reactions", async () => {
+  it("shows authoritative final win and loss snapshots with the same revealed-row treatment", async () => {
     vi.useFakeTimers();
     controllerMocks.requestAttempt.mockResolvedValue({
       status: "ready",
@@ -300,9 +324,16 @@ describe("ConnectionsGameBoard", () => {
 
     expect(screen.getByText("Game over")).toBeTruthy();
     expect(getReaction("loss")).toBeTruthy();
-    for (const group of testConnectionsPuzzle.groups) {
-      expect(screen.getByText(group.category)).toBeTruthy();
-    }
+    testConnectionsPuzzle.groups.forEach((group, groupIndex) => {
+      const revealedGroup = screen.getByRole("group", {
+        name: `Revealed group: ${group.category}`,
+      });
+      expect(revealedGroup.getAttribute("data-connections-group-tier")).toBe(
+        groupTiers[groupIndex],
+      );
+      expect(revealedGroup.className).toContain("col-span-4");
+      expect(revealedGroup.className).toContain("h-16");
+    });
   });
 
   it("reconciles stale snapshots without fabricating an outcome or reaction", async () => {
@@ -527,6 +558,7 @@ function snapshot({
 
       return {
         category: group.category,
+        tier: groupTiers[groupIndex]!,
         tiles: group.tiles.map((tile) => ({
           id: tokenForLabel(tile.label),
           label: tile.label,
