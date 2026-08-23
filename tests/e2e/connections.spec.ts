@@ -10,6 +10,7 @@ const internalSolutionIds = puzzle.groups.flatMap((group) => [
   group.id,
   ...group.tiles.map((tile) => tile.id),
 ]);
+const groupTiers = ["yellow", "green", "blue", "purple"] as const;
 
 type AttemptSnapshot = {
   attemptId: string;
@@ -17,6 +18,7 @@ type AttemptSnapshot = {
   remainingTiles: Array<{ id: string; label: string }>;
   displayedGroups: Array<{
     category: string;
+    tier: (typeof groupTiers)[number];
     tiles: Array<{ id: string; label: string }>;
   }>;
   mistakesRemaining: number;
@@ -53,7 +55,7 @@ test("initial render and Attempt payload do not expose the unrevealed solution",
   }
 });
 
-test("player can complete, refresh, and authoritatively replay a puzzle", async ({
+test("player can complete without the Connections board shifting, refresh, and authoritatively replay", async ({
   page,
 }) => {
   const initialAttemptResponse = waitForAttemptResponse(page);
@@ -63,6 +65,8 @@ test("player can complete, refresh, and authoritatively replay a puzzle", async 
   ).attempt;
 
   await expectConnectionsGameToBeUsable(page);
+  const initialBoardBox = await page.locator("[data-connections-board]").boundingBox();
+  expect(initialBoardBox).not.toBeNull();
 
   for (const [index, group] of puzzle.groups.entries()) {
     await selectTiles(
@@ -76,11 +80,22 @@ test("player can complete, refresh, and authoritatively replay a puzzle", async 
 
     expect(payload.outcome).toBe("correct");
     expect(payload.attempt.displayedGroups).toHaveLength(index + 1);
-    expect(payload.attempt.displayedGroups[index]?.category).toBe(
-      group.category,
-    );
+    expect(payload.attempt.displayedGroups[index]).toMatchObject({
+      category: group.category,
+      tier: groupTiers[index],
+    });
     expectNoInternalSolutionIds(payload);
     await expect(page.getByText(group.category, { exact: true })).toBeVisible();
+
+    const solvedGroup = page.locator(
+      `[data-connections-group-tier="${groupTiers[index]}"]`,
+    );
+    await expect(solvedGroup).toBeVisible();
+    const boardBox = await page.locator("[data-connections-board]").boundingBox();
+    expect(boardBox).not.toBeNull();
+    expect(Math.abs(boardBox!.height - initialBoardBox!.height)).toBeLessThanOrEqual(
+      1,
+    );
   }
 
   await expect(page.getByText("Puzzle complete!")).toBeVisible();
@@ -193,6 +208,9 @@ test("player can resume an active game, lose, and authoritatively replay", async
     } else {
       expect(payload.attempt.gameStatus).toBe("lost");
       expect(payload.attempt.displayedGroups).toHaveLength(4);
+      expect(payload.attempt.displayedGroups.map((group) => group.tier)).toEqual(
+        groupTiers,
+      );
     }
   }
 
@@ -233,7 +251,8 @@ async function clearSelection(page: Page) {
 }
 
 async function expectConnectionsGameToBeUsable(page: Page) {
-  await expect(page.getByRole("heading", { name: puzzle.title })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Connections" })).toBeVisible();
+  await expect(page.getByText(puzzle.title, { exact: true })).toHaveCount(0);
   await expect(page.locator("button[aria-pressed]")).toHaveCount(16);
   await expect(page.getByRole("button", { name: "Shuffle" })).toBeEnabled();
 }
@@ -336,7 +355,8 @@ function expectSnapshotShape(attempt: AttemptSnapshot) {
   }
 
   for (const group of attempt.displayedGroups) {
-    expect(Object.keys(group).sort()).toEqual(["category", "tiles"]);
+    expect(Object.keys(group).sort()).toEqual(["category", "tier", "tiles"]);
+    expect(groupTiers).toContain(group.tier);
   }
 }
 
