@@ -33,7 +33,10 @@ export function StrandsGameBoard({ puzzle }: StrandsGameBoardProps) {
         ) : game.feedback ? (
           <p className="break-words">{game.feedback.message}</p>
         ) : game.selectedWord ? (
-          <p className="break-words">{game.selectedWord}</p>
+          <p className="break-words">
+            <span className="sr-only">Selected word: </span>
+            {game.selectedWord}
+          </p>
         ) : (
           <p className="font-normal text-neutral-500">Select adjacent letters.</p>
         )}
@@ -46,6 +49,7 @@ export function StrandsGameBoard({ puzzle }: StrandsGameBoardProps) {
           foundWords={game.foundWords}
           disabled={!game.canInteract}
           onSelectTile={game.selectTile}
+          onClearSelection={game.clearSelection}
         />
       </div>
 
