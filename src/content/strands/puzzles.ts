@@ -174,37 +174,37 @@ export const newOrleansStrandsPuzzle: StrandsPuzzle = {
   grid: {
     rows: 8,
     columns: 6,
-    letters: "NEWORLRASJAEGOUOZAIYSYZNDARSVSRBETOBAOODOEMTENGI",
+    letters: "JASRYOVOZZESOOOLETDNRASAEOIYANWEBGNLGUOEAAMBTJMB",
   },
   themeWords: [
     {
       word: "JAZZ",
-      path: [9, 10, 16, 22],
+      path: [0, 1, 8, 9],
     },
     {
       word: "BEIGNET",
-      path: [35, 41, 47, 46, 45, 44, 43],
+      path: [32, 31, 26, 33, 34, 39, 44],
     },
     {
       word: "OYSTERS",
-      path: [15, 21, 27, 33, 32, 26, 20],
+      path: [5, 4, 11, 17, 10, 3, 2],
     },
     {
       word: "VOODOO",
-      path: [28, 34, 40, 39, 38, 37],
+      path: [6, 7, 12, 18, 13, 14],
     },
     {
-      word: "MARDIGRAS",
-      path: [42, 36, 30, 24, 18, 12, 6, 7, 8],
+      word: "JAMBALAYA",
+      path: [45, 40, 46, 47, 41, 35, 28, 27, 21],
     },
     {
-      word: "BAYOU",
-      path: [31, 25, 19, 13, 14],
+      word: "GUMBO",
+      path: [36, 37, 42, 43, 38],
     },
   ],
   spangram: {
     word: "NEWORLEANS",
-    path: [0, 1, 2, 3, 4, 5, 11, 17, 23, 29],
+    path: [19, 24, 30, 25, 20, 15, 16, 23, 29, 22],
   },
 };
 
