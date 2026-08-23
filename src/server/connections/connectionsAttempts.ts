@@ -4,6 +4,7 @@ import { randomInt, randomUUID } from "node:crypto";
 
 import type {
   ConnectionsAttemptSnapshot,
+  ConnectionsGroupTier,
   ConnectionsGuessOutcome,
 } from "@/contracts/connections";
 import {
@@ -38,6 +39,12 @@ const ACTIVE_ATTEMPT_INDEX =
   "connections_attempts_one_active_per_player_puzzle_idx";
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const CONNECTIONS_GROUP_TIERS: readonly ConnectionsGroupTier[] = [
+  "yellow",
+  "green",
+  "blue",
+  "purple",
+];
 
 type ConnectionsAttemptRow = Pick<
   Tables<"connections_attempts">,
@@ -697,19 +704,26 @@ function createSnapshot(
             label: tileById.get(tileId)!.label,
           }))
       : [];
-  const displayedGroups = puzzle.groups
-    .filter(
-      (group) =>
-        gameStatus === "lost" ||
-        attempt.state.solvedGroupIds.includes(group.id),
-    )
-    .map((group) => ({
-      category: group.category,
-      tiles: group.tiles.map((tile) => ({
-        id: tokenByTileId.get(tile.id)!,
-        label: tile.label,
-      })),
-    }));
+  const displayedGroups = puzzle.groups.flatMap((group, groupIndex) => {
+    const visible =
+      gameStatus === "lost" ||
+      attempt.state.solvedGroupIds.includes(group.id);
+
+    if (!visible) {
+      return [];
+    }
+
+    return [
+      {
+        category: group.category,
+        tier: CONNECTIONS_GROUP_TIERS[groupIndex]!,
+        tiles: group.tiles.map((tile) => ({
+          id: tokenByTileId.get(tile.id)!,
+          label: tile.label,
+        })),
+      },
+    ];
+  });
 
   return {
     attemptId: attempt.row.id,
