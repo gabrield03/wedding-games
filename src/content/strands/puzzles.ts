@@ -2,8 +2,10 @@ import "server-only";
 
 import type { StrandsPuzzle } from "@/domain/strands/types";
 
+import { STRANDS_PUZZLE_IDS } from "./puzzleIds";
+
 export const bigDayStrandsPuzzle: StrandsPuzzle = {
-  id: "wedding-01",
+  id: STRANDS_PUZZLE_IDS[0],
   themeClue: "The Big Day",
   grid: {
     rows: 8,
@@ -43,7 +45,7 @@ export const bigDayStrandsPuzzle: StrandsPuzzle = {
 };
 
 export const travelsStrandsPuzzle: StrandsPuzzle = {
-  id: "wedding-02",
+  id: STRANDS_PUZZLE_IDS[1],
   themeClue: "Our Travels",
   grid: {
     rows: 8,
@@ -83,7 +85,7 @@ export const travelsStrandsPuzzle: StrandsPuzzle = {
 };
 
 export const hotPotStrandsPuzzle: StrandsPuzzle = {
-  id: "wedding-03",
+  id: STRANDS_PUZZLE_IDS[2],
   themeClue: "A go-to date night meal",
   grid: {
     rows: 8,
@@ -123,7 +125,7 @@ export const hotPotStrandsPuzzle: StrandsPuzzle = {
 };
 
 export const sushiStrandsPuzzle: StrandsPuzzle = {
-  id: "wedding-04",
+  id: STRANDS_PUZZLE_IDS[3],
   themeClue: "Special Occasions",
   grid: {
     rows: 8,
