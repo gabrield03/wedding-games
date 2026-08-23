@@ -37,11 +37,10 @@ describe("Strands gameplay", () => {
     expect(extended.selectedPath).not.toBe(started.selectedPath);
   });
 
-  it("ignores non-adjacent extensions and earlier tile reuse", () => {
+  it("ignores non-adjacent extensions", () => {
     const state = stateWithPath([0, 1, 7]);
 
     expect(updateStrandsPath(testStrandsPuzzle, state, 20)).toBe(state);
-    expect(updateStrandsPath(testStrandsPuzzle, state, 0)).toBe(state);
   });
 
   it("removes the current final tile when it is selected again", () => {
@@ -54,12 +53,12 @@ describe("Strands gameplay", () => {
     expect(state.selectedPath).toEqual([0, 1, 7]);
   });
 
-  it("backtracks when the immediately previous tile is selected", () => {
-    const state = stateWithPath([0, 1, 7]);
+  it("backtracks directly to any earlier selected tile", () => {
+    const state = stateWithPath([0, 1, 7, 8, 14]);
     const backtracked = updateStrandsPath(testStrandsPuzzle, state, 1);
 
     expect(backtracked.selectedPath).toEqual([0, 1]);
-    expect(state.selectedPath).toEqual([0, 1, 7]);
+    expect(state.selectedPath).toEqual([0, 1, 7, 8, 14]);
   });
 
   it("rejects claimed tiles during normal path construction", () => {
@@ -115,6 +114,21 @@ describe("Strands gameplay", () => {
       status: "found_spangram",
       word: testStrandsPuzzle.spangram.word,
     });
+    expect(getStrandsGameStatus(testStrandsPuzzle, result.state)).toBe("playing");
+  });
+
+  it("keeps the game active after finding the spangram in the middle of progress", () => {
+    const firstTheme = testStrandsPuzzle.themeWords[0]!;
+    const result = submitStrandsPath(testStrandsPuzzle, {
+      selectedPath: [...testStrandsPuzzle.spangram.path],
+      foundWords: [firstTheme.word],
+    });
+
+    expect(result.status).toBe("found_spangram");
+    expect(result.state.foundWords).toEqual([
+      firstTheme.word,
+      testStrandsPuzzle.spangram.word,
+    ]);
     expect(getStrandsGameStatus(testStrandsPuzzle, result.state)).toBe("playing");
   });
 

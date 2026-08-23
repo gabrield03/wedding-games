@@ -43,7 +43,7 @@ export function StrandsGameBoard({ puzzle }: StrandsGameBoardProps) {
         <StrandsGrid
           puzzle={puzzle}
           selectedPath={game.selectedPath}
-          claimedTileIndexes={game.claimedTileIndexes}
+          foundWords={game.foundWords}
           disabled={!game.canInteract}
           onSelectTile={game.selectTile}
         />
@@ -53,17 +53,8 @@ export function StrandsGameBoard({ puzzle }: StrandsGameBoardProps) {
         Found {game.foundWords.length} of {game.answerCount}
       </p>
 
-      <div className="mt-4 flex justify-center gap-3">
-        {game.gameStatus === "playing" ? (
-          <button
-            type="button"
-            onClick={game.clearSelection}
-            disabled={game.selectedPath.length === 0}
-            className="rounded-full border px-5 py-2 font-semibold transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
-          >
-            Clear
-          </button>
-        ) : (
+      {game.gameStatus === "complete" && (
+        <div className="mt-4 text-center">
           <button
             type="button"
             onClick={game.playAgain}
@@ -71,8 +62,8 @@ export function StrandsGameBoard({ puzzle }: StrandsGameBoardProps) {
           >
             Play Again
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }

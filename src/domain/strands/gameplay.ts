@@ -149,17 +149,15 @@ export function updateStrandsPath(
     return { ...state, selectedPath: selectedPath.slice(0, -1) };
   }
 
-  if (
-    selectedPath.length >= 2 &&
-    tileIndex === selectedPath[selectedPath.length - 2]
-  ) {
-    return { ...state, selectedPath: selectedPath.slice(0, -1) };
+  const existingIndex = selectedPath.indexOf(tileIndex);
+  if (existingIndex >= 0) {
+    return {
+      ...state,
+      selectedPath: selectedPath.slice(0, existingIndex + 1),
+    };
   }
 
-  if (
-    selectedPath.includes(tileIndex) ||
-    !areStrandsTilesAdjacent(finalTileIndex, tileIndex, puzzle.grid.columns)
-  ) {
+  if (!areStrandsTilesAdjacent(finalTileIndex, tileIndex, puzzle.grid.columns)) {
     return state;
   }
 
