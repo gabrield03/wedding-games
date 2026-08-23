@@ -48,14 +48,7 @@ const EXPECTED_PUZZLES = [
     id: "wedding-05",
     themeClue: "Where it all started",
     spangram: "NEWORLEANS",
-    themeWords: [
-      "JAZZ",
-      "BEIGNET",
-      "OYSTERS",
-      "VOODOO",
-      "JAMBALAYA",
-      "GUMBO",
-    ],
+    themeWords: ["JAZZ", "BEIGNET", "OYSTERS", "VOODOO", "JAMBALAYA", "GUMBO"],
   },
 ] as const;
 
