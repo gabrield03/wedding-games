@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   getNextStrandsPuzzleId,
+  isStrandsPuzzleId,
   STRANDS_PUZZLE_IDS,
 } from "@/content/strands/puzzleIds";
 
@@ -14,6 +15,13 @@ describe("Strands puzzle navigation", () => {
       "wedding-04",
       "wedding-05",
     ]);
+  });
+
+  it("recognizes only configured Strands puzzle IDs", () => {
+    expect(isStrandsPuzzleId("wedding-01")).toBe(true);
+    expect(isStrandsPuzzleId("wedding-05")).toBe(true);
+    expect(isStrandsPuzzleId("wedding-06")).toBe(false);
+    expect(isStrandsPuzzleId("not-a-puzzle")).toBe(false);
   });
 
   it("cycles through every puzzle and wraps to the first puzzle", () => {
