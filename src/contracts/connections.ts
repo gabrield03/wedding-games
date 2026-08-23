@@ -8,8 +8,11 @@ export type PublicConnectionsTile = {
   label: string;
 };
 
+export type ConnectionsGroupTier = "yellow" | "green" | "blue" | "purple";
+
 export type RevealedConnectionsGroup = {
   category: string;
+  tier: ConnectionsGroupTier;
   tiles: PublicConnectionsTile[];
 };
 
