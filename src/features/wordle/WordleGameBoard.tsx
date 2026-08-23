@@ -60,6 +60,7 @@ export function WordleGameBoard({
 
   return (
     <section
+      className="mx-auto w-[40rem] max-w-[calc(100vw-2rem)] min-w-0"
       aria-labelledby="wordle-heading"
       aria-busy={game.initializationStatus === "preparing"}
     >
@@ -116,9 +117,10 @@ export function WordleGameBoard({
           </div>
 
           <div
-            className="mx-auto mt-4 w-full max-w-sm space-y-1.5"
+            className="mx-auto mt-4 w-full max-w-[17rem] space-y-1 sm:max-w-[420px] sm:space-y-1.5"
             role="group"
             aria-label="Wordle board"
+            data-wordle-board
           >
             {rows.map((row, rowIndex) => {
               const isActiveRow = rowIndex === activeRowIndex;
@@ -132,7 +134,7 @@ export function WordleGameBoard({
                       ? `active-${rowIndex}-${game.incompleteAttempt}`
                       : `row-${rowIndex}`
                   }
-                  className={`grid grid-cols-5 gap-1.5 ${shouldShake ? "wordle-row-shake" : ""}`}
+                  className={`grid grid-cols-5 gap-1 sm:gap-1.5 ${shouldShake ? "wordle-row-shake" : ""}`}
                   role="group"
                   aria-label={getRowLabel(
                     row,
@@ -171,7 +173,7 @@ export function WordleGameBoard({
           />
 
           {game.gameStatus !== "playing" && (
-            <div className="mt-6 text-center">
+            <div className="mt-5 text-center">
               <Link
                 href={nextWordHref}
                 prefetch={false}

@@ -58,8 +58,13 @@ test("player can navigate from the home page to Wordle", async ({ page }) => {
   await expect(playWordleLink).toHaveAttribute("href", "/games/wordle");
   await playWordleLink.click();
 
+  await expect(page.getByRole("heading", { name: "Wordle" })).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(
+    page.getByRole("group", { name: "Current guess is empty" }),
+  ).toBeVisible({ timeout: 15_000 });
   await expect(page).toHaveURL(wordlePuzzlePathPattern);
-  await expect(page.getByRole("heading", { name: "Wordle" })).toBeVisible();
 
   const backLink = page.getByRole("link", {
     name: "Back to games",
