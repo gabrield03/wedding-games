@@ -13,7 +13,7 @@ export function StrandsGameBoard({ puzzle }: StrandsGameBoardProps) {
   const game = useStrandsGame(puzzle);
 
   return (
-    <section aria-labelledby="strands-heading">
+    <section className="w-full min-w-0" aria-labelledby="strands-heading">
       <h1 id="strands-heading" className="text-center text-3xl font-bold">
         Strands
       </h1>
@@ -23,23 +23,23 @@ export function StrandsGameBoard({ puzzle }: StrandsGameBoardProps) {
       </p>
 
       <div
-        className="mt-4 min-h-6 text-center font-semibold"
+        className="mt-4 min-h-6 w-full min-w-0 text-center font-semibold"
         role="status"
         aria-live="polite"
         aria-atomic="true"
       >
         {game.gameStatus === "complete" ? (
-          <p>Puzzle complete!</p>
+          <p className="break-words">Puzzle complete!</p>
         ) : game.feedback ? (
-          <p>{game.feedback.message}</p>
+          <p className="break-words">{game.feedback.message}</p>
         ) : game.selectedWord ? (
-          <p>{game.selectedWord}</p>
+          <p className="break-words">{game.selectedWord}</p>
         ) : (
           <p className="font-normal text-neutral-500">Select adjacent letters.</p>
         )}
       </div>
 
-      <div className="mt-6">
+      <div className="mt-6 w-full min-w-0">
         <StrandsGrid
           puzzle={puzzle}
           selectedPath={game.selectedPath}
