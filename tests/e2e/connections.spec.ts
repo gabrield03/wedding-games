@@ -96,6 +96,9 @@ test("player can complete without the Connections board shifting, refresh, and a
     expect(Math.abs(boardBox!.height - initialBoardBox!.height)).toBeLessThanOrEqual(
       1,
     );
+    expect(Math.abs(boardBox!.width - initialBoardBox!.width)).toBeLessThanOrEqual(
+      1,
+    );
   }
 
   await expect(page.getByText("Puzzle complete!")).toBeVisible();
