@@ -10,7 +10,7 @@ export const bigDayStrandsPuzzle: StrandsPuzzle = {
   grid: {
     rows: 8,
     columns: 6,
-    letters: "CEWRECERETPEMONDIOBYIDGNOUNEUSQUGVSTETDSEIVOWAYL",
+    letters: "CEWRECERETPEMONDIOBYDIGNOUNEUSQUGVSTETDAEIVOWSYL",
   },
   themeWords: [
     {
@@ -31,7 +31,7 @@ export const bigDayStrandsPuzzle: StrandsPuzzle = {
     },
     {
       word: "VOWS",
-      path: [42, 43, 44, 39],
+      path: [42, 43, 44, 45],
     },
     {
       word: "VEIL",
@@ -40,47 +40,47 @@ export const bigDayStrandsPuzzle: StrandsPuzzle = {
   ],
   spangram: {
     word: "WEDDINGDAY",
-    path: [2, 8, 15, 21, 20, 26, 32, 38, 45, 46],
+    path: [2, 8, 15, 20, 21, 26, 32, 38, 39, 46],
   },
 };
 
 export const travelsStrandsPuzzle: StrandsPuzzle = {
   id: STRANDS_PUZZLE_IDS[1],
-  themeClue: "Our Travels",
+  themeClue: "Places we've been",
   grid: {
     rows: 8,
     columns: 6,
-    letters: "VAEVOTERNOUONCCKYROEVEOSRLRALMUFTUCEORPNSNNALEAC",
+    letters: "URRAVEOTVESLOACOMRTNUVAOKOECCNEYRUESNCFNPLEROLNA",
   },
   themeWords: [
     {
       word: "KYOTO",
-      path: [15, 16, 11, 5, 4],
+      path: [24, 31, 25, 18, 12],
     },
     {
       word: "ROME",
-      path: [17, 22, 29, 35],
+      path: [17, 23, 16, 9],
     },
     {
       word: "FLORENCE",
-      path: [31, 25, 18, 24, 19, 12, 13, 6],
+      path: [38, 45, 44, 43, 42, 36, 37, 30],
     },
     {
       word: "NAPLES",
-      path: [42, 43, 38, 44, 45, 40],
+      path: [46, 47, 40, 41, 34, 35],
     },
     {
       word: "VANCOUVER",
-      path: [0, 1, 8, 14, 9, 10, 3, 2, 7],
+      path: [8, 13, 19, 14, 15, 20, 21, 26, 32],
     },
     {
       word: "CANCUN",
-      path: [47, 46, 41, 34, 33, 39],
+      path: [27, 22, 29, 28, 33, 39],
     },
   ],
   spangram: {
     word: "OURTRAVELS",
-    path: [36, 30, 37, 32, 26, 27, 20, 21, 28, 23],
+    path: [6, 0, 1, 7, 2, 3, 4, 5, 11, 10],
   },
 };
 
@@ -90,47 +90,47 @@ export const hotPotStrandsPuzzle: StrandsPuzzle = {
   grid: {
     rows: 8,
     columns: 6,
-    letters: "SHMPAHRIHBOLMOSSTLFIOPELTBRODOHETHSOEGNFNUFIOTUM",
+    letters: "OTPIGHHONSUTSTHRFMDEOMSIOLOSBHONRHFAUFPIELOTMEBL",
   },
   themeWords: [
     {
       word: "MUSHROOM",
-      path: [47, 41, 34, 33, 26, 20, 13, 12],
+      path: [17, 10, 9, 14, 15, 20, 26, 21],
     },
     {
       word: "FISHBALL",
-      path: [18, 19, 14, 8, 9, 4, 11, 17],
+      path: [16, 23, 22, 29, 28, 35, 41, 47],
     },
     {
       word: "NOODLES",
-      path: [40, 35, 29, 28, 23, 22, 15],
+      path: [31, 30, 24, 18, 25, 19, 12],
     },
     {
       word: "SHRIMP",
-      path: [0, 1, 6, 7, 2, 3],
+      path: [27, 33, 32, 39, 44, 38],
     },
     {
       word: "TOFU",
-      path: [45, 44, 39, 46],
+      path: [43, 42, 37, 36],
     },
     {
       word: "BEEF",
-      path: [25, 31, 36, 42],
+      path: [46, 45, 40, 34],
     },
   ],
   spangram: {
     word: "HOTPOTNIGHT",
-    path: [5, 10, 16, 21, 27, 32, 38, 43, 37, 30, 24],
+    path: [6, 0, 1, 2, 7, 13, 8, 3, 4, 5, 11],
   },
 };
 
 export const sushiStrandsPuzzle: StrandsPuzzle = {
   id: STRANDS_PUZZLE_IDS[3],
-  themeClue: "Special Occasions",
+  themeClue: "An expensive dinner",
   grid: {
     rows: 8,
     columns: 6,
-    letters: "LOSASHLPOIMIANMLASSCRINEWIIGASAMAKROOSIOIRABTOON",
+    letters: "LOSASHLPOIMIANMLASSCRINEWIIGASSAIKROABAOIROMTOON",
   },
   themeWords: [
     {
@@ -155,7 +155,7 @@ export const sushiStrandsPuzzle: StrandsPuzzle = {
     },
     {
       word: "WASABI",
-      path: [24, 30, 37, 42, 43, 38],
+      path: [24, 31, 30, 36, 37, 32],
     },
     {
       word: "NORI",
@@ -164,7 +164,7 @@ export const sushiStrandsPuzzle: StrandsPuzzle = {
   ],
   spangram: {
     word: "OMAKASE",
-    path: [36, 31, 32, 33, 28, 29, 23],
+    path: [42, 43, 38, 33, 28, 29, 23],
   },
 };
 
