@@ -54,6 +54,7 @@ export function StrandsGameBoard({
         <StrandsGrid
           puzzle={puzzle}
           selectedPath={game.selectedPath}
+          hintedPath={game.hintedPath}
           foundWords={game.foundWords}
           disabled={!game.canInteract}
           onSelectTile={game.selectTile}
@@ -66,6 +67,17 @@ export function StrandsGameBoard({
       </p>
 
       <div className="mt-4 flex flex-wrap justify-center gap-3">
+        {game.gameStatus === "playing" && (
+          <button
+            type="button"
+            onClick={game.showHint}
+            disabled={!game.canHint}
+            className="rounded-full border px-5 py-2 font-semibold transition hover:bg-neutral-100 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-neutral-900"
+          >
+            Hint
+          </button>
+        )}
+
         {game.gameStatus === "complete" && (
           <button
             type="button"
