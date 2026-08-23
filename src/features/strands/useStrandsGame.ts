@@ -87,7 +87,7 @@ export function useStrandsGame(puzzle: StrandsPuzzle) {
   );
 
   const selectTile = useCallback(
-    (tileIndex: number) => {
+    (tileIndex: number): boolean => {
       setFeedback(null);
 
       const nextState = updateStrandsPath(
@@ -102,12 +102,13 @@ export function useStrandsGame(puzzle: StrandsPuzzle) {
 
       if (!matchedAnswer) {
         commitState(nextState);
-        return;
+        return false;
       }
 
       const result = submitStrandsPath(puzzle, nextState);
       commitState(result.state);
       setSubmissionFeedback(result);
+      return true;
     },
     [commitState, puzzle, setSubmissionFeedback],
   );
