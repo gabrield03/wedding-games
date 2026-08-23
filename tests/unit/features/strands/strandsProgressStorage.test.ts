@@ -11,6 +11,7 @@ import { testStrandsPuzzle } from "../../../fixtures/strands";
 
 const progressKey = `wedding-games:strands:progress:${testStrandsPuzzle.id}`;
 const lastVisitedKey = "wedding-games:strands:last-visited";
+const otherPuzzle = { ...testStrandsPuzzle, id: "wedding-02" };
 
 afterEach(() => {
   localStorage.clear();
@@ -31,6 +32,34 @@ describe("strandsProgressStorage", () => {
       foundWords: [foundWord],
       hintedWord,
     });
+  });
+
+  it("keeps progress independent across Strands puzzles", () => {
+    const firstWord = testStrandsPuzzle.themeWords[0]!.word;
+    const secondWord = testStrandsPuzzle.themeWords[1]!.word;
+
+    saveStrandsPuzzleProgress(testStrandsPuzzle, {
+      foundWords: [firstWord],
+      hintedWord: null,
+    });
+    saveStrandsPuzzleProgress(otherPuzzle, {
+      foundWords: [secondWord],
+      hintedWord: null,
+    });
+
+    expect(loadStrandsPuzzleProgress(testStrandsPuzzle)?.foundWords).toEqual([
+      firstWord,
+    ]);
+    expect(loadStrandsPuzzleProgress(otherPuzzle)?.foundWords).toEqual([
+      secondWord,
+    ]);
+
+    clearStrandsPuzzleProgress(testStrandsPuzzle.id);
+
+    expect(loadStrandsPuzzleProgress(testStrandsPuzzle)).toBeNull();
+    expect(loadStrandsPuzzleProgress(otherPuzzle)?.foundWords).toEqual([
+      secondWord,
+    ]);
   });
 
   it("rejects malformed, outdated, and puzzle-inconsistent progress", () => {
