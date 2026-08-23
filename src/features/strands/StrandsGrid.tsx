@@ -1,6 +1,11 @@
 "use client";
 
-import { useRef, type PointerEvent as ReactPointerEvent } from "react";
+import {
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 
 import type { StrandsAnswer, StrandsPuzzle } from "@/domain/strands/types";
 
@@ -9,11 +14,13 @@ type StrandsGridProps = {
   selectedPath: number[];
   foundWords: string[];
   disabled: boolean;
-  onSelectTile: (tileIndex: number) => void;
+  onSelectTile: (tileIndex: number) => boolean;
+  onClearSelection: () => void;
 };
 
 type FoundAnswerVisual = {
   answer: StrandsAnswer;
+  kind: "theme" | "spangram";
   tileClass: string;
   lineClass: string;
 };
@@ -68,12 +75,15 @@ export function StrandsGrid({
   foundWords,
   disabled,
   onSelectTile,
+  onClearSelection,
 }: StrandsGridProps) {
+  const [focusedTileIndex, setFocusedTileIndex] = useState(0);
   const selectedTiles = new Set(selectedPath);
   const foundAnswers = getFoundAnswerVisuals(puzzle, foundWords);
   const foundTileVisuals = new Map<number, FoundAnswerVisual>();
   const gestureRef = useRef<PointerGesture | null>(null);
   const selectedPathRef = useRef(selectedPath);
+  const tileRefs = useRef<Array<HTMLButtonElement | null>>([]);
   selectedPathRef.current = selectedPath;
 
   for (const visual of foundAnswers) {
@@ -135,7 +145,12 @@ export function StrandsGrid({
       const currentFinalTile = selectedPathRef.current.at(-1);
 
       if (currentFinalTile !== gesture.startTileIndex) {
-        onSelectTile(gesture.startTileIndex);
+        const resolved = onSelectTile(gesture.startTileIndex);
+
+        if (resolved) {
+          finishPointerGesture(event);
+          return;
+        }
       }
     }
 
@@ -147,7 +162,10 @@ export function StrandsGrid({
     }
 
     gesture.lastTileIndex = hoveredTileIndex;
-    onSelectTile(hoveredTileIndex);
+
+    if (onSelectTile(hoveredTileIndex)) {
+      finishPointerGesture(event);
+    }
   }
 
   function handlePointerUp(event: ReactPointerEvent<HTMLDivElement>) {
@@ -180,11 +198,74 @@ export function StrandsGrid({
     }
   }
 
+  function handleTileKeyDown(
+    event: ReactKeyboardEvent<HTMLButtonElement>,
+    tileIndex: number,
+    interactive: boolean,
+  ) {
+    const arrowDestination = getArrowDestination(
+      event.key,
+      tileIndex,
+      puzzle.grid.rows,
+      puzzle.grid.columns,
+    );
+
+    if (arrowDestination !== null) {
+      event.preventDefault();
+      focusTile(arrowDestination);
+      return;
+    }
+
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+
+      if (interactive) {
+        onSelectTile(tileIndex);
+      }
+
+      return;
+    }
+
+    if (event.key === "Backspace") {
+      event.preventDefault();
+
+      if (disabled || selectedPath.length === 0) {
+        return;
+      }
+
+      const backtrackTileIndex =
+        selectedPath.length === 1
+          ? selectedPath[0]!
+          : selectedPath[selectedPath.length - 2]!;
+      onSelectTile(backtrackTileIndex);
+      return;
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+
+      if (!disabled) {
+        onClearSelection();
+      }
+    }
+  }
+
+  function focusTile(tileIndex: number) {
+    setFocusedTileIndex(tileIndex);
+    tileRefs.current[tileIndex]?.focus();
+  }
+
   return (
     <div
       className="relative mx-auto w-64 max-w-[calc(100vw-2rem)] sm:w-80"
       data-strands-board
     >
+      <p id="strands-grid-instructions" className="sr-only">
+        Use the arrow keys to move between letters. Press Enter or Space to
+        select a letter, Backspace to move back one selected letter, and Escape
+        to clear the current selection.
+      </p>
+
       <svg
         className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible"
         viewBox={`0 0 ${puzzle.grid.columns} ${puzzle.grid.rows}`}
@@ -221,6 +302,7 @@ export function StrandsGrid({
         className="relative z-10 grid touch-none select-none grid-cols-6 gap-2 sm:gap-3"
         role="grid"
         aria-label="Strands letter grid"
+        aria-describedby="strands-grid-instructions"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -229,25 +311,36 @@ export function StrandsGrid({
         {Array.from(puzzle.grid.letters).map((letter, tileIndex) => {
           const selected = selectedTiles.has(tileIndex);
           const foundVisual = foundTileVisuals.get(tileIndex);
+          const interactive = !foundVisual && !disabled;
           const row = Math.floor(tileIndex / puzzle.grid.columns) + 1;
           const column = (tileIndex % puzzle.grid.columns) + 1;
           const foundLabel = foundVisual
-            ? `, found in ${foundVisual.answer.word}`
+            ? foundVisual.kind === "spangram"
+              ? `, found in spangram ${foundVisual.answer.word}`
+              : `, found in theme word ${foundVisual.answer.word}`
             : "";
 
           return (
             <button
               key={tileIndex}
+              ref={(element) => {
+                tileRefs.current[tileIndex] = element;
+              }}
               type="button"
               role="gridcell"
               aria-label={`${letter}, row ${row}, column ${column}${foundLabel}${selected ? ", selected" : ""}`}
-              aria-pressed={selected}
-              aria-disabled={Boolean(foundVisual) || disabled}
+              aria-selected={selected}
+              aria-disabled={!interactive}
+              tabIndex={tileIndex === focusedTileIndex ? 0 : -1}
               data-strands-tile={tileIndex}
               data-strands-claimed={foundVisual ? "true" : "false"}
+              onFocus={() => setFocusedTileIndex(tileIndex)}
+              onKeyDown={(event) =>
+                handleTileKeyDown(event, tileIndex, interactive)
+              }
               onClick={(event) => {
-                if (event.detail === 0 && !foundVisual && !disabled) {
-                  onSelectTile(tileIndex);
+                if (event.detail === 0) {
+                  return;
                 }
               }}
               className={`flex aspect-square min-w-0 items-center justify-center rounded-full border text-xl font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2 sm:text-2xl ${
@@ -256,7 +349,7 @@ export function StrandsGrid({
                   : selected
                     ? "border-sky-600 bg-sky-600 text-white ring-2 ring-sky-200"
                     : "border-neutral-300 bg-background text-foreground hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
-              } ${foundVisual || disabled ? "cursor-default" : "cursor-pointer active:scale-95"}`}
+              } ${interactive ? "cursor-pointer active:scale-95" : "cursor-default"}`}
             >
               {letter}
             </button>
@@ -280,11 +373,15 @@ function getFoundAnswerVisuals(
     }
 
     const visual = THEME_VISUALS[index % THEME_VISUALS.length]!;
-    visuals.push({ answer, ...visual });
+    visuals.push({ answer, kind: "theme", ...visual });
   });
 
   if (found.has(puzzle.spangram.word)) {
-    visuals.push({ answer: puzzle.spangram, ...SPANGRAM_VISUAL });
+    visuals.push({
+      answer: puzzle.spangram,
+      kind: "spangram",
+      ...SPANGRAM_VISUAL,
+    });
   }
 
   return visuals;
@@ -317,4 +414,27 @@ function getInteractiveTileIndex(tile: HTMLElement | null): number | null {
 
   const tileIndex = Number(tile.dataset.strandsTile);
   return Number.isInteger(tileIndex) ? tileIndex : null;
+}
+
+function getArrowDestination(
+  key: string,
+  tileIndex: number,
+  rows: number,
+  columns: number,
+): number | null {
+  const row = Math.floor(tileIndex / columns);
+  const column = tileIndex % columns;
+
+  switch (key) {
+    case "ArrowLeft":
+      return column > 0 ? tileIndex - 1 : tileIndex;
+    case "ArrowRight":
+      return column < columns - 1 ? tileIndex + 1 : tileIndex;
+    case "ArrowUp":
+      return row > 0 ? tileIndex - columns : tileIndex;
+    case "ArrowDown":
+      return row < rows - 1 ? tileIndex + columns : tileIndex;
+    default:
+      return null;
+  }
 }
