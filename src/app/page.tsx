@@ -23,6 +23,13 @@ export default function Home() {
             href="/games/wordle"
             prefetch={false}
           />
+
+          <GameCard
+            title="Strands"
+            actionLabel="Play Strands"
+            href="/games/strands"
+            prefetch={false}
+          />
         </div>
       </section>
     </main>
