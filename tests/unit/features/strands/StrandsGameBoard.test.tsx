@@ -4,15 +4,15 @@ import { afterEach, describe, expect, it } from "vitest";
 import { StrandsGameBoard } from "@/features/strands/StrandsGameBoard";
 import { testStrandsPuzzle } from "../../../fixtures/strands";
 
+const NEXT_PUZZLE_ID = "wedding-02";
+
 afterEach(() => {
   cleanup();
 });
 
 describe("StrandsGameBoard", () => {
-  it("renders the fixed letter grid with roving keyboard focus", () => {
-    const { container } = render(
-      <StrandsGameBoard puzzle={testStrandsPuzzle} />,
-    );
+  it("renders the fixed letter grid with roving keyboard focus and active puzzle navigation", () => {
+    const { container } = renderBoard();
     const cells = screen.getAllByRole("gridcell");
 
     expect(
@@ -24,12 +24,13 @@ describe("StrandsGameBoard", () => {
     expect(
       screen.getByText(/Use the arrow keys to move between letters/),
     ).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "Next Puzzle" }).getAttribute("href"),
+    ).toBe(`/games/strands/${NEXT_PUZZLE_ID}`);
   });
 
   it("moves focus spatially with arrow keys", () => {
-    const { container } = render(
-      <StrandsGameBoard puzzle={testStrandsPuzzle} />,
-    );
+    const { container } = renderBoard();
     const first = getTile(container, 0);
 
     first.focus();
@@ -45,9 +46,7 @@ describe("StrandsGameBoard", () => {
   });
 
   it("supports keyboard selection, one-step backtracking, and clearing", () => {
-    const { container } = render(
-      <StrandsGameBoard puzzle={testStrandsPuzzle} />,
-    );
+    const { container } = renderBoard();
     const first = getTile(container, 0);
     const second = getTile(container, 1);
     const diagonal = getTile(container, 7);
@@ -76,9 +75,7 @@ describe("StrandsGameBoard", () => {
   });
 
   it("auto-resolves a theme word and keeps claimed tiles focusable", () => {
-    const { container } = render(
-      <StrandsGameBoard puzzle={testStrandsPuzzle} />,
-    );
+    const { container } = renderBoard();
     const answer = testStrandsPuzzle.themeWords[0]!;
 
     selectPathWithKeyboard(container, answer.path);
@@ -99,9 +96,7 @@ describe("StrandsGameBoard", () => {
   });
 
   it("finds the spangram early without completing or blocking further play", () => {
-    const { container } = render(
-      <StrandsGameBoard puzzle={testStrandsPuzzle} />,
-    );
+    const { container } = renderBoard();
 
     selectPathWithKeyboard(container, testStrandsPuzzle.spangram.path);
 
@@ -110,6 +105,7 @@ describe("StrandsGameBoard", () => {
     ).toBeTruthy();
     expect(screen.getByText("Found 1 of 7")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Play Again" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Next Puzzle" })).toBeTruthy();
 
     const nextThemeTile = getTile(
       container,
@@ -121,10 +117,8 @@ describe("StrandsGameBoard", () => {
     expect(screen.getByRole("status").textContent).toContain("Selected word:");
   });
 
-  it("completes only after every answer and resets with Play Again", () => {
-    const { container } = render(
-      <StrandsGameBoard puzzle={testStrandsPuzzle} />,
-    );
+  it("completes only after every answer and keeps Play Again beside Next Puzzle", () => {
+    const { container } = renderBoard();
     const answers = [
       ...testStrandsPuzzle.themeWords,
       testStrandsPuzzle.spangram,
@@ -137,14 +131,27 @@ describe("StrandsGameBoard", () => {
     expect(screen.getByText("Puzzle complete!")).toBeTruthy();
     expect(screen.getByText("Found 7 of 7")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Play Again" })).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "Next Puzzle" }).getAttribute("href"),
+    ).toBe(`/games/strands/${NEXT_PUZZLE_ID}`);
 
     fireEvent.click(screen.getByRole("button", { name: "Play Again" }));
 
     expect(screen.getByText("Found 0 of 7")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Play Again" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Next Puzzle" })).toBeTruthy();
     expect(getTile(container, 0).getAttribute("aria-disabled")).toBe("false");
   });
 });
+
+function renderBoard() {
+  return render(
+    <StrandsGameBoard
+      puzzle={testStrandsPuzzle}
+      nextPuzzleId={NEXT_PUZZLE_ID}
+    />,
+  );
+}
 
 function getTile(container: HTMLElement, tileIndex: number): HTMLButtonElement {
   const tile = container.querySelector(`[data-strands-tile="${tileIndex}"]`);
