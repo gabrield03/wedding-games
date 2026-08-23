@@ -29,7 +29,9 @@ test("player can navigate from the home page to Connections", async ({
     .click();
 
   await expect(page).toHaveURL(connectionsPuzzlePath);
-  await expect(page.getByRole("heading", { name: "Connections" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Connections" }),
+  ).toBeVisible();
 
   const backLink = page.getByRole("link", {
     name: "Back to games",
