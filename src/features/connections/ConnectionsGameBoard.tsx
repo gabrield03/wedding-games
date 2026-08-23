@@ -114,10 +114,10 @@ export function ConnectionsGameBoard({ puzzle }: ConnectionsGameBoardProps) {
                     data-connections-group-tier={group.tier}
                     className={`col-span-4 flex h-16 min-w-0 flex-col items-center justify-center rounded-lg px-2 py-1 text-center text-neutral-950 sm:h-20 sm:px-4 ${GROUP_TIER_CLASSES[group.tier]}`}
                   >
-                    <p className="w-full truncate text-xs font-bold sm:text-base">
+                    <p className="w-full text-[11px] leading-tight font-bold break-words sm:text-sm">
                       {group.category}
                     </p>
-                    <p className="mt-0.5 w-full text-[10px] leading-tight break-words sm:text-sm">
+                    <p className="mt-0.5 w-full text-[9px] leading-tight break-words sm:text-xs">
                       {group.tiles.map((tile) => tile.label).join(", ")}
                     </p>
                   </div>
