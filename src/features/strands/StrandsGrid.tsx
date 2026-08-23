@@ -48,7 +48,10 @@ export function StrandsGrid({
   }
 
   return (
-    <div className="relative mx-auto w-full max-w-lg" data-strands-board>
+    <div
+      className="relative mx-auto w-64 max-w-[calc(100vw-2rem)] sm:w-80"
+      data-strands-board
+    >
       <svg
         className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible"
         viewBox={`0 0 ${puzzle.grid.columns} ${puzzle.grid.rows}`}
