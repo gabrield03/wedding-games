@@ -25,7 +25,7 @@ export function ConnectionsGameBoard({ puzzle }: ConnectionsGameBoardProps) {
 
   return (
     <section
-      className="relative isolate"
+      className="relative isolate mx-auto w-[28rem] max-w-[calc(100vw-2rem)] min-w-0"
       aria-busy={game.initializationStatus === "preparing"}
     >
       <h1 className="text-center text-3xl font-bold">Connections</h1>
