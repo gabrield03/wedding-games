@@ -18,6 +18,19 @@ export function StrandsGameBoard({
 }: StrandsGameBoardProps) {
   const game = useStrandsGame(puzzle);
 
+  if (!game.isHydrated) {
+    return (
+      <section className="w-full min-w-0" aria-labelledby="strands-heading">
+        <h1 id="strands-heading" className="text-center text-3xl font-bold">
+          Strands
+        </h1>
+        <p className="mt-6 text-center text-neutral-600" role="status">
+          Loading puzzle...
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section className="w-full min-w-0" aria-labelledby="strands-heading">
       <h1 id="strands-heading" className="text-center text-3xl font-bold">
