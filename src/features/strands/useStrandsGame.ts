@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   clearStrandsPath,
@@ -14,6 +14,13 @@ import {
   type StrandsSubmissionResult,
 } from "@/domain/strands/gameplay";
 import type { StrandsGameState, StrandsPuzzle } from "@/domain/strands/types";
+
+import {
+  clearStrandsPuzzleProgress,
+  loadStrandsPuzzleProgress,
+  saveLastVisitedStrandsPuzzleId,
+  saveStrandsPuzzleProgress,
+} from "./strandsProgressStorage";
 
 type StrandsFeedback =
   | { kind: "found-theme"; message: string }
@@ -31,11 +38,38 @@ export function useStrandsGame(puzzle: StrandsPuzzle) {
   const stateRef = useRef(initialState);
   const [feedback, setFeedback] = useState<StrandsFeedback>(null);
   const [hintedWord, setHintedWord] = useState<string | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   const commitState = useCallback((nextState: StrandsGameState) => {
     stateRef.current = nextState;
     setState(nextState);
   }, []);
+
+  useEffect(() => {
+    const persistedProgress = loadStrandsPuzzleProgress(puzzle);
+    const restoredState: StrandsGameState = {
+      selectedPath: [],
+      foundWords: persistedProgress?.foundWords ?? [],
+    };
+
+    stateRef.current = restoredState;
+    setState(restoredState);
+    setHintedWord(persistedProgress?.hintedWord ?? null);
+    setFeedback(null);
+    saveLastVisitedStrandsPuzzleId(puzzle.id);
+    setIsHydrated(true);
+  }, [puzzle]);
+
+  useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
+    saveStrandsPuzzleProgress(puzzle, {
+      foundWords: state.foundWords,
+      hintedWord,
+    });
+  }, [hintedWord, isHydrated, puzzle, state.foundWords]);
 
   const setSubmissionFeedback = useCallback(
     (result: StrandsSubmissionResult) => {
@@ -186,12 +220,14 @@ export function useStrandsGame(puzzle: StrandsPuzzle) {
   }, [hintedWord, puzzle]);
 
   const playAgain = useCallback(() => {
+    clearStrandsPuzzleProgress(puzzle.id);
     commitState(createInitialStrandsGameState());
     setHintedWord(null);
     setFeedback(null);
-  }, [commitState]);
+  }, [commitState, puzzle.id]);
 
   return {
+    isHydrated,
     selectedPath: state.selectedPath,
     selectedWord,
     foundWords: state.foundWords,
@@ -199,8 +235,8 @@ export function useStrandsGame(puzzle: StrandsPuzzle) {
     hintedPath,
     gameStatus,
     feedback,
-    canInteract: gameStatus === "playing",
-    canHint,
+    canInteract: isHydrated && gameStatus === "playing",
+    canHint: isHydrated && canHint,
     answerCount: puzzle.themeWords.length + 1,
     selectTile,
     clearSelection,
