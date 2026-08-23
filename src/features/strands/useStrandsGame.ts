@@ -21,6 +21,7 @@ type StrandsFeedback =
   | { kind: "already-found"; message: string }
   | { kind: "not-theme"; message: string }
   | { kind: "invalid-path"; message: string }
+  | { kind: "hint"; message: string }
   | { kind: "complete"; message: string }
   | null;
 
@@ -29,6 +30,7 @@ export function useStrandsGame(puzzle: StrandsPuzzle) {
   const [state, setState] = useState(initialState);
   const stateRef = useRef(initialState);
   const [feedback, setFeedback] = useState<StrandsFeedback>(null);
+  const [hintedWord, setHintedWord] = useState<string | null>(null);
 
   const commitState = useCallback((nextState: StrandsGameState) => {
     stateRef.current = nextState;
@@ -73,6 +75,25 @@ export function useStrandsGame(puzzle: StrandsPuzzle) {
     [],
   );
 
+  const clearResolvedHint = useCallback((result: StrandsSubmissionResult) => {
+    const resolvedWord =
+      result.status === "found_theme" ||
+      result.status === "found_spangram" ||
+      result.status === "already_found"
+        ? result.word
+        : result.status === "game_complete"
+          ? result.completedBy?.word
+          : undefined;
+
+    if (!resolvedWord) {
+      return;
+    }
+
+    setHintedWord((currentHint) =>
+      currentHint === resolvedWord ? null : currentHint,
+    );
+  }, []);
+
   const gameStatus = useMemo(
     () => getStrandsGameStatus(puzzle, state),
     [puzzle, state],
@@ -84,6 +105,17 @@ export function useStrandsGame(puzzle: StrandsPuzzle) {
   const claimedTileIndexes = useMemo(
     () => getClaimedStrandsTileIndexes(puzzle, state),
     [puzzle, state],
+  );
+  const hintedPath = useMemo(
+    () =>
+      puzzle.themeWords.find(({ word }) => word === hintedWord)?.path ?? [],
+    [hintedWord, puzzle.themeWords],
+  );
+  const canHint = useMemo(
+    () =>
+      gameStatus === "playing" &&
+      puzzle.themeWords.some(({ word }) => !state.foundWords.includes(word)),
+    [gameStatus, puzzle.themeWords, state.foundWords],
   );
 
   const selectTile = useCallback(
@@ -103,10 +135,11 @@ export function useStrandsGame(puzzle: StrandsPuzzle) {
 
       const result = submitStrandsPath(puzzle, nextState);
       commitState(result.state);
+      clearResolvedHint(result);
       setSubmissionFeedback(result);
       return true;
     },
-    [commitState, puzzle, setSubmissionFeedback],
+    [clearResolvedHint, commitState, puzzle, setSubmissionFeedback],
   );
 
   const clearSelection = useCallback(() => {
@@ -118,11 +151,44 @@ export function useStrandsGame(puzzle: StrandsPuzzle) {
     const result = submitStrandsPath(puzzle, stateRef.current);
 
     commitState(result.state);
+    clearResolvedHint(result);
     setSubmissionFeedback(result);
-  }, [commitState, puzzle, setSubmissionFeedback]);
+  }, [clearResolvedHint, commitState, puzzle, setSubmissionFeedback]);
+
+  const showHint = useCallback(() => {
+    if (getStrandsGameStatus(puzzle, stateRef.current) === "complete") {
+      return;
+    }
+
+    if (
+      hintedWord &&
+      !stateRef.current.foundWords.includes(hintedWord) &&
+      puzzle.themeWords.some(({ word }) => word === hintedWord)
+    ) {
+      setFeedback({ kind: "hint", message: "Hint highlighted on the board." });
+      return;
+    }
+
+    const remainingThemeWords = puzzle.themeWords.filter(
+      ({ word }) => !stateRef.current.foundWords.includes(word),
+    );
+
+    if (remainingThemeWords.length === 0) {
+      return;
+    }
+
+    const hintedAnswer =
+      remainingThemeWords[
+        Math.floor(Math.random() * remainingThemeWords.length)
+      ]!;
+
+    setHintedWord(hintedAnswer.word);
+    setFeedback({ kind: "hint", message: "Hint highlighted on the board." });
+  }, [hintedWord, puzzle]);
 
   const playAgain = useCallback(() => {
     commitState(createInitialStrandsGameState());
+    setHintedWord(null);
     setFeedback(null);
   }, [commitState]);
 
@@ -131,13 +197,16 @@ export function useStrandsGame(puzzle: StrandsPuzzle) {
     selectedWord,
     foundWords: state.foundWords,
     claimedTileIndexes,
+    hintedPath,
     gameStatus,
     feedback,
     canInteract: gameStatus === "playing",
+    canHint,
     answerCount: puzzle.themeWords.length + 1,
     selectTile,
     clearSelection,
     submitSelection,
+    showHint,
     playAgain,
   };
 }
