@@ -21,7 +21,7 @@ export function WordleKeyboard({
 }: WordleKeyboardProps) {
   return (
     <div
-      className="mx-auto mt-6 w-full max-w-[640px] space-y-2"
+      className="mx-auto mt-5 w-full max-w-[640px] space-y-1.5 sm:mt-6 sm:space-y-2"
       role="group"
       aria-label="On-screen keyboard"
       data-wordle-keyboard
@@ -43,7 +43,7 @@ export function WordleKeyboard({
                 onClick={() => onLetter(letter)}
                 aria-label={status ? `${letter}, ${status}` : letter}
                 data-status={status ?? "unused"}
-                className={`min-h-14 min-w-0 flex-1 touch-manipulation rounded px-1 py-2 text-sm font-bold transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base ${getKeyStatusClass(status)}`}
+                className={`min-h-[52px] min-w-0 flex-1 touch-manipulation rounded px-1 py-2 text-sm font-bold transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-14 sm:text-base ${getKeyStatusClass(status)}`}
               >
                 {letter}
               </button>
@@ -87,7 +87,7 @@ function ActionKey({
       disabled={disabled}
       onClick={onClick}
       aria-label={accessibleLabel}
-      className={`min-h-14 min-w-0 flex-[2] touch-manipulation rounded border border-neutral-400 bg-neutral-200 px-0.5 py-2 font-bold text-neutral-950 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${labelSizeClass}`}
+      className={`min-h-[52px] min-w-0 flex-[2] touch-manipulation rounded border border-neutral-400 bg-neutral-200 px-0.5 py-2 font-bold text-neutral-950 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-14 ${labelSizeClass}`}
     >
       {label}
     </button>
