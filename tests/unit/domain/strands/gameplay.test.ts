@@ -80,7 +80,7 @@ describe("Strands gameplay", () => {
     );
   });
 
-  it("matches exact forward and reverse answer paths", () => {
+  it("matches only the exact forward answer path", () => {
     const answer = testStrandsPuzzle.themeWords[0]!;
 
     expect(getStrandsAnswerMatch(testStrandsPuzzle, answer.path)).toEqual({
@@ -89,7 +89,7 @@ describe("Strands gameplay", () => {
     });
     expect(
       getStrandsAnswerMatch(testStrandsPuzzle, [...answer.path].reverse()),
-    ).toEqual({ word: answer.word, kind: "theme" });
+    ).toBeNull();
     expect(getStrandsAnswerMatch(testStrandsPuzzle, [0, 1, 2, 8])).toBeNull();
   });
 
@@ -104,16 +104,14 @@ describe("Strands gameplay", () => {
     });
   });
 
-  it("discovers the spangram through its reversed stored path without ending the game early", () => {
+  it("rejects a reversed spangram path", () => {
     const result = submitStrandsPath(testStrandsPuzzle, {
       selectedPath: [...testStrandsPuzzle.spangram.path].reverse(),
       foundWords: [],
     });
 
-    expect(result).toMatchObject({
-      status: "found_spangram",
-      word: testStrandsPuzzle.spangram.word,
-    });
+    expect(result.status).toBe("not_theme");
+    expect(result.state.foundWords).toEqual([]);
     expect(getStrandsGameStatus(testStrandsPuzzle, result.state)).toBe(
       "playing",
     );
