@@ -4,7 +4,7 @@ Last updated: 2026-08-22
 
 ## Current milestone
 
-**M6 - Server-Authoritative Gameplay: in progress (final Wordle client cutover)**
+**M7 - Strands Prototype: in progress (Issue 2 domain and G1 content)**
 
 M1, the Connections Prototype milestone, is complete.
 
@@ -93,9 +93,12 @@ merged.
 
 M6 Issue 5 cuts the Wordle client over to authoritative Attempts and removes
 the hidden answer from browser-facing route props and render payloads.
-Implementation and the complete local validation gate are finished. Merge is
-still pending, so Issue 5 and M6 remain in progress. This is the final planned
-M6 issue.
+Issue 5 is complete and merged. M6 server-authoritative gameplay is complete.
+
+M7 Issue 1 defined the Strands puzzle, path, interaction, accessibility, and
+vertical-slice direction. Issue 2 is implementing the pure domain rules and
+the fixed first production puzzle without adding UI, persistence, or server
+authority.
 
 Final reaction behavior:
 
@@ -1369,7 +1372,34 @@ Issue 5 implementation validation completed:
 - Format, format check, lint, typecheck, production build, `git diff --check`,
   and scope review passed.
 
-Issue 5 and M6 remain in progress until merge is complete.
+Issue 5 and M6 are complete.
+
+## M7 issue 2 - Implement Strands domain rules and G1 puzzle
+
+Issue 2 implementation:
+
+- Added the independent pure Strands puzzle and immutable game-state model for
+  a fixed 8-by-6, row-major grid.
+- Added adjacency, append/backtrack, claimed-tile exclusion, exact forward or
+  reverse path matching, discovery, duplicate defense, neutral non-theme
+  handling, and derived completion rules.
+- Added runtime validation for dimensions, canonical answers, paths,
+  adjacency, spelling, overlap, exact 48-tile coverage, and opposite-edge
+  spangram coverage.
+- Added the local `the-big-day` G1 puzzle with the locked theme clue, six theme
+  words, `WEDDINGDAY` spangram, explicit grid, and explicit answer paths.
+- Kept Strands independent from React, routes, the database, Attempts, and the
+  Connections and Wordle implementations.
+
+Issue 2 implementation validation completed:
+
+- All 27 focused Strands domain, validation, and content tests passed.
+- All 271 unit/component tests passed.
+- Format, format check, lint, typecheck, production build, `git diff --check`,
+  and scope review passed.
+- Playwright was not run because Issue 2 adds no route or UI behavior.
+
+Issue 2 remains in progress until merge is complete.
 
 ## M5 issue 1 non-goals and deferred work
 
@@ -1447,5 +1477,6 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Merge the validated final Wordle client authority cutover. Do not begin
-scoring, leaderboards, or another milestone yet.
+Complete validation and merge for M7 Issue 2, then begin the playable Strands
+board/controller issue. Do not add persistence or server authority during the
+Strands prototype milestone.
