@@ -38,7 +38,9 @@ export function StrandsGameBoard({ puzzle }: StrandsGameBoardProps) {
             {game.selectedWord}
           </p>
         ) : (
-          <p className="font-normal text-neutral-500">Select adjacent letters.</p>
+          <p className="font-normal text-neutral-500">
+            Select adjacent letters.
+          </p>
         )}
       </div>
 

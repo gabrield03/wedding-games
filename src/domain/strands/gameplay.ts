@@ -157,7 +157,9 @@ export function updateStrandsPath(
     };
   }
 
-  if (!areStrandsTilesAdjacent(finalTileIndex, tileIndex, puzzle.grid.columns)) {
+  if (
+    !areStrandsTilesAdjacent(finalTileIndex, tileIndex, puzzle.grid.columns)
+  ) {
     return state;
   }
 

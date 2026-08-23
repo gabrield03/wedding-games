@@ -82,9 +82,7 @@ export function StrandsGrid({
   const foundAnswers = getFoundAnswerVisuals(puzzle, foundWords);
   const foundTileVisuals = new Map<number, FoundAnswerVisual>();
   const gestureRef = useRef<PointerGesture | null>(null);
-  const selectedPathRef = useRef(selectedPath);
   const tileRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  selectedPathRef.current = selectedPath;
 
   for (const visual of foundAnswers) {
     for (const tileIndex of visual.answer.path) {
@@ -130,8 +128,10 @@ export function StrandsGrid({
     const hoveredTile = getTileElementFromPoint(event.clientX, event.clientY);
     const hoveredTileIndex = getInteractiveTileIndex(hoveredTile);
     const movedFarEnough =
-      Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY) >=
-      DRAG_DISTANCE_PX;
+      Math.hypot(
+        event.clientX - gesture.startX,
+        event.clientY - gesture.startY,
+      ) >= DRAG_DISTANCE_PX;
     const movedToAnotherTile =
       hoveredTileIndex !== null && hoveredTileIndex !== gesture.startTileIndex;
 
@@ -142,7 +142,7 @@ export function StrandsGrid({
     if (!gesture.dragged) {
       gesture.dragged = true;
 
-      const currentFinalTile = selectedPathRef.current.at(-1);
+      const currentFinalTile = selectedPath.at(-1);
 
       if (currentFinalTile !== gesture.startTileIndex) {
         const resolved = onSelectTile(gesture.startTileIndex);

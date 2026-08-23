@@ -10,10 +10,14 @@ afterEach(() => {
 
 describe("StrandsGameBoard", () => {
   it("renders the fixed letter grid with roving keyboard focus", () => {
-    const { container } = render(<StrandsGameBoard puzzle={testStrandsPuzzle} />);
+    const { container } = render(
+      <StrandsGameBoard puzzle={testStrandsPuzzle} />,
+    );
     const cells = screen.getAllByRole("gridcell");
 
-    expect(screen.getByRole("grid", { name: "Strands letter grid" })).toBeTruthy();
+    expect(
+      screen.getByRole("grid", { name: "Strands letter grid" }),
+    ).toBeTruthy();
     expect(cells).toHaveLength(48);
     expect(getTile(container, 0).tabIndex).toBe(0);
     expect(getTile(container, 1).tabIndex).toBe(-1);
@@ -23,7 +27,9 @@ describe("StrandsGameBoard", () => {
   });
 
   it("moves focus spatially with arrow keys", () => {
-    const { container } = render(<StrandsGameBoard puzzle={testStrandsPuzzle} />);
+    const { container } = render(
+      <StrandsGameBoard puzzle={testStrandsPuzzle} />,
+    );
     const first = getTile(container, 0);
 
     first.focus();
@@ -39,7 +45,9 @@ describe("StrandsGameBoard", () => {
   });
 
   it("supports keyboard selection, one-step backtracking, and clearing", () => {
-    const { container } = render(<StrandsGameBoard puzzle={testStrandsPuzzle} />);
+    const { container } = render(
+      <StrandsGameBoard puzzle={testStrandsPuzzle} />,
+    );
     const first = getTile(container, 0);
     const second = getTile(container, 1);
     const diagonal = getTile(container, 7);
@@ -68,7 +76,9 @@ describe("StrandsGameBoard", () => {
   });
 
   it("auto-resolves a theme word and keeps claimed tiles focusable", () => {
-    const { container } = render(<StrandsGameBoard puzzle={testStrandsPuzzle} />);
+    const { container } = render(
+      <StrandsGameBoard puzzle={testStrandsPuzzle} />,
+    );
     const answer = testStrandsPuzzle.themeWords[0]!;
 
     selectPathWithKeyboard(container, answer.path);
@@ -89,7 +99,9 @@ describe("StrandsGameBoard", () => {
   });
 
   it("finds the spangram early without completing or blocking further play", () => {
-    const { container } = render(<StrandsGameBoard puzzle={testStrandsPuzzle} />);
+    const { container } = render(
+      <StrandsGameBoard puzzle={testStrandsPuzzle} />,
+    );
 
     selectPathWithKeyboard(container, testStrandsPuzzle.spangram.path);
 
@@ -110,7 +122,9 @@ describe("StrandsGameBoard", () => {
   });
 
   it("completes only after every answer and resets with Play Again", () => {
-    const { container } = render(<StrandsGameBoard puzzle={testStrandsPuzzle} />);
+    const { container } = render(
+      <StrandsGameBoard puzzle={testStrandsPuzzle} />,
+    );
     const answers = [
       ...testStrandsPuzzle.themeWords,
       testStrandsPuzzle.spangram,
@@ -133,9 +147,7 @@ describe("StrandsGameBoard", () => {
 });
 
 function getTile(container: HTMLElement, tileIndex: number): HTMLButtonElement {
-  const tile = container.querySelector(
-    `[data-strands-tile="${tileIndex}"]`,
-  );
+  const tile = container.querySelector(`[data-strands-tile="${tileIndex}"]`);
 
   if (!(tile instanceof HTMLButtonElement)) {
     throw new Error(`Missing Strands tile ${tileIndex}.`);

@@ -90,11 +90,7 @@ export function useStrandsGame(puzzle: StrandsPuzzle) {
     (tileIndex: number): boolean => {
       setFeedback(null);
 
-      const nextState = updateStrandsPath(
-        puzzle,
-        stateRef.current,
-        tileIndex,
-      );
+      const nextState = updateStrandsPath(puzzle, stateRef.current, tileIndex);
       const matchedAnswer = getStrandsAnswerMatch(
         puzzle,
         nextState.selectedPath,

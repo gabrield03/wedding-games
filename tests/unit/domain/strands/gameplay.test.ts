@@ -114,7 +114,9 @@ describe("Strands gameplay", () => {
       status: "found_spangram",
       word: testStrandsPuzzle.spangram.word,
     });
-    expect(getStrandsGameStatus(testStrandsPuzzle, result.state)).toBe("playing");
+    expect(getStrandsGameStatus(testStrandsPuzzle, result.state)).toBe(
+      "playing",
+    );
   });
 
   it("keeps the game active after finding the spangram in the middle of progress", () => {
@@ -129,7 +131,9 @@ describe("Strands gameplay", () => {
       firstTheme.word,
       testStrandsPuzzle.spangram.word,
     ]);
-    expect(getStrandsGameStatus(testStrandsPuzzle, result.state)).toBe("playing");
+    expect(getStrandsGameStatus(testStrandsPuzzle, result.state)).toBe(
+      "playing",
+    );
   });
 
   it("rejects a different path even when its selected letters spell an answer", () => {
