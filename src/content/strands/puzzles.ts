@@ -168,9 +168,50 @@ export const sushiStrandsPuzzle: StrandsPuzzle = {
   },
 };
 
+export const newOrleansStrandsPuzzle: StrandsPuzzle = {
+  id: STRANDS_PUZZLE_IDS[4],
+  themeClue: "Where it all started",
+  grid: {
+    rows: 8,
+    columns: 6,
+    letters: "NEWORLRASJAEGOUOZAIYSYZNDARSVSRBETOBAOODOEMTENGI",
+  },
+  themeWords: [
+    {
+      word: "JAZZ",
+      path: [9, 10, 16, 22],
+    },
+    {
+      word: "BEIGNET",
+      path: [35, 41, 47, 46, 45, 44, 43],
+    },
+    {
+      word: "OYSTERS",
+      path: [15, 21, 27, 33, 32, 26, 20],
+    },
+    {
+      word: "VOODOO",
+      path: [28, 34, 40, 39, 38, 37],
+    },
+    {
+      word: "MARDIGRAS",
+      path: [42, 36, 30, 24, 18, 12, 6, 7, 8],
+    },
+    {
+      word: "BAYOU",
+      path: [31, 25, 19, 13, 14],
+    },
+  ],
+  spangram: {
+    word: "NEWORLEANS",
+    path: [0, 1, 2, 3, 4, 5, 11, 17, 23, 29],
+  },
+};
+
 export const strandsPuzzles: StrandsPuzzle[] = [
   bigDayStrandsPuzzle,
   travelsStrandsPuzzle,
   hotPotStrandsPuzzle,
   sushiStrandsPuzzle,
+  newOrleansStrandsPuzzle,
 ];
