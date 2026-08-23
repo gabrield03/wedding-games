@@ -288,20 +288,6 @@ export function StrandsGrid({
           />
         ))}
 
-        {hintedPath.length > 1 && (
-          <polyline
-            data-strands-hint-path
-            points={pathPoints(hintedPath, puzzle.grid.columns)}
-            fill="none"
-            className="stroke-neutral-400 dark:stroke-neutral-500"
-            strokeWidth="4"
-            strokeDasharray="5 5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            vectorEffect="non-scaling-stroke"
-          />
-        )}
-
         {selectedPath.length > 1 && (
           <polyline
             points={pathPoints(selectedPath, puzzle.grid.columns)}
