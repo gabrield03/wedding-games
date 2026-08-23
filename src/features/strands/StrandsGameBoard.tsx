@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import type { StrandsPuzzle } from "@/domain/strands/types";
 
 import { StrandsGrid } from "./StrandsGrid";
@@ -7,9 +9,13 @@ import { useStrandsGame } from "./useStrandsGame";
 
 type StrandsGameBoardProps = {
   puzzle: StrandsPuzzle;
+  nextPuzzleId: string;
 };
 
-export function StrandsGameBoard({ puzzle }: StrandsGameBoardProps) {
+export function StrandsGameBoard({
+  puzzle,
+  nextPuzzleId,
+}: StrandsGameBoardProps) {
   const game = useStrandsGame(puzzle);
 
   return (
@@ -59,8 +65,8 @@ export function StrandsGameBoard({ puzzle }: StrandsGameBoardProps) {
         Found {game.foundWords.length} of {game.answerCount}
       </p>
 
-      {game.gameStatus === "complete" && (
-        <div className="mt-4 text-center">
+      <div className="mt-4 flex flex-wrap justify-center gap-3">
+        {game.gameStatus === "complete" && (
           <button
             type="button"
             onClick={game.playAgain}
@@ -68,8 +74,15 @@ export function StrandsGameBoard({ puzzle }: StrandsGameBoardProps) {
           >
             Play Again
           </button>
-        </div>
-      )}
+        )}
+
+        <Link
+          href={`/games/strands/${nextPuzzleId}`}
+          className="rounded-full border px-5 py-2 font-semibold transition hover:bg-neutral-100 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2 dark:hover:bg-neutral-900"
+        >
+          Next Puzzle
+        </Link>
+      </div>
     </section>
   );
 }

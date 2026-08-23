@@ -9,6 +9,7 @@ import {
 } from "@/domain/strands/types";
 
 const UPPERCASE_ASCII_PATTERN = /^[A-Z]+$/;
+const MULTIPLE_PATH_LIMIT = 2;
 
 export function validateStrandsPuzzle(puzzle: StrandsPuzzle): string[] {
   const errors: string[] = [];
@@ -72,6 +73,12 @@ export function validateStrandsPuzzle(puzzle: StrandsPuzzle): string[] {
 
   if (!touchesOppositeEdges(puzzle.spangram.path)) {
     errors.push("Spangram path must touch two opposite grid edges");
+  }
+
+  if (hasValidGridShape(puzzle)) {
+    for (const { answer, label } of answers) {
+      validateUniqueAnswerPath(puzzle, answer, label, errors);
+    }
   }
 
   return errors;
@@ -160,6 +167,105 @@ function validateAnswer(
       usedTiles.set(tileIndex, answer.word);
     }
   }
+}
+
+function validateUniqueAnswerPath(
+  puzzle: StrandsPuzzle,
+  answer: StrandsAnswer,
+  label: "Theme word" | "Spangram",
+  errors: string[],
+) {
+  if (
+    answer.word.length < STRANDS_MIN_WORD_LENGTH ||
+    !UPPERCASE_ASCII_PATTERN.test(answer.word)
+  ) {
+    return;
+  }
+
+  const pathCount = countSpellingPaths(
+    puzzle.grid.letters,
+    puzzle.grid.columns,
+    answer.word,
+    MULTIPLE_PATH_LIMIT,
+  );
+  const answerLabel = `${label} ${answer.word}`;
+
+  if (pathCount === 0) {
+    errors.push(`${answerLabel} has no valid path that spells ${answer.word}`);
+  } else if (pathCount > 1) {
+    errors.push(
+      `${answerLabel} has multiple valid paths that spell ${answer.word}`,
+    );
+  }
+}
+
+function countSpellingPaths(
+  letters: string,
+  columns: number,
+  word: string,
+  limit: number,
+): number {
+  let pathCount = 0;
+  const visited = new Set<number>();
+
+  function search(tileIndex: number, wordIndex: number) {
+    if (pathCount >= limit) {
+      return;
+    }
+
+    if (wordIndex === word.length - 1) {
+      pathCount += 1;
+      return;
+    }
+
+    visited.add(tileIndex);
+    const nextLetter = word[wordIndex + 1];
+
+    for (
+      let candidateIndex = 0;
+      candidateIndex < letters.length;
+      candidateIndex += 1
+    ) {
+      if (
+        visited.has(candidateIndex) ||
+        letters[candidateIndex] !== nextLetter ||
+        !areStrandsTilesAdjacent(tileIndex, candidateIndex, columns)
+      ) {
+        continue;
+      }
+
+      search(candidateIndex, wordIndex + 1);
+
+      if (pathCount >= limit) {
+        break;
+      }
+    }
+
+    visited.delete(tileIndex);
+  }
+
+  for (let tileIndex = 0; tileIndex < letters.length; tileIndex += 1) {
+    if (letters[tileIndex] !== word[0]) {
+      continue;
+    }
+
+    search(tileIndex, 0);
+
+    if (pathCount >= limit) {
+      break;
+    }
+  }
+
+  return pathCount;
+}
+
+function hasValidGridShape(puzzle: StrandsPuzzle): boolean {
+  return (
+    puzzle.grid.rows === STRANDS_GRID_ROWS &&
+    puzzle.grid.columns === STRANDS_GRID_COLUMNS &&
+    puzzle.grid.letters.length === STRANDS_TILE_COUNT &&
+    UPPERCASE_ASCII_PATTERN.test(puzzle.grid.letters)
+  );
 }
 
 function touchesOppositeEdges(path: number[]): boolean {
