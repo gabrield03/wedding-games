@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 const strandsPuzzlePath = "/games/strands/wedding-01";
+const sushiPuzzlePath = "/games/strands/wedding-04";
+const newOrleansPuzzlePath = "/games/strands/wedding-05";
 
 test("player can request a Strands hint without solving the answer", async ({
   page,
@@ -50,4 +52,18 @@ test("player can request a Strands hint without solving the answer", async ({
   );
 
   expect(repeatedHintedIndexes).toEqual(firstHintedIndexes);
+});
+
+test("Next Puzzle enters New Orleans and wraps back to the first puzzle", async ({
+  page,
+}) => {
+  await page.goto(sushiPuzzlePath);
+
+  await page.getByRole("link", { name: "Next Puzzle" }).click();
+  await expect(page).toHaveURL(newOrleansPuzzlePath);
+  await expect(page.getByText("Where it all started")).toBeVisible();
+
+  await page.getByRole("link", { name: "Next Puzzle" }).click();
+  await expect(page).toHaveURL(strandsPuzzlePath);
+  await expect(page.getByText("The Big Day")).toBeVisible();
 });

@@ -44,6 +44,12 @@ const EXPECTED_PUZZLES = [
       "NORI",
     ],
   },
+  {
+    id: "wedding-05",
+    themeClue: "Where it all started",
+    spangram: "NEWORLEANS",
+    themeWords: ["JAZZ", "BEIGNET", "OYSTERS", "VOODOO", "JAMBALAYA", "GUMBO"],
+  },
 ] as const;
 
 describe("getStrandsPuzzle", () => {

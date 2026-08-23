@@ -3,6 +3,7 @@ export const STRANDS_PUZZLE_IDS = [
   "wedding-02",
   "wedding-03",
   "wedding-04",
+  "wedding-05",
 ] as const;
 
 export type StrandsPuzzleId = (typeof STRANDS_PUZZLE_IDS)[number];

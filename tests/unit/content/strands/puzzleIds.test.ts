@@ -12,6 +12,7 @@ describe("Strands puzzle navigation", () => {
       "wedding-02",
       "wedding-03",
       "wedding-04",
+      "wedding-05",
     ]);
   });
 
@@ -19,7 +20,8 @@ describe("Strands puzzle navigation", () => {
     expect(getNextStrandsPuzzleId("wedding-01")).toBe("wedding-02");
     expect(getNextStrandsPuzzleId("wedding-02")).toBe("wedding-03");
     expect(getNextStrandsPuzzleId("wedding-03")).toBe("wedding-04");
-    expect(getNextStrandsPuzzleId("wedding-04")).toBe("wedding-01");
+    expect(getNextStrandsPuzzleId("wedding-04")).toBe("wedding-05");
+    expect(getNextStrandsPuzzleId("wedding-05")).toBe("wedding-01");
   });
 
   it("returns null for an unknown puzzle ID", () => {
