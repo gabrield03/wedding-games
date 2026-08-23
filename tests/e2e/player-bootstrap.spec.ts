@@ -13,9 +13,7 @@ function waitForPlayerBootstrap(page: Page) {
 }
 
 async function expectConnectionsGameToBeUsable(page: Page) {
-  await expect(
-    page.getByRole("heading", { name: developmentConnectionsPuzzle.title }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Connections" })).toBeVisible();
   await expect(page.locator("button[aria-pressed]")).toHaveCount(16);
   await expect(page.getByRole("button", { name: "Shuffle" })).toBeEnabled();
 }
