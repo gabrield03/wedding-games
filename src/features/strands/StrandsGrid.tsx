@@ -303,6 +303,8 @@ export function StrandsGrid({
         role="grid"
         aria-label="Strands letter grid"
         aria-describedby="strands-grid-instructions"
+        aria-rowcount={puzzle.grid.rows}
+        aria-colcount={puzzle.grid.columns}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -329,6 +331,8 @@ export function StrandsGrid({
               type="button"
               role="gridcell"
               aria-label={`${letter}, row ${row}, column ${column}${foundLabel}${selected ? ", selected" : ""}`}
+              aria-rowindex={row}
+              aria-colindex={column}
               aria-selected={selected}
               aria-disabled={!interactive}
               tabIndex={tileIndex === focusedTileIndex ? 0 : -1}
@@ -338,11 +342,6 @@ export function StrandsGrid({
               onKeyDown={(event) =>
                 handleTileKeyDown(event, tileIndex, interactive)
               }
-              onClick={(event) => {
-                if (event.detail === 0) {
-                  return;
-                }
-              }}
               className={`flex aspect-square min-w-0 items-center justify-center rounded-full border text-xl font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2 sm:text-2xl ${
                 foundVisual
                   ? foundVisual.tileClass
