@@ -107,8 +107,7 @@ export function useStrandsGame(puzzle: StrandsPuzzle) {
     [puzzle, state],
   );
   const hintedPath = useMemo(
-    () =>
-      puzzle.themeWords.find(({ word }) => word === hintedWord)?.path ?? [],
+    () => puzzle.themeWords.find(({ word }) => word === hintedWord)?.path ?? [],
     [hintedWord, puzzle.themeWords],
   );
   const canHint = useMemo(

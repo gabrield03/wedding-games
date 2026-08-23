@@ -193,9 +193,7 @@ function validatePathCrossings(
   answers: LabeledAnswer[],
   errors: string[],
 ) {
-  const segments = answers.flatMap((answer) =>
-    getPathSegments(puzzle, answer),
-  );
+  const segments = answers.flatMap((answer) => getPathSegments(puzzle, answer));
   const reportedCrossings = new Set<string>();
 
   for (let firstIndex = 0; firstIndex < segments.length; firstIndex += 1) {
@@ -231,7 +229,10 @@ function validatePathCrossings(
         continue;
       }
 
-      const words = [first.answer.answer.word, second.answer.answer.word].sort();
+      const words = [
+        first.answer.answer.word,
+        second.answer.answer.word,
+      ].sort();
       const key = `between:${words.join(":")}`;
       if (!reportedCrossings.has(key)) {
         errors.push(
@@ -285,8 +286,7 @@ function segmentsCrossInTheirInteriors(
   const secondEndSide = orientation(second.start, second.end, first.end);
 
   return (
-    firstStartSide * firstEndSide < 0 &&
-    secondStartSide * secondEndSide < 0
+    firstStartSide * firstEndSide < 0 && secondStartSide * secondEndSide < 0
   );
 }
 
