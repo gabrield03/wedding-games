@@ -23,6 +23,9 @@ test("player can navigate from the home page to Connections", async ({
   await expect(
     page.getByRole("link", { name: "Play Wordle", exact: true }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Play Strands", exact: true }),
+  ).toBeVisible();
 
   await page
     .getByRole("link", { name: "Play Connections", exact: true })
