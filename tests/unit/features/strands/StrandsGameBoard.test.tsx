@@ -97,7 +97,7 @@ describe("StrandsGameBoard", () => {
     expect(screen.getByText("Found 1 of 7")).toBeTruthy();
   });
 
-  it("highlights one unfound theme path without solving or revealing its word", () => {
+  it("outlines one unfound theme answer without showing its path, solving, or revealing its word", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     const { container } = renderBoard();
     const hintedAnswer = testStrandsPuzzle.themeWords[0]!;
@@ -120,7 +120,7 @@ describe("StrandsGameBoard", () => {
       expect(getTile(container, tileIndex).dataset.strandsHinted).toBe("false");
     }
 
-    expect(container.querySelector("[data-strands-hint-path]")).toBeTruthy();
+    expect(container.querySelector("[data-strands-hint-path]")).toBeNull();
   });
 
   it("keeps the same hint on repeated requests until that answer is found", () => {
