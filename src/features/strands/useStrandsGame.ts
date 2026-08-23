@@ -1,20 +1,19 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import {
   clearStrandsPath,
   createInitialStrandsGameState,
   getClaimedStrandsTileIndexes,
+  getStrandsAnswerMatch,
   getStrandsGameStatus,
   getStrandsPathWord,
   submitStrandsPath,
   updateStrandsPath,
+  type StrandsSubmissionResult,
 } from "@/domain/strands/gameplay";
-import {
-  STRANDS_MIN_WORD_LENGTH,
-  type StrandsPuzzle,
-} from "@/domain/strands/types";
+import type { StrandsGameState, StrandsPuzzle } from "@/domain/strands/types";
 
 type StrandsFeedback =
   | { kind: "found-theme"; message: string }
@@ -26,8 +25,53 @@ type StrandsFeedback =
   | null;
 
 export function useStrandsGame(puzzle: StrandsPuzzle) {
-  const [state, setState] = useState(createInitialStrandsGameState);
+  const initialState = createInitialStrandsGameState();
+  const [state, setState] = useState(initialState);
+  const stateRef = useRef(initialState);
   const [feedback, setFeedback] = useState<StrandsFeedback>(null);
+
+  const commitState = useCallback((nextState: StrandsGameState) => {
+    stateRef.current = nextState;
+    setState(nextState);
+  }, []);
+
+  const setSubmissionFeedback = useCallback(
+    (result: StrandsSubmissionResult) => {
+      switch (result.status) {
+        case "found_theme":
+          setFeedback({
+            kind: "found-theme",
+            message: `Found: ${result.word}`,
+          });
+          break;
+        case "found_spangram":
+          setFeedback({
+            kind: "found-spangram",
+            message: `Spangram found: ${result.word}`,
+          });
+          break;
+        case "already_found":
+          setFeedback({
+            kind: "already-found",
+            message: `${result.word} is already found.`,
+          });
+          break;
+        case "not_theme":
+          setFeedback({ kind: "not-theme", message: "Not a theme word." });
+          break;
+        case "invalid_path":
+          setFeedback({
+            kind: "invalid-path",
+            message: "Select at least four adjacent letters.",
+          });
+          break;
+        case "game_complete":
+          setFeedback({ kind: "complete", message: "Puzzle complete!" });
+          break;
+      }
+    },
+    [],
+  );
 
   const gameStatus = useMemo(
     () => getStrandsGameStatus(puzzle, state),
@@ -45,58 +89,45 @@ export function useStrandsGame(puzzle: StrandsPuzzle) {
   const selectTile = useCallback(
     (tileIndex: number) => {
       setFeedback(null);
-      setState((currentState) =>
-        updateStrandsPath(puzzle, currentState, tileIndex),
+
+      const nextState = updateStrandsPath(
+        puzzle,
+        stateRef.current,
+        tileIndex,
       );
+      const matchedAnswer = getStrandsAnswerMatch(
+        puzzle,
+        nextState.selectedPath,
+      );
+
+      if (!matchedAnswer) {
+        commitState(nextState);
+        return;
+      }
+
+      const result = submitStrandsPath(puzzle, nextState);
+      commitState(result.state);
+      setSubmissionFeedback(result);
     },
-    [puzzle],
+    [commitState, puzzle, setSubmissionFeedback],
   );
 
   const clearSelection = useCallback(() => {
     setFeedback(null);
-    setState((currentState) => clearStrandsPath(currentState));
-  }, []);
+    commitState(clearStrandsPath(stateRef.current));
+  }, [commitState]);
 
   const submitSelection = useCallback(() => {
-    const result = submitStrandsPath(puzzle, state);
+    const result = submitStrandsPath(puzzle, stateRef.current);
 
-    setState(result.state);
-
-    switch (result.status) {
-      case "found_theme":
-        setFeedback({ kind: "found-theme", message: `Found: ${result.word}` });
-        break;
-      case "found_spangram":
-        setFeedback({
-          kind: "found-spangram",
-          message: `Spangram found: ${result.word}`,
-        });
-        break;
-      case "already_found":
-        setFeedback({
-          kind: "already-found",
-          message: `${result.word} is already found.`,
-        });
-        break;
-      case "not_theme":
-        setFeedback({ kind: "not-theme", message: "Not a theme word." });
-        break;
-      case "invalid_path":
-        setFeedback({
-          kind: "invalid-path",
-          message: "Select at least four adjacent letters.",
-        });
-        break;
-      case "game_complete":
-        setFeedback({ kind: "complete", message: "Puzzle complete!" });
-        break;
-    }
-  }, [puzzle, state]);
+    commitState(result.state);
+    setSubmissionFeedback(result);
+  }, [commitState, puzzle, setSubmissionFeedback]);
 
   const playAgain = useCallback(() => {
-    setState(createInitialStrandsGameState());
+    commitState(createInitialStrandsGameState());
     setFeedback(null);
-  }, []);
+  }, [commitState]);
 
   return {
     selectedPath: state.selectedPath,
@@ -106,9 +137,6 @@ export function useStrandsGame(puzzle: StrandsPuzzle) {
     gameStatus,
     feedback,
     canInteract: gameStatus === "playing",
-    canSubmit:
-      gameStatus === "playing" &&
-      state.selectedPath.length >= STRANDS_MIN_WORD_LENGTH,
     answerCount: puzzle.themeWords.length + 1,
     selectTile,
     clearSelection,

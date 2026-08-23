@@ -55,24 +55,14 @@ export function StrandsGameBoard({ puzzle }: StrandsGameBoardProps) {
 
       <div className="mt-4 flex justify-center gap-3">
         {game.gameStatus === "playing" ? (
-          <>
-            <button
-              type="button"
-              onClick={game.clearSelection}
-              disabled={game.selectedPath.length === 0}
-              className="rounded-full border px-5 py-2 font-semibold transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
-            >
-              Clear
-            </button>
-            <button
-              type="button"
-              onClick={game.submitSelection}
-              disabled={!game.canSubmit}
-              className="rounded-full border px-5 py-2 font-semibold transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
-            >
-              Submit
-            </button>
-          </>
+          <button
+            type="button"
+            onClick={game.clearSelection}
+            disabled={game.selectedPath.length === 0}
+            className="rounded-full border px-5 py-2 font-semibold transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
+          >
+            Clear
+          </button>
         ) : (
           <button
             type="button"

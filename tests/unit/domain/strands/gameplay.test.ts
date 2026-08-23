@@ -5,6 +5,7 @@ import {
   clearStrandsPath,
   createInitialStrandsGameState,
   getClaimedStrandsTileIndexes,
+  getStrandsAnswerMatch,
   getStrandsGameStatus,
   getStrandsPathWord,
   submitStrandsPath,
@@ -36,12 +37,21 @@ describe("Strands gameplay", () => {
     expect(extended.selectedPath).not.toBe(started.selectedPath);
   });
 
-  it("ignores non-adjacent extensions, earlier tile reuse, and the current final tile", () => {
+  it("ignores non-adjacent extensions and earlier tile reuse", () => {
     const state = stateWithPath([0, 1, 7]);
 
     expect(updateStrandsPath(testStrandsPuzzle, state, 20)).toBe(state);
     expect(updateStrandsPath(testStrandsPuzzle, state, 0)).toBe(state);
-    expect(updateStrandsPath(testStrandsPuzzle, state, 7)).toBe(state);
+  });
+
+  it("removes the current final tile when it is selected again", () => {
+    const state = stateWithPath([0, 1, 7]);
+    const shortened = updateStrandsPath(testStrandsPuzzle, state, 7);
+    const cleared = updateStrandsPath(testStrandsPuzzle, stateWithPath([0]), 0);
+
+    expect(shortened.selectedPath).toEqual([0, 1]);
+    expect(cleared.selectedPath).toEqual([]);
+    expect(state.selectedPath).toEqual([0, 1, 7]);
   });
 
   it("backtracks when the immediately previous tile is selected", () => {
@@ -71,6 +81,19 @@ describe("Strands gameplay", () => {
     );
   });
 
+  it("matches exact forward and reverse answer paths", () => {
+    const answer = testStrandsPuzzle.themeWords[0]!;
+
+    expect(getStrandsAnswerMatch(testStrandsPuzzle, answer.path)).toEqual({
+      word: answer.word,
+      kind: "theme",
+    });
+    expect(
+      getStrandsAnswerMatch(testStrandsPuzzle, [...answer.path].reverse()),
+    ).toEqual({ word: answer.word, kind: "theme" });
+    expect(getStrandsAnswerMatch(testStrandsPuzzle, [0, 1, 2, 8])).toBeNull();
+  });
+
   it("discovers a theme word through its forward stored path", () => {
     const answer = testStrandsPuzzle.themeWords[0]!;
     const result = submitAnswer(createInitialStrandsGameState(), answer);
@@ -82,7 +105,7 @@ describe("Strands gameplay", () => {
     });
   });
 
-  it("discovers the spangram through its reversed stored path", () => {
+  it("discovers the spangram through its reversed stored path without ending the game early", () => {
     const result = submitStrandsPath(testStrandsPuzzle, {
       selectedPath: [...testStrandsPuzzle.spangram.path].reverse(),
       foundWords: [],
@@ -92,6 +115,7 @@ describe("Strands gameplay", () => {
       status: "found_spangram",
       word: testStrandsPuzzle.spangram.word,
     });
+    expect(getStrandsGameStatus(testStrandsPuzzle, result.state)).toBe("playing");
   });
 
   it("rejects a different path even when its selected letters spell an answer", () => {

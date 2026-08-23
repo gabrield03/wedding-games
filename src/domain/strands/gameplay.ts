@@ -14,6 +14,11 @@ type FoundAnswerResult = {
   state: StrandsGameState;
 };
 
+export type StrandsAnswerMatch = {
+  word: string;
+  kind: "theme" | "spangram";
+};
+
 export type StrandsSubmissionResult =
   | ({ status: "found_theme" } & FoundAnswerResult)
   | ({ status: "found_spangram" } & FoundAnswerResult)
@@ -99,6 +104,21 @@ export function getClaimedStrandsTileIndexes(
     .flatMap(({ path }) => path);
 }
 
+export function getStrandsAnswerMatch(
+  puzzle: StrandsPuzzle,
+  path: StrandsPath,
+): StrandsAnswerMatch | null {
+  for (const answer of puzzle.themeWords) {
+    if (pathsMatch(answer.path, path)) {
+      return { word: answer.word, kind: "theme" };
+    }
+  }
+
+  return pathsMatch(puzzle.spangram.path, path)
+    ? { word: puzzle.spangram.word, kind: "spangram" }
+    : null;
+}
+
 export function updateStrandsPath(
   puzzle: StrandsPuzzle,
   state: StrandsGameState,
@@ -126,7 +146,7 @@ export function updateStrandsPath(
   }
 
   if (tileIndex === finalTileIndex) {
-    return state;
+    return { ...state, selectedPath: selectedPath.slice(0, -1) };
   }
 
   if (
@@ -166,12 +186,12 @@ export function submitStrandsPath(
     return { status: "invalid_path", state: clearedState };
   }
 
-  const matchedAnswer = findMatchingAnswer(puzzle, state.selectedPath);
+  const matchedAnswer = getStrandsAnswerMatch(puzzle, state.selectedPath);
 
-  if (matchedAnswer && state.foundWords.includes(matchedAnswer.answer.word)) {
+  if (matchedAnswer && state.foundWords.includes(matchedAnswer.word)) {
     return {
       status: "already_found",
-      word: matchedAnswer.answer.word,
+      word: matchedAnswer.word,
       state: clearedState,
     };
   }
@@ -192,7 +212,7 @@ export function submitStrandsPath(
 
   const nextState = {
     selectedPath: [],
-    foundWords: [...state.foundWords, matchedAnswer.answer.word],
+    foundWords: [...state.foundWords, matchedAnswer.word],
   };
 
   if (getStrandsGameStatus(puzzle, nextState) === "complete") {
@@ -201,7 +221,7 @@ export function submitStrandsPath(
       state: nextState,
       completedBy: {
         answerKind: matchedAnswer.kind,
-        word: matchedAnswer.answer.word,
+        word: matchedAnswer.word,
       },
     };
   }
@@ -209,7 +229,7 @@ export function submitStrandsPath(
   return {
     status:
       matchedAnswer.kind === "spangram" ? "found_spangram" : "found_theme",
-    word: matchedAnswer.answer.word,
+    word: matchedAnswer.word,
     state: nextState,
   };
 }
@@ -240,18 +260,6 @@ function isStructurallyValidPath(
     .every((tileIndex, index) =>
       areStrandsTilesAdjacent(path[index]!, tileIndex, puzzle.grid.columns),
     );
-}
-
-function findMatchingAnswer(puzzle: StrandsPuzzle, path: StrandsPath) {
-  for (const answer of puzzle.themeWords) {
-    if (pathsMatch(answer.path, path)) {
-      return { answer, kind: "theme" as const };
-    }
-  }
-
-  return pathsMatch(puzzle.spangram.path, path)
-    ? { answer: puzzle.spangram, kind: "spangram" as const }
-    : null;
 }
 
 function pathsMatch(storedPath: StrandsPath, selectedPath: StrandsPath) {
