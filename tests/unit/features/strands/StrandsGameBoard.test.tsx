@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { StrandsGameBoard } from "@/features/strands/StrandsGameBoard";
 import { testStrandsPuzzle } from "../../../fixtures/strands";
@@ -8,6 +8,7 @@ const NEXT_PUZZLE_ID = "wedding-02";
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
 });
 
 describe("StrandsGameBoard", () => {
@@ -24,6 +25,7 @@ describe("StrandsGameBoard", () => {
     expect(
       screen.getByText(/Use the arrow keys to move between letters/),
     ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Hint" })).toBeTruthy();
     expect(
       screen.getByRole("link", { name: "Next Puzzle" }).getAttribute("href"),
     ).toBe(`/games/strands/${NEXT_PUZZLE_ID}`);
@@ -95,6 +97,75 @@ describe("StrandsGameBoard", () => {
     expect(screen.getByText("Found 1 of 7")).toBeTruthy();
   });
 
+  it("highlights one unfound theme path without solving or revealing its word", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const { container } = renderBoard();
+    const hintedAnswer = testStrandsPuzzle.themeWords[0]!;
+
+    fireEvent.click(screen.getByRole("button", { name: "Hint" }));
+
+    expect(screen.getByRole("status").textContent).toContain(
+      "Hint highlighted on the board.",
+    );
+    expect(screen.getByText("Found 0 of 7")).toBeTruthy();
+    expect(screen.queryByText(hintedAnswer.word)).toBeNull();
+
+    for (const tileIndex of hintedAnswer.path) {
+      const tile = getTile(container, tileIndex);
+      expect(tile.dataset.strandsHinted).toBe("true");
+      expect(tile.getAttribute("aria-label")).toContain("hinted");
+    }
+
+    for (const tileIndex of testStrandsPuzzle.spangram.path) {
+      expect(getTile(container, tileIndex).dataset.strandsHinted).toBe("false");
+    }
+
+    expect(container.querySelector("[data-strands-hint-path]")).toBeTruthy();
+  });
+
+  it("keeps the same hint on repeated requests until that answer is found", () => {
+    const random = vi.spyOn(Math, "random").mockReturnValueOnce(0);
+    const { container } = renderBoard();
+    const firstTheme = testStrandsPuzzle.themeWords[0]!;
+    const secondTheme = testStrandsPuzzle.themeWords[1]!;
+    const hintButton = screen.getByRole("button", { name: "Hint" });
+
+    fireEvent.click(hintButton);
+    random.mockReturnValue(0.99);
+    fireEvent.click(hintButton);
+
+    expect(random).toHaveBeenCalledTimes(1);
+    expect(getTile(container, firstTheme.path[0]!).dataset.strandsHinted).toBe(
+      "true",
+    );
+    expect(getTile(container, secondTheme.path[0]!).dataset.strandsHinted).toBe(
+      "false",
+    );
+  });
+
+  it("clears a hint when its theme word is found and can hint another word", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const { container } = renderBoard();
+    const firstTheme = testStrandsPuzzle.themeWords[0]!;
+    const secondTheme = testStrandsPuzzle.themeWords[1]!;
+    const hintButton = screen.getByRole("button", { name: "Hint" });
+
+    fireEvent.click(hintButton);
+    selectPathWithKeyboard(container, firstTheme.path);
+
+    expect(getTile(container, firstTheme.path[0]!).dataset.strandsHinted).toBe(
+      "false",
+    );
+    expect(screen.getByText("Found 1 of 7")).toBeTruthy();
+
+    fireEvent.click(hintButton);
+
+    expect(getTile(container, secondTheme.path[0]!).dataset.strandsHinted).toBe(
+      "true",
+    );
+    expect(screen.getByText("Found 1 of 7")).toBeTruthy();
+  });
+
   it("finds the spangram early without completing or blocking further play", () => {
     const { container } = renderBoard();
 
@@ -105,6 +176,7 @@ describe("StrandsGameBoard", () => {
     ).toBeTruthy();
     expect(screen.getByText("Found 1 of 7")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Play Again" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Hint" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Next Puzzle" })).toBeTruthy();
 
     const nextThemeTile = getTile(
@@ -130,6 +202,7 @@ describe("StrandsGameBoard", () => {
 
     expect(screen.getByText("Puzzle complete!")).toBeTruthy();
     expect(screen.getByText("Found 7 of 7")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Hint" })).toBeNull();
     expect(screen.getByRole("button", { name: "Play Again" })).toBeTruthy();
     expect(
       screen.getByRole("link", { name: "Next Puzzle" }).getAttribute("href"),
@@ -138,6 +211,7 @@ describe("StrandsGameBoard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Play Again" }));
 
     expect(screen.getByText("Found 0 of 7")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Hint" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Play Again" })).toBeNull();
     expect(screen.getByRole("link", { name: "Next Puzzle" })).toBeTruthy();
     expect(getTile(container, 0).getAttribute("aria-disabled")).toBe("false");
