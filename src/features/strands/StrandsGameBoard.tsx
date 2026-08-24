@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSyncExternalStore } from "react";
 
 import type { StrandsPuzzle } from "@/domain/strands/types";
 
@@ -12,13 +13,18 @@ type StrandsGameBoardProps = {
   nextPuzzleId: string;
 };
 
-export function StrandsGameBoard({
-  puzzle,
-  nextPuzzleId,
-}: StrandsGameBoardProps) {
-  const game = useStrandsGame(puzzle);
+const subscribeToHydration = () => () => {};
+const getClientHydrationSnapshot = () => true;
+const getServerHydrationSnapshot = () => false;
 
-  if (!game.isHydrated) {
+export function StrandsGameBoard(props: StrandsGameBoardProps) {
+  const isHydrated = useSyncExternalStore(
+    subscribeToHydration,
+    getClientHydrationSnapshot,
+    getServerHydrationSnapshot,
+  );
+
+  if (!isHydrated) {
     return (
       <section className="w-full min-w-0" aria-labelledby="strands-heading">
         <h1 id="strands-heading" className="text-center text-3xl font-bold">
@@ -30,6 +36,15 @@ export function StrandsGameBoard({
       </section>
     );
   }
+
+  return <HydratedStrandsGameBoard {...props} />;
+}
+
+function HydratedStrandsGameBoard({
+  puzzle,
+  nextPuzzleId,
+}: StrandsGameBoardProps) {
+  const game = useStrandsGame(puzzle);
 
   return (
     <section className="w-full min-w-0" aria-labelledby="strands-heading">
