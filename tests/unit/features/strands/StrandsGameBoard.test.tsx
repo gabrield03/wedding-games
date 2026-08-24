@@ -107,7 +107,10 @@ describe("StrandsGameBoard", () => {
 
     selectPathWithKeyboard(firstRender.container, foundAnswer.path);
     fireEvent.click(screen.getByRole("button", { name: "Hint" }));
-    selectPathWithKeyboard(firstRender.container, partialAnswer.path.slice(0, 2));
+    selectPathWithKeyboard(
+      firstRender.container,
+      partialAnswer.path.slice(0, 2),
+    );
 
     expect(screen.getByRole("status").textContent).toContain("Selected word:");
 

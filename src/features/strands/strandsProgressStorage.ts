@@ -120,7 +120,8 @@ function validatePersistedProgress(
 
   if (
     !foundWords.every(
-      (word): word is string => typeof word === "string" && validAnswers.has(word),
+      (word): word is string =>
+        typeof word === "string" && validAnswers.has(word),
     ) ||
     new Set(foundWords).size !== foundWords.length
   ) {

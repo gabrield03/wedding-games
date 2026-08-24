@@ -131,7 +131,10 @@ test("Next Puzzle enters New Orleans and wraps back to the first puzzle", async 
   await expect(page.getByText("The Big Day")).toBeVisible();
 });
 
-async function selectTiles(page: import("@playwright/test").Page, path: number[]) {
+async function selectTiles(
+  page: import("@playwright/test").Page,
+  path: number[],
+) {
   for (const tileIndex of path) {
     await page.locator(`[data-strands-tile="${tileIndex}"]`).click();
   }
