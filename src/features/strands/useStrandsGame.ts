@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   clearStrandsPath,
@@ -15,6 +15,13 @@ import {
 } from "@/domain/strands/gameplay";
 import type { StrandsGameState, StrandsPuzzle } from "@/domain/strands/types";
 
+import {
+  clearStrandsPuzzleProgress,
+  loadStrandsPuzzleProgress,
+  saveLastVisitedStrandsPuzzleId,
+  saveStrandsPuzzleProgress,
+} from "./strandsProgressStorage";
+
 type StrandsFeedback =
   | { kind: "found-theme"; message: string }
   | { kind: "found-spangram"; message: string }
@@ -26,16 +33,32 @@ type StrandsFeedback =
   | null;
 
 export function useStrandsGame(puzzle: StrandsPuzzle) {
-  const initialState = createInitialStrandsGameState();
-  const [state, setState] = useState(initialState);
-  const stateRef = useRef(initialState);
+  const [persistedProgress] = useState(() => loadStrandsPuzzleProgress(puzzle));
+  const [state, setState] = useState<StrandsGameState>(() => ({
+    selectedPath: [],
+    foundWords: persistedProgress?.foundWords ?? [],
+  }));
+  const stateRef = useRef(state);
   const [feedback, setFeedback] = useState<StrandsFeedback>(null);
-  const [hintedWord, setHintedWord] = useState<string | null>(null);
+  const [hintedWord, setHintedWord] = useState<string | null>(
+    persistedProgress?.hintedWord ?? null,
+  );
 
   const commitState = useCallback((nextState: StrandsGameState) => {
     stateRef.current = nextState;
     setState(nextState);
   }, []);
+
+  useEffect(() => {
+    saveLastVisitedStrandsPuzzleId(puzzle.id);
+  }, [puzzle.id]);
+
+  useEffect(() => {
+    saveStrandsPuzzleProgress(puzzle, {
+      foundWords: state.foundWords,
+      hintedWord,
+    });
+  }, [hintedWord, puzzle, state.foundWords]);
 
   const setSubmissionFeedback = useCallback(
     (result: StrandsSubmissionResult) => {
@@ -186,10 +209,11 @@ export function useStrandsGame(puzzle: StrandsPuzzle) {
   }, [hintedWord, puzzle]);
 
   const playAgain = useCallback(() => {
+    clearStrandsPuzzleProgress(puzzle.id);
     commitState(createInitialStrandsGameState());
     setHintedWord(null);
     setFeedback(null);
-  }, [commitState]);
+  }, [commitState, puzzle.id]);
 
   return {
     selectedPath: state.selectedPath,

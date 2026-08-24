@@ -8,6 +8,7 @@ const NEXT_PUZZLE_ID = "wedding-02";
 
 afterEach(() => {
   cleanup();
+  localStorage.clear();
   vi.restoreAllMocks();
 });
 
@@ -95,6 +96,39 @@ describe("StrandsGameBoard", () => {
     expect(document.activeElement).toBe(claimedTile);
     fireEvent.keyDown(claimedTile, { key: "Enter" });
     expect(screen.getByText("Found 1 of 7")).toBeTruthy();
+  });
+
+  it("restores found answers and hints without restoring a partial selection", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const firstRender = renderBoard();
+    const foundAnswer = testStrandsPuzzle.themeWords[0]!;
+    const hintedAnswer = testStrandsPuzzle.themeWords[1]!;
+    const partialAnswer = testStrandsPuzzle.themeWords[2]!;
+
+    selectPathWithKeyboard(firstRender.container, foundAnswer.path);
+    fireEvent.click(screen.getByRole("button", { name: "Hint" }));
+    selectPathWithKeyboard(
+      firstRender.container,
+      partialAnswer.path.slice(0, 2),
+    );
+
+    expect(screen.getByRole("status").textContent).toContain("Selected word:");
+
+    firstRender.unmount();
+    const { container } = renderBoard();
+
+    expect(screen.getByText("Found 1 of 7")).toBeTruthy();
+    expect(screen.getByText("Select adjacent letters.")).toBeTruthy();
+
+    for (const tileIndex of partialAnswer.path.slice(0, 2)) {
+      expect(getTile(container, tileIndex).getAttribute("aria-selected")).toBe(
+        "false",
+      );
+    }
+
+    for (const tileIndex of hintedAnswer.path) {
+      expect(getTile(container, tileIndex).dataset.strandsHinted).toBe("true");
+    }
   });
 
   it("outlines one unfound theme answer without showing its path, solving, or revealing its word", () => {
@@ -190,14 +224,14 @@ describe("StrandsGameBoard", () => {
   });
 
   it("completes only after every answer and keeps Play Again beside Next Puzzle", () => {
-    const { container } = renderBoard();
+    const firstRender = renderBoard();
     const answers = [
       ...testStrandsPuzzle.themeWords,
       testStrandsPuzzle.spangram,
     ];
 
     for (const answer of answers) {
-      selectPathWithKeyboard(container, answer.path);
+      selectPathWithKeyboard(firstRender.container, answer.path);
     }
 
     expect(screen.getByText("Puzzle complete!")).toBeTruthy();
@@ -214,7 +248,14 @@ describe("StrandsGameBoard", () => {
     expect(screen.getByRole("button", { name: "Hint" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Play Again" })).toBeNull();
     expect(screen.getByRole("link", { name: "Next Puzzle" })).toBeTruthy();
-    expect(getTile(container, 0).getAttribute("aria-disabled")).toBe("false");
+    expect(
+      getTile(firstRender.container, 0).getAttribute("aria-disabled"),
+    ).toBe("false");
+
+    firstRender.unmount();
+    renderBoard();
+
+    expect(screen.getByText("Found 0 of 7")).toBeTruthy();
   });
 });
 
