@@ -1,10 +1,10 @@
 # Project Status
 
-Last updated: 2026-08-22
+Last updated: 2026-08-23
 
 ## Current milestone
 
-**M7 - Strands Prototype: in progress (Issue 2 domain and G1 content)**
+**M7 - Strands Prototype: final integration complete; awaiting PR merge**
 
 M1, the Connections Prototype milestone, is complete.
 
@@ -95,10 +95,13 @@ M6 Issue 5 cuts the Wordle client over to authoritative Attempts and removes
 the hidden answer from browser-facing route props and render payloads.
 Issue 5 is complete and merged. M6 server-authoritative gameplay is complete.
 
-M7 Issue 1 defined the Strands puzzle, path, interaction, accessibility, and
-vertical-slice direction. Issue 2 is implementing the pure domain rules and
-the fixed first production puzzle without adding UI, persistence, or server
-authority.
+M7 is functionally complete and awaiting the final integration PR merge. It
+includes the pure Strands domain and validator, a playable accessible board,
+five personalized puzzles with deterministic navigation, hint behavior,
+home-page integration, a `/games/strands` resume entry point, and
+Strands-specific browser-local persistence for discovered progress and the
+last visited puzzle. Server-authoritative Strands Attempts and answer
+protection remain intentionally deferred to the next milestone.
 
 Final reaction behavior:
 
@@ -170,7 +173,7 @@ Planned navigation direction:
   Wedding games home page
   -> Connections
   -> Wordle
-  -> future games
+  -> Strands
 
 /games/connections/[puzzleId]
   Individual Connections puzzle
@@ -180,16 +183,26 @@ Planned navigation direction:
 
 /games/wordle
   Request-time Wordle puzzle selection and redirect
+
+/games/strands
+  Resume the most recently visited valid Strands puzzle, or enter wedding-01
+  for a first-time browser
+
+/games/strands/[puzzleId]
+  Individual Strands puzzle
 ```
 
-The root page now serves a simple two-game selection page. Connections links to
+The root page now serves a three-game selection page. Connections links to
 `/games/connections/development-puzzle`; Wordle links to `/games/wordle`, which
 selects and redirects to one of the current Event's PostgreSQL-backed puzzles
-at request time.
+at request time; and Strands links to `/games/strands`, which resumes the
+browser's most recently visited valid Strands puzzle or falls back to
+`wedding-01`.
 
-Connections and Wordle remain independent game-specific implementations. Do
-not build a generic game platform, registry, repository, or engine until later
-requirements demonstrate a concrete shared need.
+Connections, Wordle, and Strands remain independent game-specific
+implementations. Do not build a generic game platform, registry, repository,
+persistence framework, or engine until later requirements demonstrate a
+concrete shared need.
 
 ## M1 completed
 
@@ -253,7 +266,7 @@ M1 delivered a complete playable Connections-style game.
 
 The tests were updated so behavior tests derive IDs/labels from the puzzle fixture rather than depending on old hardcoded content.
 
-## Current code organization
+## Historical code organization snapshot
 
 ```text
 src/
@@ -1399,7 +1412,34 @@ Issue 2 implementation validation completed:
   and scope review passed.
 - Playwright was not run because Issue 2 adds no route or UI behavior.
 
-Issue 2 remains in progress until merge is complete.
+Issue 2 is complete and merged.
+
+## M7 final integration - Integrate Strands into the game hub and persist local progress
+
+Status: Implementation and local validation complete; awaiting PR merge.
+
+Implemented:
+
+- Added Strands as the third explicit game on the Wedding Games home page.
+- Added `/games/strands` as a client-side entry boundary that resumes the most
+  recently visited valid puzzle and falls back to `wedding-01`.
+- Added a versioned Strands-specific `localStorage` boundary rather than a
+  generic cross-game persistence framework.
+- Persisted found answers and the active hint independently for each puzzle.
+- Kept partial selected paths, feedback, focus, and pointer state transient.
+- Preserve progress when using Next Puzzle, leaving Strands, or refreshing.
+- Play Again clears only the current puzzle's persisted progress.
+- Invalid, malformed, stale, or puzzle-inconsistent stored values fail safely.
+- Kept Strands browser-authoritative for M7. Server-backed Attempts, solution
+  protection, scoring, and leaderboards remain deferred.
+
+Validation completed:
+
+- The full `npm run gate` passed.
+- Focused Strands persistence, board, and puzzle-navigation tests passed.
+- Focused Chromium Strands browser coverage passed.
+- Manual first-entry, resume, multi-puzzle progress, hint restoration,
+  refresh, and transient-selection behavior passed.
 
 ## M5 issue 1 non-goals and deferred work
 
@@ -1477,6 +1517,8 @@ CI and Vercel preview should also be green before merge.
 
 ## Immediate next step
 
-Complete validation and merge for M7 Issue 2, then begin the playable Strands
-board/controller issue. Do not add persistence or server authority during the
-Strands prototype milestone.
+Open and merge the final M7 Strands hub/persistence PR after CI and the Vercel
+preview pass. Then close M7 and begin server-authoritative Strands work:
+persisted Attempts, server-side path evaluation, sanitized snapshots, solution
+protection, refresh/resume behavior, and client cutover. Scoring and
+leaderboards remain deferred until after Strands authority.
