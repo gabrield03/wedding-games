@@ -260,7 +260,11 @@ function validateEntry(
     return;
   }
 
-  validCells.forEach((cell, index) => {
+  entry.cells.forEach((cell, index) => {
+    if (!isValidCell(puzzle, cell)) {
+      return;
+    }
+
     const solutionCharacter = puzzle.grid.solution[cell.row]![cell.column]!;
     const cellKey = getCellKey(cell);
 
