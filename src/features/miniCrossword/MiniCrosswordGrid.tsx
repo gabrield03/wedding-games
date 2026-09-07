@@ -37,6 +37,7 @@ export function MiniCrosswordGrid({
       className="mx-auto grid w-full max-w-sm border-l border-t border-neutral-800 dark:border-neutral-300"
       style={{
         gridTemplateColumns: `repeat(${puzzle.grid.columns}, minmax(0, 1fr))`,
+        touchAction: "manipulation",
       }}
       role="grid"
       aria-label="Mini Crossword board"
@@ -89,6 +90,11 @@ export function MiniCrosswordGrid({
                 if (pointerDownCellRef.current === key) {
                   pointerDownCellRef.current = null;
                 }
+              }}
+              onTouchEnd={(event) => {
+                event.preventDefault();
+                onSelectCell(cell);
+                pointerDownCellRef.current = null;
               }}
               onClick={() => {
                 onSelectCell(cell);
