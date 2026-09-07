@@ -3,9 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
+  checkMiniCrosswordEntry,
   clearMiniCrosswordCell,
+  clearMiniCrosswordEntry,
   createInitialMiniCrosswordGameState,
   isMiniCrosswordBoardFilled,
+  isMiniCrosswordEntryFilled,
   resetMiniCrosswordGame,
   setMiniCrosswordCellLetter,
   submitMiniCrossword,
@@ -24,7 +27,12 @@ import {
   saveMiniCrosswordPuzzleProgress,
 } from "./miniCrosswordProgressStorage";
 
-type MiniCrosswordFeedback = "incorrect" | "complete" | null;
+type MiniCrosswordFeedback =
+  | "incorrect"
+  | "complete"
+  | "word-correct"
+  | "word-incorrect"
+  | null;
 
 export function useMiniCrosswordGame(puzzle: MiniCrosswordPuzzle) {
   const initialEntry = puzzle.entries[0]!;
@@ -166,6 +174,29 @@ export function useMiniCrosswordGame(puzzle: MiniCrosswordPuzzle) {
     setFeedback(null);
   }
 
+  function clearWord() {
+    if (state.status === "complete" || !activeEntry) {
+      return;
+    }
+
+    setState((current) => clearMiniCrosswordEntry(puzzle, current, activeEntry));
+    setFeedback(null);
+  }
+
+  function checkWord() {
+    if (state.status === "complete" || !activeEntry) {
+      return;
+    }
+
+    const result = checkMiniCrosswordEntry(puzzle, state, activeEntry);
+
+    if (result === "correct") {
+      setFeedback("word-correct");
+    } else if (result === "incorrect") {
+      setFeedback("word-incorrect");
+    }
+  }
+
   function submit() {
     const result = submitMiniCrossword(puzzle, state);
     setState(result.state);
@@ -192,12 +223,18 @@ export function useMiniCrosswordGame(puzzle: MiniCrosswordPuzzle) {
     activeDirection,
     activeEntry,
     feedback,
+    canCheckWord:
+      state.status === "playing" &&
+      activeEntry !== null &&
+      isMiniCrosswordEntryFilled(puzzle, state, activeEntry),
     canSubmit:
       state.status === "playing" && isMiniCrosswordBoardFilled(puzzle, state),
     selectCell,
     selectEntry,
     enterLetter,
     backspace,
+    clearWord,
+    checkWord,
     submit,
     playAgain,
   };
