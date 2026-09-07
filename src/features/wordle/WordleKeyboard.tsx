@@ -78,7 +78,7 @@ function ActionKey({
   onClick,
 }: ActionKeyProps) {
   const labelSizeClass = accessibleLabel
-    ? "text-base"
+    ? "text-xl sm:text-2xl"
     : "text-[10px] sm:text-xs";
 
   return (

@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { miniCrosswordPuzzles } from "@/content/miniCrossword/puzzles";
@@ -56,6 +62,44 @@ describe("MiniCrosswordGameBoard", () => {
         name: /1\. A favorite kind of game night/,
       }),
     ).toBeTruthy();
+  });
+
+  it("uses a compact mobile clue navigator instead of relying on the full clue list", () => {
+    renderBoard();
+
+    const navigator = screen.getByRole("group", {
+      name: "Mini Crossword clue navigation",
+    });
+
+    expect(navigator.textContent).toContain("1 Across");
+    expect(navigator.textContent).toContain("Understand, as a joke");
+
+    fireEvent.click(
+      within(navigator).getByRole("button", { name: "Next clue" }),
+    );
+
+    expect(navigator.textContent).toContain("1 Down");
+    expect(navigator.textContent).toContain(
+      "Things partners may share after one gets a cold",
+    );
+  });
+
+  it("routes the mobile on-screen keyboard through existing crossword input", () => {
+    const { container } = renderBoard();
+    const keyboard = screen.getByRole("group", {
+      name: "Mini Crossword keyboard",
+    });
+    const firstCell = getCell(container, 0, 2);
+
+    fireEvent.click(within(keyboard).getByRole("button", { name: "G" }));
+
+    expect(firstCell.getAttribute("aria-label")).toContain("letter G");
+
+    fireEvent.click(
+      within(keyboard).getByRole("button", { name: "Backspace" }),
+    );
+
+    expect(firstCell.getAttribute("aria-label")).toContain("empty");
   });
 
   it("does not toggle a newly clicked crossing cell because focus fires first", () => {

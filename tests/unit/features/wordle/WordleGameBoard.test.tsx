@@ -583,6 +583,9 @@ describe("WordleGameBoard", () => {
       expect(key.className).toContain("touch-manipulation");
       expect(key.className).toContain("min-w-0");
     }
+
+    expect(backspace.className).toContain("text-xl");
+    expect(backspace.className).toContain("sm:text-2xl");
   });
 
   it("ignores shortcuts and keyboard events from interactive controls", async () => {
