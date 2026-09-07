@@ -100,9 +100,8 @@ export function useMiniCrosswordGame(puzzle: MiniCrosswordPuzzle) {
         .slice(selectedIndex + 1)
         .find(
           (cell) =>
-            state.letters[
-              cell.row * puzzle.grid.columns + cell.column
-            ] === null,
+            state.letters[cell.row * puzzle.grid.columns + cell.column] ===
+            null,
         );
 
       if (nextEmptyCell) {

@@ -87,9 +87,7 @@ describe("MiniCrosswordGameBoard", () => {
 
   it("skips cells already filled by crossing answers while typing", () => {
     const puzzle7x7 = miniCrosswordPuzzles[1]!;
-    const { container } = render(
-      <MiniCrosswordGameBoard puzzle={puzzle7x7} />,
-    );
+    const { container } = render(<MiniCrosswordGameBoard puzzle={puzzle7x7} />);
     const section = getGameSection();
 
     fireEvent.click(
@@ -115,9 +113,9 @@ describe("MiniCrosswordGameBoard", () => {
     }
 
     for (const [column, letter] of [..."VEGGIES"].entries()) {
-      expect(getCell(container, 3, column).getAttribute("aria-label")).toContain(
-        `letter ${letter}`,
-      );
+      expect(
+        getCell(container, 3, column).getAttribute("aria-label"),
+      ).toContain(`letter ${letter}`);
     }
   });
 
