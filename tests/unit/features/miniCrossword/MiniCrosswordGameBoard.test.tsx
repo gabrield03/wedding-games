@@ -102,14 +102,18 @@ describe("MiniCrosswordGameBoard", () => {
     expect(firstCell.getAttribute("aria-label")).toContain("empty");
   });
 
-  it("handles repeated touch selection without relying on the browser click gesture", () => {
+  it("disables browser touch gestures on the crossword board while preserving direction toggling", () => {
     const { container } = renderBoard();
+    const grid = screen.getByRole("grid", { name: "Mini Crossword board" });
     const crossingCell = getCell(container, 1, 1);
 
-    fireEvent.touchEnd(crossingCell);
+    expect((grid as HTMLElement).style.touchAction).toBe("none");
+    expect(crossingCell.style.touchAction).toBe("none");
+
+    fireEvent.click(crossingCell);
     expect(screen.getByRole("status").textContent).toContain("4 Across");
 
-    fireEvent.touchEnd(crossingCell);
+    fireEvent.click(crossingCell);
     expect(screen.getByRole("status").textContent).toContain("4 Down");
   });
 
