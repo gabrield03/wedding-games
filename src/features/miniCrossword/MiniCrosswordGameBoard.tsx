@@ -66,8 +66,10 @@ function HydratedMiniCrosswordGameBoard({
     ({ direction }) => direction === "down",
   );
   const orderedEntries = [...puzzle.entries].sort(compareEntries);
-  const activeEntryIndex = game.activeEntry
-    ? orderedEntries.findIndex((entry) => entriesEqual(entry, game.activeEntry))
+  const activeEntry = game.activeEntry;
+
+  const activeEntryIndex = activeEntry
+    ? orderedEntries.findIndex((entry) => entriesEqual(entry, activeEntry))
     : -1;
 
   function handleKeyDown(event: ReactKeyboardEvent<HTMLElement>) {
@@ -355,7 +357,5 @@ function entriesEqual(
   first: MiniCrosswordEntry,
   second: MiniCrosswordEntry,
 ): boolean {
-  return (
-    first.number === second.number && first.direction === second.direction
-  );
+  return first.number === second.number && first.direction === second.direction;
 }
