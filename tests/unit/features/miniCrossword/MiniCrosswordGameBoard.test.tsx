@@ -102,6 +102,63 @@ describe("MiniCrosswordGameBoard", () => {
     expect(firstCell.getAttribute("aria-label")).toContain("empty");
   });
 
+  it("checks the active word with ambiguous feedback and no cell reveal", () => {
+    renderBoard();
+    const section = getGameSection();
+    const checkWord = screen.getByRole("button", { name: "Check Word" });
+
+    expect((checkWord as HTMLButtonElement).disabled).toBe(true);
+
+    for (const letter of "GEX") {
+      fireEvent.keyDown(section, { key: letter });
+    }
+
+    expect((checkWord as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(checkWord);
+
+    expect(screen.getByRole("status").textContent).toContain(
+      "That word isn't right.",
+    );
+
+    fireEvent.keyDown(section, { key: "T" });
+    fireEvent.click(checkWord);
+
+    expect(screen.getByRole("status").textContent).toContain(
+      "That word is correct.",
+    );
+    expect(screen.queryByText(/incorrect cell/i)).toBeNull();
+  });
+
+  it("clears only the active word", () => {
+    const { container } = renderBoard();
+    const section = getGameSection();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /4\. Term of affection/ }),
+    );
+    fireEvent.keyDown(section, { key: "D" });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /1\. Understand, as a joke/ }),
+    );
+
+    for (const letter of "GET") {
+      fireEvent.keyDown(section, { key: letter });
+    }
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear Word" }));
+
+    for (const column of [2, 3, 4]) {
+      expect(getCell(container, 0, column).getAttribute("aria-label")).toContain(
+        "empty",
+      );
+    }
+
+    expect(getCell(container, 1, 1).getAttribute("aria-label")).toContain(
+      "letter D",
+    );
+  });
+
   it("does not toggle a newly clicked crossing cell because focus fires first", () => {
     const { container } = renderBoard();
     const crossingCell = getCell(container, 1, 1);
