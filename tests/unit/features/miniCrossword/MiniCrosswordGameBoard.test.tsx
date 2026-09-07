@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { miniCrosswordPuzzles } from "@/content/miniCrossword/puzzles";
@@ -58,27 +64,42 @@ describe("MiniCrosswordGameBoard", () => {
     ).toBeTruthy();
   });
 
-  it("focuses the mobile text input after a pointer tap and routes typing", () => {
-    const { container } = renderBoard();
-    const crossingCell = getCell(container, 1, 1);
-    const textInput = screen.getByRole("textbox", {
-      name: "Mini Crossword keyboard input",
+  it("uses a compact mobile clue navigator instead of relying on the full clue list", () => {
+    renderBoard();
+
+    const navigator = screen.getByRole("group", {
+      name: "Mini Crossword clue navigation",
     });
 
-    fireEvent.pointerDown(crossingCell);
-    fireEvent.focus(crossingCell);
-    fireEvent.click(crossingCell, { detail: 1 });
+    expect(navigator.textContent).toContain("1 Across");
+    expect(navigator.textContent).toContain("Understand, as a joke");
 
-    expect(document.activeElement).toBe(textInput);
-    expect(screen.getByRole("status").textContent).toContain("4 Across");
+    fireEvent.click(
+      within(navigator).getByRole("button", { name: "Next clue" }),
+    );
 
-    fireEvent.change(textInput, { target: { value: "d" } });
+    expect(navigator.textContent).toContain("1 Down");
+    expect(navigator.textContent).toContain(
+      "Things partners may share after one gets a cold",
+    );
+  });
 
-    expect(crossingCell.getAttribute("aria-label")).toContain("letter D");
+  it("routes the mobile on-screen keyboard through existing crossword input", () => {
+    const { container } = renderBoard();
+    const keyboard = screen.getByRole("group", {
+      name: "Mini Crossword keyboard",
+    });
+    const firstCell = getCell(container, 0, 2);
 
-    fireEvent.keyDown(textInput, { key: "Backspace" });
+    fireEvent.click(within(keyboard).getByRole("button", { name: "G" }));
 
-    expect(crossingCell.getAttribute("aria-label")).toContain("empty");
+    expect(firstCell.getAttribute("aria-label")).toContain("letter G");
+
+    fireEvent.click(
+      within(keyboard).getByRole("button", { name: "Backspace" }),
+    );
+
+    expect(firstCell.getAttribute("aria-label")).toContain("empty");
   });
 
   it("does not toggle a newly clicked crossing cell because focus fires first", () => {
