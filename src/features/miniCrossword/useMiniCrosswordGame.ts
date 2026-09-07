@@ -110,19 +110,32 @@ export function useMiniCrosswordGame(puzzle: MiniCrosswordPuzzle) {
       return;
     }
 
-    setState((current) =>
-      clearMiniCrosswordCell(puzzle, current, selectedCell),
-    );
-    setFeedback(null);
-
     const entry = findActiveEntry(puzzle, selectedCell, activeDirection);
-    const selectedIndex = entry?.cells.findIndex((cell) =>
+    const selectedEntryIndex = entry?.cells.findIndex((cell) =>
       cellsEqual(cell, selectedCell),
     );
+    const selectedStateIndex =
+      selectedCell.row * puzzle.grid.columns + selectedCell.column;
+    const previousCell =
+      entry && selectedEntryIndex !== undefined && selectedEntryIndex > 0
+        ? entry.cells[selectedEntryIndex - 1]!
+        : null;
 
-    if (entry && selectedIndex !== undefined && selectedIndex > 0) {
-      setSelectedCell(entry.cells[selectedIndex - 1]!);
+    if (state.letters[selectedStateIndex] !== null || !previousCell) {
+      setState((current) =>
+        clearMiniCrosswordCell(puzzle, current, selectedCell),
+      );
+    } else {
+      setState((current) =>
+        clearMiniCrosswordCell(puzzle, current, previousCell),
+      );
     }
+
+    if (previousCell) {
+      setSelectedCell(previousCell);
+    }
+
+    setFeedback(null);
   }
 
   function submit() {
