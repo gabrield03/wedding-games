@@ -58,6 +58,29 @@ describe("MiniCrosswordGameBoard", () => {
     ).toBeTruthy();
   });
 
+  it("focuses the mobile text input after a pointer tap and routes typing", () => {
+    const { container } = renderBoard();
+    const crossingCell = getCell(container, 1, 1);
+    const textInput = screen.getByRole("textbox", {
+      name: "Mini Crossword keyboard input",
+    });
+
+    fireEvent.pointerDown(crossingCell);
+    fireEvent.focus(crossingCell);
+    fireEvent.click(crossingCell);
+
+    expect(document.activeElement).toBe(textInput);
+    expect(screen.getByRole("status").textContent).toContain("4 Across");
+
+    fireEvent.change(textInput, { target: { value: "d" } });
+
+    expect(crossingCell.getAttribute("aria-label")).toContain("letter D");
+
+    fireEvent.keyDown(textInput, { key: "Backspace" });
+
+    expect(crossingCell.getAttribute("aria-label")).toContain("empty");
+  });
+
   it("does not toggle a newly clicked crossing cell because focus fires first", () => {
     const { container } = renderBoard();
     const crossingCell = getCell(container, 1, 1);
