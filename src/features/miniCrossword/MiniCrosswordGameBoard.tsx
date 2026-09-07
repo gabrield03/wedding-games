@@ -128,6 +128,10 @@ function HydratedMiniCrosswordGameBoard({
           <p>Puzzle complete!</p>
         ) : game.feedback === "incorrect" ? (
           <p>Something&apos;s not right.</p>
+        ) : game.feedback === "word-correct" ? (
+          <p>That word is correct.</p>
+        ) : game.feedback === "word-incorrect" ? (
+          <p>That word isn&apos;t right.</p>
         ) : game.activeEntry ? (
           <p className="hidden sm:block">
             {game.activeEntry.number}{" "}
@@ -178,6 +182,30 @@ function HydratedMiniCrosswordGameBoard({
             className="min-h-14 w-12 shrink-0 rounded-r-lg border border-l-0 text-2xl font-semibold transition active:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-inset dark:active:bg-neutral-900"
           >
             ›
+          </button>
+        </div>
+      )}
+
+      {game.gameStatus === "playing" && game.activeEntry && (
+        <div
+          className="mt-3 flex justify-center gap-5 text-sm"
+          role="group"
+          aria-label="Mini Crossword word controls"
+        >
+          <button
+            type="button"
+            onClick={game.clearWord}
+            className="font-semibold underline decoration-neutral-400 underline-offset-4 transition hover:decoration-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2"
+          >
+            Clear Word
+          </button>
+          <button
+            type="button"
+            onClick={game.checkWord}
+            disabled={!game.canCheckWord}
+            className="font-semibold underline decoration-neutral-400 underline-offset-4 transition hover:decoration-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Check Word
           </button>
         </div>
       )}
