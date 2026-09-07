@@ -42,7 +42,7 @@ describe("MiniCrosswordGameBoard", () => {
     expect(screen.getAllByRole("gridcell")).toHaveLength(49);
     expect(
       screen.getByRole("button", {
-        name: /3\. Finish her catchphrase: “Eat yo ___”/,
+        name: /4\. Finish her catchphrase: “Eat yo ___”/,
       }),
     ).toBeTruthy();
     expect(
@@ -83,6 +83,42 @@ describe("MiniCrosswordGameBoard", () => {
 
     expect(firstCell.getAttribute("aria-label")).toContain("empty");
     expect(firstCell.getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("skips cells already filled by crossing answers while typing", () => {
+    const puzzle7x7 = miniCrosswordPuzzles[1]!;
+    const { container } = render(
+      <MiniCrosswordGameBoard puzzle={puzzle7x7} />,
+    );
+    const section = getGameSection();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /2\. Sudden loud noise/ }),
+    );
+
+    for (const letter of "BANG") {
+      fireEvent.keyDown(section, { key: letter });
+    }
+
+    expect(getCell(container, 3, 2).getAttribute("aria-label")).toContain(
+      "letter G",
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /4\. Finish her catchphrase: “Eat yo ___”/,
+      }),
+    );
+
+    for (const letter of "VEGIES") {
+      fireEvent.keyDown(section, { key: letter });
+    }
+
+    for (const [column, letter] of [..."VEGGIES"].entries()) {
+      expect(getCell(container, 3, column).getAttribute("aria-label")).toContain(
+        `letter ${letter}`,
+      );
+    }
   });
 
   it("selects a clue and highlights its answer cells", () => {
