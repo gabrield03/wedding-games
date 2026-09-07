@@ -34,9 +34,7 @@ export type MiniCrosswordGameState = {
 };
 
 export type MiniCrosswordEntryCheckResult =
-  | "incomplete"
-  | "incorrect"
-  | "correct";
+  "incomplete" | "incorrect" | "correct";
 
 export type MiniCrosswordSubmissionResult = {
   status: "incomplete" | "incorrect" | "correct";

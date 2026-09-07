@@ -149,9 +149,9 @@ describe("MiniCrosswordGameBoard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Clear Word" }));
 
     for (const column of [2, 3, 4]) {
-      expect(getCell(container, 0, column).getAttribute("aria-label")).toContain(
-        "empty",
-      );
+      expect(
+        getCell(container, 0, column).getAttribute("aria-label"),
+      ).toContain("empty");
     }
 
     expect(getCell(container, 1, 1).getAttribute("aria-label")).toContain(

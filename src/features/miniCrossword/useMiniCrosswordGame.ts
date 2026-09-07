@@ -28,11 +28,7 @@ import {
 } from "./miniCrosswordProgressStorage";
 
 type MiniCrosswordFeedback =
-  | "incorrect"
-  | "complete"
-  | "word-correct"
-  | "word-incorrect"
-  | null;
+  "incorrect" | "complete" | "word-correct" | "word-incorrect" | null;
 
 export function useMiniCrosswordGame(puzzle: MiniCrosswordPuzzle) {
   const initialEntry = puzzle.entries[0]!;
