@@ -61,6 +61,22 @@ describe("MiniCrosswordGameBoard", () => {
     ).toBeTruthy();
   });
 
+  it("does not toggle a newly clicked crossing cell because focus fires first", () => {
+    const { container } = renderBoard();
+    const crossingCell = getCell(container, 1, 1);
+
+    fireEvent.pointerDown(crossingCell);
+    fireEvent.focus(crossingCell);
+    fireEvent.click(crossingCell);
+
+    expect(screen.getByRole("status").textContent).toContain("4 Across");
+
+    fireEvent.pointerDown(crossingCell);
+    fireEvent.click(crossingCell);
+
+    expect(screen.getByRole("status").textContent).toContain("4 Down");
+  });
+
   it("toggles Across and Down when the selected crossing cell is clicked again", () => {
     const { container } = renderBoard();
     const firstCell = getCell(container, 0, 2);
