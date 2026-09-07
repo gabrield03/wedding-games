@@ -59,7 +59,7 @@ export function MiniCrosswordGrid({
                 key={cellIndex}
                 role="gridcell"
                 aria-label={`Blocked cell, row ${row + 1}, column ${column + 1}`}
-                className="aspect-square border-r border-b border-neutral-800 bg-neutral-900 dark:border-neutral-300 dark:bg-neutral-100"
+                className="aspect-square border-r border-b border-neutral-800 bg-neutral-900 dark:border-neutral-300 dark:bg-neutral-900"
                 data-mini-crossword-block
               />
             );
@@ -88,7 +88,7 @@ export function MiniCrosswordGrid({
                   ? "bg-sky-500 text-neutral-950"
                   : active
                     ? "bg-sky-100 text-neutral-950 dark:bg-sky-900 dark:text-white"
-                    : "bg-background text-foreground"
+                    : "bg-background text-foreground dark:bg-white dark:text-neutral-950"
               } disabled:cursor-default`}
             >
               {clueNumber && (
