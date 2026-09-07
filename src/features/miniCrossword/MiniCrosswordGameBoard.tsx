@@ -163,6 +163,7 @@ function ClueList({
                 onClick={() => onSelectEntry(entry)}
                 disabled={disabled}
                 aria-current={active ? "true" : undefined}
+                aria-label={`${entry.number}. ${entry.clue}`}
                 className={`w-full rounded-md px-2 py-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2 ${
                   active
                     ? "bg-sky-100 dark:bg-sky-900"
