@@ -67,7 +67,7 @@ describe("MiniCrosswordGameBoard", () => {
 
     fireEvent.pointerDown(crossingCell);
     fireEvent.focus(crossingCell);
-    fireEvent.click(crossingCell);
+    fireEvent.click(crossingCell, { detail: 1 });
 
     expect(document.activeElement).toBe(textInput);
     expect(screen.getByRole("status").textContent).toContain("4 Across");
