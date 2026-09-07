@@ -41,10 +41,7 @@ describe("MiniCrosswordGameBoard", () => {
     const puzzle7x7 = miniCrosswordPuzzles[1]!;
 
     render(
-      <MiniCrosswordGameBoard
-        puzzle={puzzle7x7}
-        nextPuzzleId="wedding-01"
-      />,
+      <MiniCrosswordGameBoard puzzle={puzzle7x7} nextPuzzleId="wedding-01" />,
     );
 
     expect(screen.getByText("How Well Do You Know Us?")).toBeTruthy();
@@ -113,10 +110,7 @@ describe("MiniCrosswordGameBoard", () => {
   it("skips cells already filled by crossing answers while typing", () => {
     const puzzle7x7 = miniCrosswordPuzzles[1]!;
     const { container } = render(
-      <MiniCrosswordGameBoard
-        puzzle={puzzle7x7}
-        nextPuzzleId="wedding-01"
-      />,
+      <MiniCrosswordGameBoard puzzle={puzzle7x7} nextPuzzleId="wedding-01" />,
     );
     const section = getGameSection();
 
@@ -245,10 +239,7 @@ describe("MiniCrosswordGameBoard", () => {
 
 function renderBoard() {
   return render(
-    <MiniCrosswordGameBoard
-      puzzle={puzzle}
-      nextPuzzleId="wedding-02"
-    />,
+    <MiniCrosswordGameBoard puzzle={puzzle} nextPuzzleId="wedding-02" />,
   );
 }
 
