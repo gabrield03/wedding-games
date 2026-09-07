@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import {
+  type ChangeEvent,
   type KeyboardEvent as ReactKeyboardEvent,
+  useRef,
   useSyncExternalStore,
 } from "react";
 
@@ -54,6 +56,7 @@ function HydratedMiniCrosswordGameBoard({
   nextPuzzleId,
 }: MiniCrosswordGameBoardProps) {
   const game = useMiniCrosswordGame(puzzle);
+  const textInputRef = useRef<HTMLInputElement>(null);
   const acrossEntries = puzzle.entries.filter(
     ({ direction }) => direction === "across",
   );
@@ -78,12 +81,52 @@ function HydratedMiniCrosswordGameBoard({
     }
   }
 
+  function focusTextInput() {
+    textInputRef.current?.focus({ preventScroll: true });
+  }
+
+  function handleTextInputChange(event: ChangeEvent<HTMLInputElement>) {
+    const letter = event.currentTarget.value.slice(-1);
+    event.currentTarget.value = "";
+
+    if (/^[A-Za-z]$/.test(letter)) {
+      game.enterLetter(letter);
+    }
+  }
+
+  function handleTextInputKeyDown(
+    event: ReactKeyboardEvent<HTMLInputElement>,
+  ) {
+    event.stopPropagation();
+
+    if (event.key === "Backspace") {
+      event.preventDefault();
+      game.backspace();
+    }
+  }
+
   return (
     <section
       className="mx-auto w-full max-w-2xl"
       aria-labelledby="mini-crossword-heading"
       onKeyDown={handleKeyDown}
     >
+      <input
+        ref={textInputRef}
+        type="text"
+        inputMode="text"
+        autoComplete="off"
+        autoCapitalize="characters"
+        autoCorrect="off"
+        spellCheck={false}
+        tabIndex={-1}
+        maxLength={1}
+        aria-label="Mini Crossword keyboard input"
+        className="pointer-events-none fixed bottom-0 left-0 h-4 w-4 text-base opacity-0"
+        onChange={handleTextInputChange}
+        onKeyDown={handleTextInputKeyDown}
+      />
+
       <h1
         id="mini-crossword-heading"
         className="text-center text-3xl font-bold"
@@ -122,6 +165,7 @@ function HydratedMiniCrosswordGameBoard({
           activeEntry={game.activeEntry}
           disabled={game.gameStatus === "complete"}
           onSelectCell={game.selectCell}
+          onRequestTextInput={focusTextInput}
         />
       </div>
 
@@ -132,6 +176,7 @@ function HydratedMiniCrosswordGameBoard({
           activeEntry={game.activeEntry}
           disabled={game.gameStatus === "complete"}
           onSelectEntry={game.selectEntry}
+          onRequestTextInput={focusTextInput}
         />
         <ClueList
           heading="Down"
@@ -139,6 +184,7 @@ function HydratedMiniCrosswordGameBoard({
           activeEntry={game.activeEntry}
           disabled={game.gameStatus === "complete"}
           onSelectEntry={game.selectEntry}
+          onRequestTextInput={focusTextInput}
         />
       </div>
 
@@ -179,6 +225,7 @@ type ClueListProps = {
   activeEntry: MiniCrosswordPuzzle["entries"][number] | null;
   disabled: boolean;
   onSelectEntry: (entry: MiniCrosswordPuzzle["entries"][number]) => void;
+  onRequestTextInput: () => void;
 };
 
 function ClueList({
@@ -187,7 +234,10 @@ function ClueList({
   activeEntry,
   disabled,
   onSelectEntry,
+  onRequestTextInput,
 }: ClueListProps) {
+  const pointerEntryRef = useRef<string | null>(null);
+
   return (
     <section aria-labelledby={`mini-crossword-${heading.toLowerCase()}`}>
       <h2
@@ -206,7 +256,26 @@ function ClueList({
             <li key={`${entry.number}-${entry.direction}`}>
               <button
                 type="button"
-                onClick={() => onSelectEntry(entry)}
+                onPointerDown={() => {
+                  pointerEntryRef.current = `${entry.number}:${entry.direction}`;
+                }}
+                onPointerCancel={() => {
+                  pointerEntryRef.current = null;
+                }}
+                onPointerLeave={() => {
+                  pointerEntryRef.current = null;
+                }}
+                onClick={() => {
+                  const entryKey = `${entry.number}:${entry.direction}`;
+                  const pointerActivated = pointerEntryRef.current === entryKey;
+
+                  onSelectEntry(entry);
+                  pointerEntryRef.current = null;
+
+                  if (pointerActivated) {
+                    onRequestTextInput();
+                  }
+                }}
                 disabled={disabled}
                 aria-current={active ? "true" : undefined}
                 aria-label={`${entry.number}. ${entry.clue}`}
