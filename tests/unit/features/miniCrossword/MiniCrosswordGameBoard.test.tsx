@@ -168,9 +168,9 @@ describe("MiniCrosswordGameBoard", () => {
     firstRender.unmount();
     const secondRender = renderBoard();
 
-    expect(getCell(secondRender.container, 0, 2).getAttribute("aria-label")).toContain(
-      "letter G",
-    );
+    expect(
+      getCell(secondRender.container, 0, 2).getAttribute("aria-label"),
+    ).toContain("letter G");
   });
 
   it("keeps Submit disabled until full and gives only ambiguous incorrect feedback", () => {
