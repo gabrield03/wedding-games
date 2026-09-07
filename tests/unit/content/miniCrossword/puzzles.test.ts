@@ -33,11 +33,11 @@ describe("Mini Crossword production content", () => {
     expect(puzzle.title).toBe("How Well Do You Know Us?");
     expect(puzzle.grid.solution).toEqual([
       "T#BUBU#",
-      "R#A####",
-      "I#N####",
+      "R#A##R#",
+      "I#N##G#",
       "VEGGIES",
-      "I##O#Y#",
-      "ALSO#E#",
+      "I##O###",
+      "ALSO###",
       "###DUDU",
     ]);
     expect(puzzle.entries.map(({ answer }) => answer)).toEqual([
@@ -47,8 +47,8 @@ describe("Mini Crossword production content", () => {
       "DUDU",
       "TRIVIA",
       "BANG",
+      "URGE",
       "GOOD",
-      "EYED",
     ]);
   });
 });
