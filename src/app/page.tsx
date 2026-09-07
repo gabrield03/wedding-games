@@ -31,7 +31,6 @@ export default function Home() {
             prefetch={false}
           />
 
-
           <GameCard
             title="Mini Crossword"
             actionLabel="Play Mini Crossword"
