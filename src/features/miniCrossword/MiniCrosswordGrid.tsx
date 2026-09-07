@@ -92,13 +92,11 @@ export function MiniCrosswordGrid({
                   pointerDownCellRef.current = null;
                 }
               }}
-              onClick={() => {
-                const pointerActivated = pointerDownCellRef.current === key;
-
+              onClick={(event) => {
                 onSelectCell(cell);
                 pointerDownCellRef.current = null;
 
-                if (pointerActivated) {
+                if (event.detail > 0) {
                   onRequestTextInput();
                 }
               }}
