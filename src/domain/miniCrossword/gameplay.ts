@@ -1,6 +1,8 @@
 import {
   MINI_CROSSWORD_BLOCK,
   type MiniCrosswordCell,
+  type MiniCrosswordEntry,
+  type MiniCrosswordEntryCheckResult,
   type MiniCrosswordGameState,
   type MiniCrosswordPuzzle,
   type MiniCrosswordSubmissionResult,
@@ -76,6 +78,57 @@ export function clearMiniCrosswordCell(
     ...state,
     letters,
   };
+}
+
+export function clearMiniCrosswordEntry(
+  puzzle: MiniCrosswordPuzzle,
+  state: MiniCrosswordGameState,
+  entry: MiniCrosswordEntry,
+): MiniCrosswordGameState {
+  if (state.status === "complete") {
+    return state;
+  }
+
+  const letters = [...state.letters];
+  let changed = false;
+
+  for (const cell of entry.cells) {
+    const cellIndex = getCellIndex(puzzle, cell);
+
+    if (letters[cellIndex] !== null) {
+      letters[cellIndex] = null;
+      changed = true;
+    }
+  }
+
+  return changed ? { ...state, letters } : state;
+}
+
+export function isMiniCrosswordEntryFilled(
+  puzzle: MiniCrosswordPuzzle,
+  state: MiniCrosswordGameState,
+  entry: MiniCrosswordEntry,
+): boolean {
+  return entry.cells.every(
+    (cell) => state.letters[getCellIndex(puzzle, cell)] !== null,
+  );
+}
+
+export function checkMiniCrosswordEntry(
+  puzzle: MiniCrosswordPuzzle,
+  state: MiniCrosswordGameState,
+  entry: MiniCrosswordEntry,
+): MiniCrosswordEntryCheckResult {
+  if (!isMiniCrosswordEntryFilled(puzzle, state, entry)) {
+    return "incomplete";
+  }
+
+  return entry.cells.every(
+    (cell, index) =>
+      state.letters[getCellIndex(puzzle, cell)] === entry.answer[index],
+  )
+    ? "correct"
+    : "incorrect";
 }
 
 export function isMiniCrosswordBoardFilled(
