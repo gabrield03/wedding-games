@@ -9,10 +9,8 @@ import {
 } from "@/domain/miniCrossword/types";
 
 const MINI_CROSSWORD_PROGRESS_VERSION = 1;
-const LAST_VISITED_PUZZLE_KEY =
-  "wedding-games:mini-crossword:last-visited";
-const PUZZLE_PROGRESS_KEY_PREFIX =
-  "wedding-games:mini-crossword:progress:";
+const LAST_VISITED_PUZZLE_KEY = "wedding-games:mini-crossword:last-visited";
+const PUZZLE_PROGRESS_KEY_PREFIX = "wedding-games:mini-crossword:progress:";
 
 export type PersistedMiniCrosswordProgress = {
   version: typeof MINI_CROSSWORD_PROGRESS_VERSION;
@@ -150,10 +148,7 @@ function validatePersistedProgress(
     }
   }
 
-  if (
-    value.status === "complete" &&
-    !lettersMatchSolution(puzzle, letters)
-  ) {
+  if (value.status === "complete" && !lettersMatchSolution(puzzle, letters)) {
     return null;
   }
 
