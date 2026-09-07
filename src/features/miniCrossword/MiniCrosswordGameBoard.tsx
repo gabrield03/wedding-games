@@ -83,8 +83,6 @@ export function MiniCrosswordGameBoard({
           activeEntry={game.activeEntry}
           disabled={game.gameStatus === "complete"}
           onSelectCell={game.selectCell}
-          onLetter={game.enterLetter}
-          onBackspace={game.backspace}
         />
       </div>
 
