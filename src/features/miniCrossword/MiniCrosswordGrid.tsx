@@ -37,7 +37,6 @@ export function MiniCrosswordGrid({
       className="mx-auto grid w-full max-w-sm border-l border-t border-neutral-800 dark:border-neutral-300"
       style={{
         gridTemplateColumns: `repeat(${puzzle.grid.columns}, minmax(0, 1fr))`,
-        touchAction: "none",
       }}
       role="grid"
       aria-label="Mini Crossword board"
@@ -102,8 +101,7 @@ export function MiniCrosswordGrid({
               }}
               data-mini-crossword-cell={`${row}-${column}`}
               data-active-answer={active ? "true" : "false"}
-              style={{ touchAction: "none", WebkitUserSelect: "none" }}
-              className={`relative aspect-square select-none border-r border-b border-neutral-800 text-2xl font-bold uppercase transition focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-inset dark:border-neutral-300 sm:text-3xl ${
+              className={`relative aspect-square border-r border-b border-neutral-800 text-2xl font-bold uppercase transition focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-inset dark:border-neutral-300 sm:text-3xl ${
                 selected
                   ? "bg-sky-500 text-neutral-950"
                   : active
