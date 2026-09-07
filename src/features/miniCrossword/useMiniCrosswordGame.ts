@@ -164,8 +164,7 @@ export function useMiniCrosswordGame(puzzle: MiniCrosswordPuzzle) {
     activeEntry,
     feedback,
     canSubmit:
-      state.status === "playing" &&
-      isMiniCrosswordBoardFilled(puzzle, state),
+      state.status === "playing" && isMiniCrosswordBoardFilled(puzzle, state),
     selectCell,
     selectEntry,
     enterLetter,

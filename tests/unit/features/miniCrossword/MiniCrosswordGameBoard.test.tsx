@@ -18,12 +18,14 @@ describe("MiniCrosswordGameBoard", () => {
       screen.getByRole("grid", { name: "Mini Crossword board" }),
     ).toBeTruthy();
     expect(screen.getAllByRole("gridcell")).toHaveLength(25);
-    expect(container.querySelectorAll("[data-mini-crossword-block]")).toHaveLength(
-      6,
-    );
+    expect(
+      container.querySelectorAll("[data-mini-crossword-block]"),
+    ).toHaveLength(6);
     expect(screen.getByRole("heading", { name: "Across" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Down" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /1\. Understand, as a joke/ })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: /1\. Understand, as a joke/ }),
+    ).toBeTruthy();
     expect(
       screen.getByRole("button", {
         name: /1\. Things partners may share after one gets a cold/,
@@ -81,14 +83,10 @@ describe("MiniCrosswordGameBoard", () => {
       [3, 1],
       [4, 1],
     ]) {
-      expect(
-        getCell(container, row, column).dataset.activeAnswer,
-      ).toBe("true");
+      expect(getCell(container, row, column).dataset.activeAnswer).toBe("true");
     }
 
-    expect(getCell(container, 1, 1).getAttribute("aria-selected")).toBe(
-      "true",
-    );
+    expect(getCell(container, 1, 1).getAttribute("aria-selected")).toBe("true");
   });
 
   it("keeps Submit disabled until full and gives only ambiguous incorrect feedback", () => {
@@ -137,9 +135,9 @@ describe("MiniCrosswordGameBoard", () => {
           continue;
         }
 
-        expect(getCell(container, row, column).getAttribute("aria-label")).toContain(
-          "empty",
-        );
+        expect(
+          getCell(container, row, column).getAttribute("aria-label"),
+        ).toContain("empty");
       }
     }
   });
