@@ -95,11 +95,11 @@ describe("MiniCrosswordGameBoard", () => {
     const { container } = renderBoard();
     const submit = screen.getByRole("button", { name: "Submit" });
 
-    expect(submit).toBeDisabled();
+    expect((submit as HTMLButtonElement).disabled).toBe(true);
 
     fillBoard(container, { wrongCell: "0-2" });
 
-    expect(submit).toBeEnabled();
+    expect((submit as HTMLButtonElement).disabled).toBe(false);
     fireEvent.click(submit);
 
     expect(screen.getByRole("status").textContent).toContain(
@@ -116,7 +116,7 @@ describe("MiniCrosswordGameBoard", () => {
     fillBoard(container);
 
     expect(screen.queryByText("Puzzle complete!")).toBeNull();
-    expect(submit).toBeEnabled();
+    expect((submit as HTMLButtonElement).disabled).toBe(false);
 
     fireEvent.click(submit);
 
@@ -126,7 +126,10 @@ describe("MiniCrosswordGameBoard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Play Again" }));
 
     expect(screen.queryByText("Puzzle complete!")).toBeNull();
-    expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
+    expect(
+      (screen.getByRole("button", { name: "Submit" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
 
     for (let row = 0; row < puzzle.grid.rows; row += 1) {
       for (let column = 0; column < puzzle.grid.columns; column += 1) {
