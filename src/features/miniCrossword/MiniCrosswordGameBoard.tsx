@@ -236,8 +236,6 @@ function ClueList({
   onSelectEntry,
   onRequestTextInput,
 }: ClueListProps) {
-  const pointerEntryRef = useRef<string | null>(null);
-
   return (
     <section aria-labelledby={`mini-crossword-${heading.toLowerCase()}`}>
       <h2
@@ -256,23 +254,10 @@ function ClueList({
             <li key={`${entry.number}-${entry.direction}`}>
               <button
                 type="button"
-                onPointerDown={() => {
-                  pointerEntryRef.current = `${entry.number}:${entry.direction}`;
-                }}
-                onPointerCancel={() => {
-                  pointerEntryRef.current = null;
-                }}
-                onPointerLeave={() => {
-                  pointerEntryRef.current = null;
-                }}
-                onClick={() => {
-                  const entryKey = `${entry.number}:${entry.direction}`;
-                  const pointerActivated = pointerEntryRef.current === entryKey;
-
+                onClick={(event) => {
                   onSelectEntry(entry);
-                  pointerEntryRef.current = null;
 
-                  if (pointerActivated) {
+                  if (event.detail > 0) {
                     onRequestTextInput();
                   }
                 }}
