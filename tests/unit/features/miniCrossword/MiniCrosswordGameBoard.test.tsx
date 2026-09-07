@@ -102,6 +102,17 @@ describe("MiniCrosswordGameBoard", () => {
     expect(firstCell.getAttribute("aria-label")).toContain("empty");
   });
 
+  it("handles repeated touch selection without relying on the browser click gesture", () => {
+    const { container } = renderBoard();
+    const crossingCell = getCell(container, 1, 1);
+
+    fireEvent.touchEnd(crossingCell);
+    expect(screen.getByRole("status").textContent).toContain("4 Across");
+
+    fireEvent.touchEnd(crossingCell);
+    expect(screen.getByRole("status").textContent).toContain("4 Down");
+  });
+
   it("does not toggle a newly clicked crossing cell because focus fires first", () => {
     const { container } = renderBoard();
     const crossingCell = getCell(container, 1, 1);
