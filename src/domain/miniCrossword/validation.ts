@@ -103,10 +103,7 @@ export function validateMiniCrosswordPuzzle(
   return errors;
 }
 
-function validateGrid(
-  puzzle: MiniCrosswordPuzzle,
-  errors: string[],
-): boolean {
+function validateGrid(puzzle: MiniCrosswordPuzzle, errors: string[]): boolean {
   let valid = true;
 
   if (!Number.isInteger(puzzle.grid.rows) || puzzle.grid.rows <= 0) {
@@ -223,9 +220,7 @@ function validateEntry(
       const existingStart = numberStarts.get(entry.number);
 
       if (existingStart && existingStart !== startKey) {
-        errors.push(
-          `Clue number ${entry.number} must refer to one start cell`,
-        );
+        errors.push(`Clue number ${entry.number} must refer to one start cell`);
       } else {
         numberStarts.set(entry.number, startKey);
       }
@@ -308,11 +303,7 @@ function deriveExpectedEntries(puzzle: MiniCrosswordPuzzle): ExpectedEntry[] {
         { row, column },
         "across",
       );
-      const downCells = getEntryCellsFromStart(
-        puzzle,
-        { row, column },
-        "down",
-      );
+      const downCells = getEntryCellsFromStart(puzzle, { row, column }, "down");
       const startsAcross = acrossCells.length >= MIN_ANSWER_LENGTH;
       const startsDown = downCells.length >= MIN_ANSWER_LENGTH;
 

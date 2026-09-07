@@ -13,12 +13,12 @@ import { testMiniCrosswordPuzzle } from "../../../fixtures/miniCrossword";
 
 describe("Mini Crossword gameplay", () => {
   it("creates an empty playing state for every grid cell", () => {
-    expect(createInitialMiniCrosswordGameState(testMiniCrosswordPuzzle)).toEqual(
-      {
-        letters: Array.from({ length: 25 }, () => null),
-        status: "playing",
-      },
-    );
+    expect(
+      createInitialMiniCrosswordGameState(testMiniCrosswordPuzzle),
+    ).toEqual({
+      letters: Array.from({ length: 25 }, () => null),
+      status: "playing",
+    });
   });
 
   it("enters, normalizes, and replaces letters immutably", () => {
@@ -99,11 +99,10 @@ describe("Mini Crossword gameplay", () => {
     expect(cleared.letters[6]).toBeNull();
     expect(cleared).not.toBe(filled);
     expect(
-      clearMiniCrosswordCell(
-        testMiniCrosswordPuzzle,
-        cleared,
-        { row: 0, column: 0 },
-      ),
+      clearMiniCrosswordCell(testMiniCrosswordPuzzle, cleared, {
+        row: 0,
+        column: 0,
+      }),
     ).toBe(cleared);
   });
 
@@ -173,11 +172,10 @@ describe("Mini Crossword gameplay", () => {
       ),
     ).toBe(result.state);
     expect(
-      clearMiniCrosswordCell(
-        testMiniCrosswordPuzzle,
-        result.state,
-        { row: 0, column: 2 },
-      ),
+      clearMiniCrosswordCell(testMiniCrosswordPuzzle, result.state, {
+        row: 0,
+        column: 2,
+      }),
     ).toBe(result.state);
   });
 
