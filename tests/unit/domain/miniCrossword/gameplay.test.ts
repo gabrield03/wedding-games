@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  checkMiniCrosswordEntry,
   clearMiniCrosswordCell,
+  clearMiniCrosswordEntry,
   createInitialMiniCrosswordGameState,
   isMiniCrosswordBoardFilled,
+  isMiniCrosswordEntryFilled,
   resetMiniCrosswordGame,
   setMiniCrosswordCellLetter,
   submitMiniCrossword,
@@ -104,6 +107,82 @@ describe("Mini Crossword gameplay", () => {
         column: 0,
       }),
     ).toBe(cleared);
+  });
+
+  it("checks a filled entry without revealing individual cell correctness", () => {
+    const entry = testMiniCrosswordPuzzle.entries[0]!;
+    let state = createInitialMiniCrosswordGameState(testMiniCrosswordPuzzle);
+
+    expect(
+      isMiniCrosswordEntryFilled(testMiniCrosswordPuzzle, state, entry),
+    ).toBe(false);
+    expect(checkMiniCrosswordEntry(testMiniCrosswordPuzzle, state, entry)).toBe(
+      "incomplete",
+    );
+
+    for (const [index, cell] of entry.cells.entries()) {
+      state = setMiniCrosswordCellLetter(
+        testMiniCrosswordPuzzle,
+        state,
+        cell,
+        entry.answer[index]!,
+      );
+    }
+
+    expect(
+      isMiniCrosswordEntryFilled(testMiniCrosswordPuzzle, state, entry),
+    ).toBe(true);
+    expect(checkMiniCrosswordEntry(testMiniCrosswordPuzzle, state, entry)).toBe(
+      "correct",
+    );
+
+    const incorrect = setMiniCrosswordCellLetter(
+      testMiniCrosswordPuzzle,
+      state,
+      entry.cells.at(-1)!,
+      "Z",
+    );
+
+    expect(
+      checkMiniCrosswordEntry(testMiniCrosswordPuzzle, incorrect, entry),
+    ).toBe("incorrect");
+  });
+
+  it("clears only the requested entry", () => {
+    const entry = testMiniCrosswordPuzzle.entries[0]!;
+    let state = createInitialMiniCrosswordGameState(testMiniCrosswordPuzzle);
+
+    state = setMiniCrosswordCellLetter(
+      testMiniCrosswordPuzzle,
+      state,
+      { row: 1, column: 1 },
+      "D",
+    );
+
+    for (const [index, cell] of entry.cells.entries()) {
+      state = setMiniCrosswordCellLetter(
+        testMiniCrosswordPuzzle,
+        state,
+        cell,
+        entry.answer[index]!,
+      );
+    }
+
+    const cleared = clearMiniCrosswordEntry(
+      testMiniCrosswordPuzzle,
+      state,
+      entry,
+    );
+
+    for (const cell of entry.cells) {
+      expect(
+        cleared.letters[
+          cell.row * testMiniCrosswordPuzzle.grid.columns + cell.column
+        ],
+      ).toBeNull();
+    }
+
+    expect(cleared.letters[6]).toBe("D");
   });
 
   it("distinguishes an incomplete board from a fully filled board", () => {
