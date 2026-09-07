@@ -101,7 +101,7 @@ export function MiniCrosswordGrid({
               }}
               data-mini-crossword-cell={`${row}-${column}`}
               data-active-answer={active ? "true" : "false"}
-              className={`relative aspect-square border-r border-b border-neutral-800 text-2xl font-bold uppercase transition focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-inset dark:border-neutral-300 sm:text-3xl ${
+              className={`relative aspect-square touch-manipulation border-r border-b border-neutral-800 text-2xl font-bold uppercase transition focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-inset dark:border-neutral-300 sm:text-3xl ${
                 selected
                   ? "bg-sky-500 text-neutral-950"
                   : active
