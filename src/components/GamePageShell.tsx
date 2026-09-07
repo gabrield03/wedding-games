@@ -7,7 +7,7 @@ type GamePageShellProps = {
 
 export function GamePageShell({ children }: GamePageShellProps) {
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col px-4 py-10">
+    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 py-10">
       <nav aria-label="Game navigation">
         <Link
           href="/"
@@ -18,7 +18,7 @@ export function GamePageShell({ children }: GamePageShellProps) {
         </Link>
       </nav>
 
-      <div className="mt-6">{children}</div>
+      <div className="mt-6 min-w-0">{children}</div>
     </main>
   );
 }
