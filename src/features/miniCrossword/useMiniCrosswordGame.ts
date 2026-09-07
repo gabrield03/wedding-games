@@ -179,7 +179,9 @@ export function useMiniCrosswordGame(puzzle: MiniCrosswordPuzzle) {
       return;
     }
 
-    setState((current) => clearMiniCrosswordEntry(puzzle, current, activeEntry));
+    setState((current) =>
+      clearMiniCrosswordEntry(puzzle, current, activeEntry),
+    );
     setFeedback(null);
   }
 
