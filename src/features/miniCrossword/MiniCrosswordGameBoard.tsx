@@ -2,16 +2,19 @@
 
 import Link from "next/link";
 import {
-  type ChangeEvent,
   type KeyboardEvent as ReactKeyboardEvent,
-  useRef,
   useSyncExternalStore,
 } from "react";
 
-import type { MiniCrosswordPuzzle } from "@/domain/miniCrossword/types";
+import type {
+  MiniCrosswordEntry,
+  MiniCrosswordPuzzle,
+} from "@/domain/miniCrossword/types";
 
 import { MiniCrosswordGrid } from "./MiniCrosswordGrid";
 import { useMiniCrosswordGame } from "./useMiniCrosswordGame";
+
+const MINI_CROSSWORD_KEYBOARD_ROWS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
 
 type MiniCrosswordGameBoardProps = {
   puzzle: MiniCrosswordPuzzle;
@@ -56,13 +59,16 @@ function HydratedMiniCrosswordGameBoard({
   nextPuzzleId,
 }: MiniCrosswordGameBoardProps) {
   const game = useMiniCrosswordGame(puzzle);
-  const textInputRef = useRef<HTMLInputElement>(null);
   const acrossEntries = puzzle.entries.filter(
     ({ direction }) => direction === "across",
   );
   const downEntries = puzzle.entries.filter(
     ({ direction }) => direction === "down",
   );
+  const orderedEntries = [...puzzle.entries].sort(compareEntries);
+  const activeEntryIndex = game.activeEntry
+    ? orderedEntries.findIndex((entry) => entriesEqual(entry, game.activeEntry))
+    : -1;
 
   function handleKeyDown(event: ReactKeyboardEvent<HTMLElement>) {
     if (game.gameStatus === "complete") {
@@ -81,28 +87,16 @@ function HydratedMiniCrosswordGameBoard({
     }
   }
 
-  function focusTextInput() {
-    textInputRef.current?.focus({ preventScroll: true });
-  }
-
-  function handleTextInputChange(event: ChangeEvent<HTMLInputElement>) {
-    const letter = event.currentTarget.value.slice(-1);
-    event.currentTarget.value = "";
-
-    if (/^[A-Za-z]$/.test(letter)) {
-      game.enterLetter(letter);
+  function selectRelativeEntry(offset: number) {
+    if (orderedEntries.length === 0) {
+      return;
     }
-  }
 
-  function handleTextInputKeyDown(
-    event: ReactKeyboardEvent<HTMLInputElement>,
-  ) {
-    event.stopPropagation();
+    const currentIndex = activeEntryIndex >= 0 ? activeEntryIndex : 0;
+    const nextIndex =
+      (currentIndex + offset + orderedEntries.length) % orderedEntries.length;
 
-    if (event.key === "Backspace") {
-      event.preventDefault();
-      game.backspace();
-    }
+    game.selectEntry(orderedEntries[nextIndex]!);
   }
 
   return (
@@ -111,22 +105,6 @@ function HydratedMiniCrosswordGameBoard({
       aria-labelledby="mini-crossword-heading"
       onKeyDown={handleKeyDown}
     >
-      <input
-        ref={textInputRef}
-        type="text"
-        inputMode="text"
-        autoComplete="off"
-        autoCapitalize="characters"
-        autoCorrect="off"
-        spellCheck={false}
-        tabIndex={-1}
-        maxLength={1}
-        aria-label="Mini Crossword keyboard input"
-        className="pointer-events-none fixed bottom-0 left-0 h-4 w-4 text-base opacity-0"
-        onChange={handleTextInputChange}
-        onKeyDown={handleTextInputKeyDown}
-      />
-
       <h1
         id="mini-crossword-heading"
         className="text-center text-3xl font-bold"
@@ -149,7 +127,7 @@ function HydratedMiniCrosswordGameBoard({
         ) : game.feedback === "incorrect" ? (
           <p>Something&apos;s not right.</p>
         ) : game.activeEntry ? (
-          <p>
+          <p className="hidden sm:block">
             {game.activeEntry.number}{" "}
             {game.activeEntry.direction === "across" ? "Across" : "Down"}:{" "}
             <span className="font-normal">{game.activeEntry.clue}</span>
@@ -165,18 +143,57 @@ function HydratedMiniCrosswordGameBoard({
           activeEntry={game.activeEntry}
           disabled={game.gameStatus === "complete"}
           onSelectCell={game.selectCell}
-          onRequestTextInput={focusTextInput}
         />
       </div>
 
-      <div className="mt-8 grid gap-8 sm:grid-cols-2">
+      {game.gameStatus === "playing" && game.activeEntry && (
+        <div
+          className="mt-4 flex items-stretch sm:hidden"
+          role="group"
+          aria-label="Mini Crossword clue navigation"
+        >
+          <button
+            type="button"
+            onClick={() => selectRelativeEntry(-1)}
+            aria-label="Previous clue"
+            className="min-h-14 w-12 shrink-0 rounded-l-lg border border-r-0 text-2xl font-semibold transition active:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-inset dark:active:bg-neutral-900"
+          >
+            ‹
+          </button>
+          <div className="flex min-h-14 min-w-0 flex-1 items-center justify-center border px-3 py-2 text-center">
+            <p className="break-words text-sm">
+              <span className="font-bold">
+                {game.activeEntry.number}{" "}
+                {game.activeEntry.direction === "across" ? "Across" : "Down"}
+              </span>{" "}
+              {game.activeEntry.clue}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => selectRelativeEntry(1)}
+            aria-label="Next clue"
+            className="min-h-14 w-12 shrink-0 rounded-r-lg border border-l-0 text-2xl font-semibold transition active:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-inset dark:active:bg-neutral-900"
+          >
+            ›
+          </button>
+        </div>
+      )}
+
+      {game.gameStatus === "playing" && (
+        <MiniCrosswordKeyboard
+          onLetter={game.enterLetter}
+          onBackspace={game.backspace}
+        />
+      )}
+
+      <div className="mt-8 hidden gap-8 sm:grid sm:grid-cols-2">
         <ClueList
           heading="Across"
           entries={acrossEntries}
           activeEntry={game.activeEntry}
           disabled={game.gameStatus === "complete"}
           onSelectEntry={game.selectEntry}
-          onRequestTextInput={focusTextInput}
         />
         <ClueList
           heading="Down"
@@ -184,7 +201,6 @@ function HydratedMiniCrosswordGameBoard({
           activeEntry={game.activeEntry}
           disabled={game.gameStatus === "complete"}
           onSelectEntry={game.selectEntry}
-          onRequestTextInput={focusTextInput}
         />
       </div>
 
@@ -219,13 +235,62 @@ function HydratedMiniCrosswordGameBoard({
   );
 }
 
+type MiniCrosswordKeyboardProps = {
+  onLetter: (letter: string) => void;
+  onBackspace: () => void;
+};
+
+function MiniCrosswordKeyboard({
+  onLetter,
+  onBackspace,
+}: MiniCrosswordKeyboardProps) {
+  return (
+    <div
+      className="mt-3 space-y-1.5 sm:hidden"
+      role="group"
+      aria-label="Mini Crossword keyboard"
+    >
+      {MINI_CROSSWORD_KEYBOARD_ROWS.map((row, rowIndex) => (
+        <div
+          key={row}
+          className={`flex justify-center gap-1 ${
+            rowIndex === 1 ? "px-4" : rowIndex === 2 ? "px-7" : ""
+          }`}
+        >
+          {[...row].map((letter) => (
+            <button
+              key={letter}
+              type="button"
+              onClick={() => onLetter(letter)}
+              aria-label={letter}
+              className="min-h-12 min-w-0 flex-1 touch-manipulation rounded border border-neutral-400 bg-neutral-100 px-0.5 text-sm font-bold text-neutral-950 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-1 dark:bg-neutral-200"
+            >
+              {letter}
+            </button>
+          ))}
+
+          {rowIndex === MINI_CROSSWORD_KEYBOARD_ROWS.length - 1 && (
+            <button
+              type="button"
+              onClick={onBackspace}
+              aria-label="Backspace"
+              className="min-h-12 min-w-0 flex-[1.5] touch-manipulation rounded border border-neutral-400 bg-neutral-200 px-1 text-xl font-bold text-neutral-950 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-1"
+            >
+              ⌫
+            </button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 type ClueListProps = {
   heading: "Across" | "Down";
   entries: MiniCrosswordPuzzle["entries"];
   activeEntry: MiniCrosswordPuzzle["entries"][number] | null;
   disabled: boolean;
   onSelectEntry: (entry: MiniCrosswordPuzzle["entries"][number]) => void;
-  onRequestTextInput: () => void;
 };
 
 function ClueList({
@@ -234,7 +299,6 @@ function ClueList({
   activeEntry,
   disabled,
   onSelectEntry,
-  onRequestTextInput,
 }: ClueListProps) {
   return (
     <section aria-labelledby={`mini-crossword-${heading.toLowerCase()}`}>
@@ -254,13 +318,7 @@ function ClueList({
             <li key={`${entry.number}-${entry.direction}`}>
               <button
                 type="button"
-                onClick={(event) => {
-                  onSelectEntry(entry);
-
-                  if (event.detail > 0) {
-                    onRequestTextInput();
-                  }
-                }}
+                onClick={() => onSelectEntry(entry)}
                 disabled={disabled}
                 aria-current={active ? "true" : undefined}
                 aria-label={`${entry.number}. ${entry.clue}`}
@@ -278,5 +336,26 @@ function ClueList({
         })}
       </ol>
     </section>
+  );
+}
+
+function compareEntries(first: MiniCrosswordEntry, second: MiniCrosswordEntry) {
+  if (first.number !== second.number) {
+    return first.number - second.number;
+  }
+
+  if (first.direction === second.direction) {
+    return 0;
+  }
+
+  return first.direction === "across" ? -1 : 1;
+}
+
+function entriesEqual(
+  first: MiniCrosswordEntry,
+  second: MiniCrosswordEntry,
+): boolean {
+  return (
+    first.number === second.number && first.direction === second.direction
   );
 }
