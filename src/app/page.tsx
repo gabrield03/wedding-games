@@ -30,6 +30,13 @@ export default function Home() {
             href="/games/strands"
             prefetch={false}
           />
+
+          <GameCard
+            title="Mini Crossword"
+            actionLabel="Play Mini Crossword"
+            href="/games/mini-crossword"
+            prefetch={false}
+          />
         </div>
       </section>
     </main>

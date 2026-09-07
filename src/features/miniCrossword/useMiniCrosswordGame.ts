@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   clearMiniCrosswordCell,
@@ -17,12 +17,27 @@ import type {
   MiniCrosswordPuzzle,
 } from "@/domain/miniCrossword/types";
 
+import {
+  clearMiniCrosswordPuzzleProgress,
+  loadMiniCrosswordPuzzleProgress,
+  saveLastVisitedMiniCrosswordPuzzleId,
+  saveMiniCrosswordPuzzleProgress,
+} from "./miniCrosswordProgressStorage";
+
 type MiniCrosswordFeedback = "incorrect" | "complete" | null;
 
 export function useMiniCrosswordGame(puzzle: MiniCrosswordPuzzle) {
   const initialEntry = puzzle.entries[0]!;
+  const [persistedProgress] = useState(() =>
+    loadMiniCrosswordPuzzleProgress(puzzle),
+  );
   const [state, setState] = useState(() =>
-    createInitialMiniCrosswordGameState(puzzle),
+    persistedProgress
+      ? {
+          letters: persistedProgress.letters,
+          status: persistedProgress.status,
+        }
+      : createInitialMiniCrosswordGameState(puzzle),
   );
   const [selectedCell, setSelectedCell] = useState<MiniCrosswordCell>(
     initialEntry.cells[0]!,
@@ -35,6 +50,14 @@ export function useMiniCrosswordGame(puzzle: MiniCrosswordPuzzle) {
     () => findActiveEntry(puzzle, selectedCell, activeDirection),
     [activeDirection, puzzle, selectedCell],
   );
+
+  useEffect(() => {
+    saveLastVisitedMiniCrosswordPuzzleId(puzzle.id);
+  }, [puzzle.id]);
+
+  useEffect(() => {
+    saveMiniCrosswordPuzzleProgress(puzzle, state);
+  }, [puzzle, state]);
 
   function selectCell(cell: MiniCrosswordCell) {
     if (state.status === "complete") {
@@ -155,6 +178,7 @@ export function useMiniCrosswordGame(puzzle: MiniCrosswordPuzzle) {
   }
 
   function playAgain() {
+    clearMiniCrosswordPuzzleProgress(puzzle.id);
     setState(resetMiniCrosswordGame(puzzle));
     setSelectedCell(initialEntry.cells[0]!);
     setActiveDirection(initialEntry.direction);

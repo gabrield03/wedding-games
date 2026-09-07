@@ -8,6 +8,7 @@ const puzzle = miniCrosswordPuzzles[0]!;
 
 afterEach(() => {
   cleanup();
+  localStorage.clear();
 });
 
 describe("MiniCrosswordGameBoard", () => {
@@ -31,12 +32,17 @@ describe("MiniCrosswordGameBoard", () => {
         name: /1\. Things partners may share after one gets a cold/,
       }),
     ).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "Next Puzzle" }).getAttribute("href"),
+    ).toBe("/games/mini-crossword/wedding-02");
   });
 
   it("renders the personalized 7x7 puzzle with all cells and clues", () => {
     const puzzle7x7 = miniCrosswordPuzzles[1]!;
 
-    render(<MiniCrosswordGameBoard puzzle={puzzle7x7} />);
+    render(
+      <MiniCrosswordGameBoard puzzle={puzzle7x7} nextPuzzleId="wedding-01" />,
+    );
 
     expect(screen.getByText("How Well Do You Know Us?")).toBeTruthy();
     expect(screen.getAllByRole("gridcell")).toHaveLength(49);
@@ -50,6 +56,22 @@ describe("MiniCrosswordGameBoard", () => {
         name: /1\. A favorite kind of game night/,
       }),
     ).toBeTruthy();
+  });
+
+  it("does not toggle a newly clicked crossing cell because focus fires first", () => {
+    const { container } = renderBoard();
+    const crossingCell = getCell(container, 1, 1);
+
+    fireEvent.pointerDown(crossingCell);
+    fireEvent.focus(crossingCell);
+    fireEvent.click(crossingCell);
+
+    expect(screen.getByRole("status").textContent).toContain("4 Across");
+
+    fireEvent.pointerDown(crossingCell);
+    fireEvent.click(crossingCell);
+
+    expect(screen.getByRole("status").textContent).toContain("4 Down");
   });
 
   it("toggles Across and Down when the selected crossing cell is clicked again", () => {
@@ -87,7 +109,9 @@ describe("MiniCrosswordGameBoard", () => {
 
   it("skips cells already filled by crossing answers while typing", () => {
     const puzzle7x7 = miniCrosswordPuzzles[1]!;
-    const { container } = render(<MiniCrosswordGameBoard puzzle={puzzle7x7} />);
+    const { container } = render(
+      <MiniCrosswordGameBoard puzzle={puzzle7x7} nextPuzzleId="wedding-01" />,
+    );
     const section = getGameSection();
 
     fireEvent.click(
@@ -140,6 +164,23 @@ describe("MiniCrosswordGameBoard", () => {
     }
 
     expect(getCell(container, 1, 1).getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("restores in-progress letters after remounting the same puzzle", () => {
+    const firstRender = renderBoard();
+    const section = getGameSection();
+    const firstCell = getCell(firstRender.container, 0, 2);
+
+    fireEvent.keyDown(section, { key: "g" });
+
+    expect(firstCell.getAttribute("aria-label")).toContain("letter G");
+
+    firstRender.unmount();
+    const secondRender = renderBoard();
+
+    expect(
+      getCell(secondRender.container, 0, 2).getAttribute("aria-label"),
+    ).toContain("letter G");
   });
 
   it("keeps Submit disabled until full and gives only ambiguous incorrect feedback", () => {
@@ -197,7 +238,9 @@ describe("MiniCrosswordGameBoard", () => {
 });
 
 function renderBoard() {
-  return render(<MiniCrosswordGameBoard puzzle={puzzle} />);
+  return render(
+    <MiniCrosswordGameBoard puzzle={puzzle} nextPuzzleId="wedding-02" />,
+  );
 }
 
 function getGameSection(): HTMLElement {

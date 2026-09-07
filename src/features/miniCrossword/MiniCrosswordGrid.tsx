@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef } from "react";
+
 import {
   MINI_CROSSWORD_BLOCK,
   type MiniCrosswordCell,
@@ -24,6 +26,7 @@ export function MiniCrosswordGrid({
   disabled,
   onSelectCell,
 }: MiniCrosswordGridProps) {
+  const pointerDownCellRef = useRef<string | null>(null);
   const activeCells = new Set(
     activeEntry?.cells.map(({ row, column }) => cellKey(row, column)) ?? [],
   );
@@ -51,7 +54,8 @@ export function MiniCrosswordGrid({
           const selected =
             selectedCell.row === row && selectedCell.column === column;
           const active = activeCells.has(cellKey(row, column));
-          const clueNumber = clueNumbers.get(cellKey(row, column));
+          const key = cellKey(row, column);
+          const clueNumber = clueNumbers.get(key);
 
           if (blocked) {
             return (
@@ -75,9 +79,23 @@ export function MiniCrosswordGrid({
               aria-label={`${clueNumber ? `Clue ${clueNumber}, ` : ""}row ${row + 1}, column ${column + 1}${letter ? `, letter ${letter}` : ", empty"}`}
               aria-selected={selected}
               disabled={disabled}
-              onClick={() => onSelectCell(cell)}
+              onPointerDown={() => {
+                pointerDownCellRef.current = key;
+              }}
+              onPointerCancel={() => {
+                pointerDownCellRef.current = null;
+              }}
+              onPointerLeave={() => {
+                if (pointerDownCellRef.current === key) {
+                  pointerDownCellRef.current = null;
+                }
+              }}
+              onClick={() => {
+                onSelectCell(cell);
+                pointerDownCellRef.current = null;
+              }}
               onFocus={() => {
-                if (!selected) {
+                if (!selected && pointerDownCellRef.current !== key) {
                   onSelectCell(cell);
                 }
               }}
