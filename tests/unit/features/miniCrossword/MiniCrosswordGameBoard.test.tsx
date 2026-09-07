@@ -33,6 +33,25 @@ describe("MiniCrosswordGameBoard", () => {
     ).toBeTruthy();
   });
 
+  it("renders the personalized 7x7 puzzle with all cells and clues", () => {
+    const puzzle7x7 = miniCrosswordPuzzles[1]!;
+
+    render(<MiniCrosswordGameBoard puzzle={puzzle7x7} />);
+
+    expect(screen.getByText("How Well Do You Know Us?")).toBeTruthy();
+    expect(screen.getAllByRole("gridcell")).toHaveLength(49);
+    expect(
+      screen.getByRole("button", {
+        name: /3\. Finish her catchphrase: “Eat yo ___”/,
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", {
+        name: /1\. A favorite kind of game night/,
+      }),
+    ).toBeTruthy();
+  });
+
   it("toggles Across and Down when the selected crossing cell is clicked again", () => {
     const { container } = renderBoard();
     const firstCell = getCell(container, 0, 2);
