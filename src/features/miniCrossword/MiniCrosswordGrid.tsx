@@ -16,6 +16,7 @@ type MiniCrosswordGridProps = {
   activeEntry: MiniCrosswordEntry | null;
   disabled: boolean;
   onSelectCell: (cell: MiniCrosswordCell) => void;
+  onRequestTextInput: () => void;
 };
 
 export function MiniCrosswordGrid({
@@ -25,6 +26,7 @@ export function MiniCrosswordGrid({
   activeEntry,
   disabled,
   onSelectCell,
+  onRequestTextInput,
 }: MiniCrosswordGridProps) {
   const pointerDownCellRef = useRef<string | null>(null);
   const activeCells = new Set(
@@ -91,8 +93,14 @@ export function MiniCrosswordGrid({
                 }
               }}
               onClick={() => {
+                const pointerActivated = pointerDownCellRef.current === key;
+
                 onSelectCell(cell);
                 pointerDownCellRef.current = null;
+
+                if (pointerActivated) {
+                  onRequestTextInput();
+                }
               }}
               onFocus={() => {
                 if (!selected && pointerDownCellRef.current !== key) {
