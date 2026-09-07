@@ -1,9 +1,16 @@
 import { describe, expect, it } from "vitest";
 
+import { MINI_CROSSWORD_PUZZLE_IDS } from "@/content/miniCrossword/puzzleIds";
 import { miniCrosswordPuzzles } from "@/content/miniCrossword/puzzles";
 import { validateMiniCrosswordPuzzle } from "@/domain/miniCrossword/validation";
 
 describe("Mini Crossword production content", () => {
+  it("keeps puzzle navigation IDs aligned with production content", () => {
+    expect(miniCrosswordPuzzles.map(({ id }) => id)).toEqual([
+      ...MINI_CROSSWORD_PUZZLE_IDS,
+    ]);
+  });
+
   it("keeps every wedding-themed Mini Crossword valid", () => {
     expect(miniCrosswordPuzzles).toHaveLength(2);
 
