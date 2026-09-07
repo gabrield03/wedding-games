@@ -81,9 +81,7 @@ export function clearMiniCrosswordPuzzleProgress(puzzleId: string) {
   }
 }
 
-export function loadLastVisitedMiniCrosswordPuzzleId():
-  | MiniCrosswordPuzzleId
-  | null {
+export function loadLastVisitedMiniCrosswordPuzzleId(): MiniCrosswordPuzzleId | null {
   const puzzleId = readStorageValue(LAST_VISITED_PUZZLE_KEY);
 
   return puzzleId && isMiniCrosswordPuzzleId(puzzleId) ? puzzleId : null;

@@ -11,8 +11,7 @@ import {
 
 const firstPuzzle = miniCrosswordPuzzles[0]!;
 const secondPuzzle = miniCrosswordPuzzles[1]!;
-const firstProgressKey =
-  `wedding-games:mini-crossword:progress:${firstPuzzle.id}`;
+const firstProgressKey = `wedding-games:mini-crossword:progress:${firstPuzzle.id}`;
 const lastVisitedKey = "wedding-games:mini-crossword:last-visited";
 
 afterEach(() => {
@@ -61,9 +60,7 @@ describe("miniCrosswordProgressStorage", () => {
     clearMiniCrosswordPuzzleProgress(firstPuzzle.id);
 
     expect(loadMiniCrosswordPuzzleProgress(firstPuzzle)).toBeNull();
-    expect(loadMiniCrosswordPuzzleProgress(secondPuzzle)?.letters[0]).toBe(
-      "T",
-    );
+    expect(loadMiniCrosswordPuzzleProgress(secondPuzzle)?.letters[0]).toBe("T");
   });
 
   it("rejects malformed, outdated, and puzzle-inconsistent progress", () => {
@@ -80,9 +77,9 @@ describe("miniCrosswordProgressStorage", () => {
       firstProgressKey,
       JSON.stringify({
         version: 1,
-        letters: Array(
-          firstPuzzle.grid.rows * firstPuzzle.grid.columns,
-        ).fill(null),
+        letters: Array(firstPuzzle.grid.rows * firstPuzzle.grid.columns).fill(
+          null,
+        ),
         status: "complete",
       }),
     );
@@ -91,9 +88,9 @@ describe("miniCrosswordProgressStorage", () => {
 
   it("removes empty playing progress", () => {
     saveMiniCrosswordPuzzleProgress(firstPuzzle, {
-      letters: Array(
-        firstPuzzle.grid.rows * firstPuzzle.grid.columns,
-      ).fill(null),
+      letters: Array(firstPuzzle.grid.rows * firstPuzzle.grid.columns).fill(
+        null,
+      ),
       status: "playing",
     });
 

@@ -1,10 +1,6 @@
-export const MINI_CROSSWORD_PUZZLE_IDS = [
-  "wedding-01",
-  "wedding-02",
-] as const;
+export const MINI_CROSSWORD_PUZZLE_IDS = ["wedding-01", "wedding-02"] as const;
 
-export type MiniCrosswordPuzzleId =
-  (typeof MINI_CROSSWORD_PUZZLE_IDS)[number];
+export type MiniCrosswordPuzzleId = (typeof MINI_CROSSWORD_PUZZLE_IDS)[number];
 
 export function isMiniCrosswordPuzzleId(
   puzzleId: string,

@@ -12,8 +12,7 @@ export function MiniCrosswordEntryRedirect() {
 
   useEffect(() => {
     const puzzleId =
-      loadLastVisitedMiniCrosswordPuzzleId() ??
-      MINI_CROSSWORD_PUZZLE_IDS[0];
+      loadLastVisitedMiniCrosswordPuzzleId() ?? MINI_CROSSWORD_PUZZLE_IDS[0];
     router.replace(`/games/mini-crossword/${puzzleId}`);
   }, [router]);
 
