@@ -1,6 +1,10 @@
 "use client";
 
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import Link from "next/link";
+import {
+  type KeyboardEvent as ReactKeyboardEvent,
+  useSyncExternalStore,
+} from "react";
 
 import type { MiniCrosswordPuzzle } from "@/domain/miniCrossword/types";
 
@@ -9,10 +13,45 @@ import { useMiniCrosswordGame } from "./useMiniCrosswordGame";
 
 type MiniCrosswordGameBoardProps = {
   puzzle: MiniCrosswordPuzzle;
+  nextPuzzleId: string;
 };
 
-export function MiniCrosswordGameBoard({
+const subscribeToHydration = () => () => {};
+const getClientHydrationSnapshot = () => true;
+const getServerHydrationSnapshot = () => false;
+
+export function MiniCrosswordGameBoard(props: MiniCrosswordGameBoardProps) {
+  const isHydrated = useSyncExternalStore(
+    subscribeToHydration,
+    getClientHydrationSnapshot,
+    getServerHydrationSnapshot,
+  );
+
+  if (!isHydrated) {
+    return (
+      <section
+        className="mx-auto w-full max-w-2xl"
+        aria-labelledby="mini-crossword-heading"
+      >
+        <h1
+          id="mini-crossword-heading"
+          className="text-center text-3xl font-bold"
+        >
+          Mini Crossword
+        </h1>
+        <p className="mt-6 text-center text-neutral-600" role="status">
+          Loading puzzle...
+        </p>
+      </section>
+    );
+  }
+
+  return <HydratedMiniCrosswordGameBoard {...props} />;
+}
+
+function HydratedMiniCrosswordGameBoard({
   puzzle,
+  nextPuzzleId,
 }: MiniCrosswordGameBoardProps) {
   const game = useMiniCrosswordGame(puzzle);
   const acrossEntries = puzzle.entries.filter(
@@ -103,7 +142,7 @@ export function MiniCrosswordGameBoard({
         />
       </div>
 
-      <div className="mt-8 text-center">
+      <div className="mt-8 flex flex-wrap justify-center gap-3">
         {game.gameStatus === "complete" ? (
           <button
             type="button"
@@ -122,6 +161,13 @@ export function MiniCrosswordGameBoard({
             Submit
           </button>
         )}
+
+        <Link
+          href={`/games/mini-crossword/${nextPuzzleId}`}
+          className="rounded-full border px-5 py-2 font-semibold transition hover:bg-neutral-100 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2 dark:hover:bg-neutral-900"
+        >
+          Next Puzzle
+        </Link>
       </div>
     </section>
   );
