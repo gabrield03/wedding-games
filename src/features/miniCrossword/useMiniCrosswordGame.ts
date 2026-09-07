@@ -95,13 +95,19 @@ export function useMiniCrosswordGame(puzzle: MiniCrosswordPuzzle) {
       cellsEqual(cell, selectedCell),
     );
 
-    if (
-      entry &&
-      selectedIndex !== undefined &&
-      selectedIndex >= 0 &&
-      selectedIndex < entry.cells.length - 1
-    ) {
-      setSelectedCell(entry.cells[selectedIndex + 1]!);
+    if (entry && selectedIndex !== undefined && selectedIndex >= 0) {
+      const nextEmptyCell = entry.cells
+        .slice(selectedIndex + 1)
+        .find(
+          (cell) =>
+            state.letters[
+              cell.row * puzzle.grid.columns + cell.column
+            ] === null,
+        );
+
+      if (nextEmptyCell) {
+        setSelectedCell(nextEmptyCell);
+      }
     }
   }
 
