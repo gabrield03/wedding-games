@@ -1,7 +1,5 @@
 "use client";
 
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-
 import {
   MINI_CROSSWORD_BLOCK,
   type MiniCrosswordCell,
@@ -16,11 +14,7 @@ type MiniCrosswordGridProps = {
   activeEntry: MiniCrosswordEntry | null;
   disabled: boolean;
   onSelectCell: (cell: MiniCrosswordCell) => void;
-  onLetter: (letter: string) => void;
-  onBackspace: () => void;
 };
-
-const LETTER_KEY_PATTERN = /^[A-Za-z]$/;
 
 export function MiniCrosswordGrid({
   puzzle,
@@ -29,35 +23,11 @@ export function MiniCrosswordGrid({
   activeEntry,
   disabled,
   onSelectCell,
-  onLetter,
-  onBackspace,
 }: MiniCrosswordGridProps) {
   const activeCells = new Set(
     activeEntry?.cells.map(({ row, column }) => cellKey(row, column)) ?? [],
   );
   const clueNumbers = getClueNumbers(puzzle);
-
-  function handleKeyDown(
-    event: ReactKeyboardEvent<HTMLButtonElement>,
-    cell: MiniCrosswordCell,
-  ) {
-    if (disabled) {
-      return;
-    }
-
-    if (LETTER_KEY_PATTERN.test(event.key)) {
-      event.preventDefault();
-      onSelectCell(cell);
-      onLetter(event.key);
-      return;
-    }
-
-    if (event.key === "Backspace") {
-      event.preventDefault();
-      onSelectCell(cell);
-      onBackspace();
-    }
-  }
 
   return (
     <div
@@ -106,7 +76,11 @@ export function MiniCrosswordGrid({
               aria-selected={selected}
               disabled={disabled}
               onClick={() => onSelectCell(cell)}
-              onKeyDown={(event) => handleKeyDown(event, cell)}
+              onFocus={() => {
+                if (!selected) {
+                  onSelectCell(cell);
+                }
+              }}
               data-mini-crossword-cell={`${row}-${column}`}
               data-active-answer={active ? "true" : "false"}
               className={`relative aspect-square border-r border-b border-neutral-800 text-2xl font-bold uppercase transition focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-inset dark:border-neutral-300 sm:text-3xl ${
