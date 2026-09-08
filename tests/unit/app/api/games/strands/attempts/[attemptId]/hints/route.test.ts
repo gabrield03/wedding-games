@@ -34,7 +34,7 @@ const attempt = {
     answerCount: 7,
   },
   foundAnswers: [],
-  hintedPath: [0, 1, 7, 6, 12, 13, 14, 19],
+  hintedTileIndexes: [0, 1, 7, 6, 12, 13, 14, 19],
   gameStatus: "playing" as const,
 };
 
