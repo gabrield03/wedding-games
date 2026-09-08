@@ -452,12 +452,16 @@ function decodeAttempt(
   const answerWords = new Set(
     [...puzzle.themeWords, puzzle.spangram].map(({ word }) => word),
   );
+  const themeWords = new Set(puzzle.themeWords.map(({ word }) => word));
 
   if (
     !Array.isArray(row.found_words) ||
     row.found_words.some((word) => typeof word !== "string") ||
     new Set(row.found_words).size !== row.found_words.length ||
     row.found_words.some((word) => !answerWords.has(word)) ||
+    (row.active_hint_word !== null &&
+      (!themeWords.has(row.active_hint_word) ||
+        row.found_words.includes(row.active_hint_word))) ||
     !Number.isInteger(row.version) ||
     row.version < 0
   ) {
@@ -501,8 +505,34 @@ function createSnapshot(
         kind,
         path: answer.path,
       })),
+    hintedPath:
+      puzzle.themeWords.find(
+        ({ word }) => word === attempt.row.active_hint_word,
+      )?.path ?? null,
     gameStatus: getStrandsGameStatus(puzzle, attempt.state),
   };
+}
+
+function getNextActiveHintWord(
+  attempt: StrandsAttemptRow,
+  submission: ReturnType<typeof submitDomainStrandsPath>,
+): string | null {
+  if (!attempt.active_hint_word) {
+    return null;
+  }
+
+  const resolvedWord =
+    submission.status === "found_theme" ||
+    submission.status === "found_spangram" ||
+    submission.status === "already_found"
+      ? submission.word
+      : submission.status === "game_complete"
+        ? submission.completedBy?.word
+        : undefined;
+
+  return resolvedWord === attempt.active_hint_word
+    ? null
+    : attempt.active_hint_word;
 }
 
 function getAnswers(
