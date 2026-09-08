@@ -22,7 +22,7 @@ export type StrandsAttemptSnapshot = {
   version: number;
   puzzle: PublicStrandsPuzzle;
   foundAnswers: RevealedStrandsAnswer[];
-  hintedPath: StrandsPath | null;
+  hintedTileIndexes: number[] | null;
   gameStatus: StrandsGameStatus;
 };
 
