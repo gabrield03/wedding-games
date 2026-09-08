@@ -312,6 +312,34 @@ describe("startStrandsAttempt", () => {
     });
   });
 
+  it("resumes a persisted active hint without revealing its word", async () => {
+    const answer = testStrandsPuzzle.themeWords[0]!;
+    installStore(
+      new FakeAttemptStore([
+        attemptRow({
+          active_hint_word: answer.word,
+          version: 1,
+        }),
+      ]),
+    );
+
+    const result = await startStrandsAttempt({
+      player,
+      puzzleId: testStrandsPuzzle.id,
+    });
+
+    expect(result).toMatchObject({
+      status: "ready",
+      attempt: {
+        version: 1,
+        hintedTileIndexes: [...answer.path].sort(
+          (first, second) => first - second,
+        ),
+      },
+    });
+    expect(JSON.stringify(result)).not.toContain(`"word":"${answer.word}"`);
+  });
+
   it("does not resume completed history and creates a fresh Attempt", async () => {
     const allAnswers = allAnswerWords();
     const store = installStore(
