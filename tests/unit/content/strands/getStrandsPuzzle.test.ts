@@ -1,129 +1,137 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getStrandsPuzzle } from "@/content/strands/getStrandsPuzzle";
-import { STRANDS_PUZZLE_IDS } from "@/content/strands/puzzleIds";
 import {
-  STRANDS_GRID_COLUMNS,
-  STRANDS_GRID_ROWS,
-  STRANDS_TILE_COUNT,
-} from "@/domain/strands/types";
-import { validateStrandsPuzzle } from "@/domain/strands/validation";
+  decodeStoredStrandsPuzzle,
+  getStrandsPuzzle,
+  getStrandsPuzzleForEvent,
+  type StoredStrandsPuzzleRow,
+} from "@/content/strands/getStrandsPuzzle";
+import type { Json } from "@/types/database.generated";
+import { testStrandsPuzzle } from "../../../fixtures/strands";
+
+const mocks = vi.hoisted(() => ({
+  eq: vi.fn(),
+  from: vi.fn(),
+  getCurrentEvent: vi.fn(),
+  getPrivilegedSupabaseClient: vi.fn(),
+  maybeSingle: vi.fn(),
+  select: vi.fn(),
+}));
 
 vi.mock("server-only", () => ({}));
+vi.mock("@/server/events/getCurrentEvent", () => ({
+  getCurrentEvent: mocks.getCurrentEvent,
+}));
+vi.mock("@/server/supabase/privileged", () => ({
+  getPrivilegedSupabaseClient: mocks.getPrivilegedSupabaseClient,
+}));
 
-const EXPECTED_PUZZLES = [
-  {
-    id: "wedding-01",
-    themeClue: "The Big Day",
-    spangram: "WEDDINGDAY",
-    themeWords: ["CEREMONY", "RECEPTION", "BOUQUET", "GUESTS", "VOWS", "VEIL"],
-  },
-  {
-    id: "wedding-02",
-    themeClue: "Places we've been",
-    spangram: "OURTRAVELS",
-    themeWords: ["KYOTO", "ROME", "FLORENCE", "NAPLES", "VANCOUVER", "CANCUN"],
-  },
-  {
-    id: "wedding-03",
-    themeClue: "A go-to date night meal",
-    spangram: "HOTPOTNIGHT",
-    themeWords: ["MUSHROOM", "FISHBALL", "NOODLES", "SHRIMP", "TOFU", "BEEF"],
-  },
-  {
-    id: "wedding-04",
-    themeClue: "An expensive dinner",
-    spangram: "OMAKASE",
-    themeWords: [
-      "NIGIRI",
-      "SASHIMI",
-      "SCALLOP",
-      "SALMON",
-      "OTORO",
-      "WASABI",
-      "NORI",
-    ],
-  },
-  {
-    id: "wedding-05",
-    themeClue: "Where it all started",
-    spangram: "NEWORLEANS",
-    themeWords: ["JAZZ", "BEIGNET", "OYSTERS", "VOODOO", "JAMBALAYA", "GUMBO"],
-  },
-] as const;
+const eventId = "00000000-0000-4000-8000-000000000001";
+const puzzleDatabaseId = "40000000-0000-4000-8000-000000000301";
 
-describe("getStrandsPuzzle", () => {
-  it("loads every production Strands puzzle through opaque public IDs", async () => {
-    expect(STRANDS_PUZZLE_IDS).toEqual(EXPECTED_PUZZLES.map(({ id }) => id));
+function storedPuzzleRow(
+  overrides: Partial<StoredStrandsPuzzleRow> = {},
+): StoredStrandsPuzzleRow {
+  return {
+    event_id: eventId,
+    grid_columns: testStrandsPuzzle.grid.columns,
+    grid_letters: testStrandsPuzzle.grid.letters,
+    grid_rows: testStrandsPuzzle.grid.rows,
+    id: puzzleDatabaseId,
+    public_id: testStrandsPuzzle.id,
+    spangram: structuredClone(testStrandsPuzzle.spangram) as Json,
+    theme_clue: testStrandsPuzzle.themeClue,
+    theme_words: structuredClone(testStrandsPuzzle.themeWords) as Json,
+    ...overrides,
+  };
+}
 
-    for (const expected of EXPECTED_PUZZLES) {
-      const puzzle = await getStrandsPuzzle(expected.id);
+beforeEach(() => {
+  vi.clearAllMocks();
 
-      expect(puzzle).toMatchObject({
-        id: expected.id,
-        themeClue: expected.themeClue,
-        grid: { rows: STRANDS_GRID_ROWS, columns: STRANDS_GRID_COLUMNS },
-        spangram: { word: expected.spangram },
-      });
-      expect(puzzle?.themeWords.map(({ word }) => word)).toEqual(
-        expected.themeWords,
-      );
-      expect(validateStrandsPuzzle(puzzle!)).toEqual([]);
-    }
+  mocks.getCurrentEvent.mockResolvedValue({
+    id: eventId,
+    slug: "current-wedding",
   });
-
-  it("returns null for unknown and old semantic puzzle IDs", async () => {
-    await expect(getStrandsPuzzle("does-not-exist")).resolves.toBeNull();
-    await expect(getStrandsPuzzle("the-big-day")).resolves.toBeNull();
-  });
-
-  it("uses every tile exactly once and stores paths that spell each answer", async () => {
-    for (const puzzleId of STRANDS_PUZZLE_IDS) {
-      const puzzle = (await getStrandsPuzzle(puzzleId))!;
-      const answers = [...puzzle.themeWords, puzzle.spangram];
-      const usedTiles = answers.flatMap(({ path }) => path);
-
-      expect(usedTiles).toHaveLength(STRANDS_TILE_COUNT);
-      expect(new Set(usedTiles)).toEqual(
-        new Set(
-          Array.from(
-            { length: STRANDS_TILE_COUNT },
-            (_, tileIndex) => tileIndex,
-          ),
-        ),
-      );
-
-      for (const answer of answers) {
-        expect(
-          answer.path.map((index) => puzzle.grid.letters[index]).join(""),
-        ).toBe(answer.word);
-      }
-    }
-  });
-
-  it("stores spangrams that touch opposite board edges", async () => {
-    for (const puzzleId of STRANDS_PUZZLE_IDS) {
-      const puzzle = (await getStrandsPuzzle(puzzleId))!;
-      expect(touchesOppositeEdges(puzzle.spangram.path)).toBe(true);
-    }
-  });
+  mocks.getPrivilegedSupabaseClient.mockReturnValue({ from: mocks.from });
+  mocks.from.mockReturnValue({ select: mocks.select });
+  mocks.select.mockReturnValue({ eq: mocks.eq });
+  mocks.eq.mockReturnValue({ eq: mocks.eq, maybeSingle: mocks.maybeSingle });
 });
 
-function touchesOppositeEdges(path: number[]) {
-  const touchesTop = path.some(
-    (tileIndex) => Math.floor(tileIndex / STRANDS_GRID_COLUMNS) === 0,
-  );
-  const touchesBottom = path.some(
-    (tileIndex) =>
-      Math.floor(tileIndex / STRANDS_GRID_COLUMNS) === STRANDS_GRID_ROWS - 1,
-  );
-  const touchesLeft = path.some(
-    (tileIndex) => tileIndex % STRANDS_GRID_COLUMNS === 0,
-  );
-  const touchesRight = path.some(
-    (tileIndex) =>
-      tileIndex % STRANDS_GRID_COLUMNS === STRANDS_GRID_COLUMNS - 1,
-  );
+describe("Strands puzzle persistence", () => {
+  it("loads and validates a puzzle from the trusted Event", async () => {
+    mocks.maybeSingle.mockResolvedValue({
+      data: storedPuzzleRow(),
+      error: null,
+    });
 
-  return (touchesTop && touchesBottom) || (touchesLeft && touchesRight);
-}
+    await expect(getStrandsPuzzle(testStrandsPuzzle.id)).resolves.toEqual(
+      testStrandsPuzzle,
+    );
+
+    expect(mocks.from).toHaveBeenCalledWith("strands_puzzles");
+    expect(mocks.eq).toHaveBeenNthCalledWith(1, "event_id", eventId);
+    expect(mocks.eq).toHaveBeenNthCalledWith(
+      2,
+      "public_id",
+      testStrandsPuzzle.id,
+    );
+  });
+
+  it("supports explicit Event-scoped loading for authoritative gameplay", async () => {
+    mocks.maybeSingle.mockResolvedValue({
+      data: storedPuzzleRow(),
+      error: null,
+    });
+
+    await expect(
+      getStrandsPuzzleForEvent(eventId, testStrandsPuzzle.id),
+    ).resolves.toEqual({
+      databaseId: puzzleDatabaseId,
+      eventId,
+      puzzle: testStrandsPuzzle,
+    });
+
+    expect(mocks.getCurrentEvent).not.toHaveBeenCalled();
+  });
+
+  it("returns null for a missing puzzle and throws for malformed stored content", async () => {
+    mocks.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+
+    await expect(
+      getStrandsPuzzleForEvent(eventId, "missing"),
+    ).resolves.toBeNull();
+
+    expect(() =>
+      decodeStoredStrandsPuzzle(
+        storedPuzzleRow({
+          grid_letters: "BAD",
+        }),
+      ),
+    ).toThrow(/failed validation/i);
+  });
+
+  it("rejects malformed stored answer JSON before gameplay uses it", () => {
+    expect(() =>
+      decodeStoredStrandsPuzzle(
+        storedPuzzleRow({
+          theme_words: [{ word: "ABCDEF", path: ["bad"] }] as Json,
+        }),
+      ),
+    ).toThrow(/invalid stored theme words entry 1/i);
+  });
+
+  it("surfaces database loading failures without exposing provider details", async () => {
+    mocks.maybeSingle.mockResolvedValue({
+      data: null,
+      error: new Error("provider detail"),
+    });
+
+    await expect(
+      getStrandsPuzzleForEvent(eventId, testStrandsPuzzle.id),
+    ).rejects.toThrow(
+      `Failed to load Strands puzzle "${testStrandsPuzzle.id}".`,
+    );
+  });
+});
