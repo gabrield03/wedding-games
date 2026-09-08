@@ -160,20 +160,28 @@ function isAttemptSnapshot(value: unknown): value is StrandsAttemptSnapshot {
     value.version < 0 ||
     !isPublicPuzzle(value.puzzle) ||
     !Array.isArray(value.foundAnswers) ||
-    !value.foundAnswers.every((answer) =>
-      isRevealedAnswer(answer, value.puzzle.answerCount),
-    ) ||
     !isHintedTileIndexes(value.hintedTileIndexes) ||
     (value.gameStatus !== "playing" && value.gameStatus !== "complete")
   ) {
     return false;
   }
 
-  const foundWords = value.foundAnswers.map(({ word }) => word);
+  const puzzle = value.puzzle;
+  const foundAnswers = value.foundAnswers;
+
+  if (
+    !foundAnswers.every((answer) =>
+      isRevealedAnswer(answer, puzzle.answerCount),
+    )
+  ) {
+    return false;
+  }
+
+  const foundWords = foundAnswers.map(({ word }) => word);
 
   return (
     new Set(foundWords).size === foundWords.length &&
-    value.foundAnswers.length <= value.puzzle.answerCount
+    foundAnswers.length <= puzzle.answerCount
   );
 }
 
