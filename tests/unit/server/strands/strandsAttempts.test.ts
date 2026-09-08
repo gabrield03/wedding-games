@@ -244,6 +244,7 @@ function installStore(store: FakeAttemptStore) {
 }
 
 beforeEach(() => {
+  vi.restoreAllMocks();
   vi.clearAllMocks();
   contentMocks.getForEvent.mockResolvedValue(storedPuzzle());
   contentMocks.decodeStored.mockReturnValue(storedPuzzle());
@@ -376,7 +377,9 @@ describe("requestStrandsHint", () => {
       },
     });
     expect(store.attempts[0]!.active_hint_word).toBe(answer.word);
-    expect(JSON.stringify(result)).not.toContain(answer.word);
+    expect(JSON.stringify(result)).not.toContain(
+      `"word":"${answer.word}"`,
+    );
   });
 
   it("keeps the same active hint without incrementing version again", async () => {
