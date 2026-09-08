@@ -1,5 +1,7 @@
 import type {
+  PublicStrandsPuzzle,
   RequestStrandsHintRequest,
+  RevealedStrandsAnswer,
   StartStrandsAttemptRequest,
   StrandsAttemptResponse,
   StrandsAttemptSnapshot,
@@ -175,7 +177,7 @@ function isAttemptSnapshot(value: unknown): value is StrandsAttemptSnapshot {
   );
 }
 
-function isPublicPuzzle(value: unknown) {
+function isPublicPuzzle(value: unknown): value is PublicStrandsPuzzle {
   if (
     !isRecord(value) ||
     typeof value.id !== "string" ||
@@ -202,7 +204,10 @@ function isPublicPuzzle(value: unknown) {
   );
 }
 
-function isRevealedAnswer(value: unknown, answerCount: number) {
+function isRevealedAnswer(
+  value: unknown,
+  answerCount: number,
+): value is RevealedStrandsAnswer {
   if (
     !isRecord(value) ||
     typeof value.word !== "string" ||
@@ -225,11 +230,11 @@ function isRevealedAnswer(value: unknown, answerCount: number) {
   );
 }
 
-function isHintedTileIndexes(value: unknown) {
+function isHintedTileIndexes(value: unknown): value is number[] | null {
   return value === null || isTilePath(value);
 }
 
-function isTilePath(value: unknown) {
+function isTilePath(value: unknown): value is number[] {
   return (
     Array.isArray(value) &&
     value.length <= STRANDS_TILE_COUNT &&
