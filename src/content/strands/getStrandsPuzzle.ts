@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { PublicStrandsPuzzle } from "@/contracts/strands";
 import type { StrandsAnswer, StrandsPuzzle } from "@/domain/strands/types";
 import { validateStrandsPuzzle } from "@/domain/strands/validation";
 import { getCurrentEvent } from "@/server/events/getCurrentEvent";
@@ -32,6 +33,39 @@ export async function getStrandsPuzzle(
   const storedPuzzle = await getStrandsPuzzleForEvent(event.id, puzzleId);
 
   return storedPuzzle?.puzzle ?? null;
+}
+
+export async function getStrandsPuzzlePreview(
+  puzzleId: string,
+): Promise<PublicStrandsPuzzle | null> {
+  const event = await getCurrentEvent();
+  const { data, error } = await getPrivilegedSupabaseClient()
+    .from("strands_puzzles")
+    .select(
+      "public_id, theme_clue, grid_rows, grid_columns, grid_letters, theme_words",
+    )
+    .eq("event_id", event.id)
+    .eq("public_id", puzzleId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to load Strands puzzle "${puzzleId}".`);
+  }
+
+  if (!data || !Array.isArray(data.theme_words)) {
+    return null;
+  }
+
+  return {
+    id: data.public_id,
+    themeClue: data.theme_clue,
+    grid: {
+      rows: data.grid_rows,
+      columns: data.grid_columns,
+      letters: data.grid_letters,
+    },
+    answerCount: data.theme_words.length + 1,
+  };
 }
 
 export async function getStrandsPuzzleForEvent(

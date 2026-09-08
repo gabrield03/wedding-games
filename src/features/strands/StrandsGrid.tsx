@@ -7,20 +7,24 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 
-import type { StrandsAnswer, StrandsPuzzle } from "@/domain/strands/types";
+import type {
+  PublicStrandsPuzzle,
+  RevealedStrandsAnswer,
+} from "@/contracts/strands";
 
 type StrandsGridProps = {
-  puzzle: StrandsPuzzle;
+  puzzle: PublicStrandsPuzzle;
   selectedPath: number[];
-  hintedPath: number[];
-  foundWords: string[];
+  hintedTileIndexes: number[];
+  foundAnswers: RevealedStrandsAnswer[];
   disabled: boolean;
-  onSelectTile: (tileIndex: number) => boolean;
+  onSelectTile: (tileIndex: number) => void;
+  onSubmitSelection: () => void;
   onClearSelection: () => void;
 };
 
 type FoundAnswerVisual = {
-  answer: StrandsAnswer;
+  answer: RevealedStrandsAnswer;
   kind: "theme" | "spangram";
   tileClass: string;
   lineClass: string;
@@ -73,21 +77,22 @@ const SPANGRAM_VISUAL = {
 export function StrandsGrid({
   puzzle,
   selectedPath,
-  hintedPath,
-  foundWords,
+  hintedTileIndexes,
+  foundAnswers,
   disabled,
   onSelectTile,
+  onSubmitSelection,
   onClearSelection,
 }: StrandsGridProps) {
   const [focusedTileIndex, setFocusedTileIndex] = useState(0);
   const selectedTiles = new Set(selectedPath);
-  const hintedTiles = new Set(hintedPath);
-  const foundAnswers = getFoundAnswerVisuals(puzzle, foundWords);
+  const hintedTiles = new Set(hintedTileIndexes);
+  const foundVisuals = getFoundAnswerVisuals(foundAnswers);
   const foundTileVisuals = new Map<number, FoundAnswerVisual>();
   const gestureRef = useRef<PointerGesture | null>(null);
   const tileRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  for (const visual of foundAnswers) {
+  for (const visual of foundVisuals) {
     for (const tileIndex of visual.answer.path) {
       foundTileVisuals.set(tileIndex, visual);
     }
@@ -148,12 +153,7 @@ export function StrandsGrid({
       const currentFinalTile = selectedPath.at(-1);
 
       if (currentFinalTile !== gesture.startTileIndex) {
-        const resolved = onSelectTile(gesture.startTileIndex);
-
-        if (resolved) {
-          finishPointerGesture(event);
-          return;
-        }
+        onSelectTile(gesture.startTileIndex);
       }
     }
 
@@ -166,9 +166,7 @@ export function StrandsGrid({
 
     gesture.lastTileIndex = hoveredTileIndex;
 
-    if (onSelectTile(hoveredTileIndex)) {
-      finishPointerGesture(event);
-    }
+    onSelectTile(hoveredTileIndex);
   }
 
   function handlePointerUp(event: ReactPointerEvent<HTMLDivElement>) {
@@ -180,6 +178,8 @@ export function StrandsGrid({
 
     if (!gesture.dragged) {
       onSelectTile(gesture.startTileIndex);
+    } else {
+      onSubmitSelection();
     }
 
     finishPointerGesture(event);
@@ -266,7 +266,8 @@ export function StrandsGrid({
       <p id="strands-grid-instructions" className="sr-only">
         Use the arrow keys to move between letters. Press Enter or Space to
         select a letter, Backspace to move back one selected letter, and Escape
-        to clear the current selection.
+        to clear the current selection. Use Submit after keyboard or tap
+        selection. Drag across letters and release to submit immediately.
       </p>
 
       <svg
@@ -275,7 +276,7 @@ export function StrandsGrid({
         preserveAspectRatio="none"
         aria-hidden="true"
       >
-        {foundAnswers.map((visual) => (
+        {foundVisuals.map((visual) => (
           <polyline
             key={visual.answer.word}
             points={pathPoints(visual.answer.path, puzzle.grid.columns)}
@@ -368,30 +369,25 @@ export function StrandsGrid({
 }
 
 function getFoundAnswerVisuals(
-  puzzle: StrandsPuzzle,
-  foundWords: string[],
+  foundAnswers: RevealedStrandsAnswer[],
 ): FoundAnswerVisual[] {
-  const found = new Set(foundWords);
-  const visuals: FoundAnswerVisual[] = [];
-
-  puzzle.themeWords.forEach((answer, index) => {
-    if (!found.has(answer.word)) {
-      return;
+  return foundAnswers.map((answer) => {
+    if (answer.kind === "spangram") {
+      return {
+        answer,
+        kind: "spangram",
+        ...SPANGRAM_VISUAL,
+      };
     }
 
-    const visual = THEME_VISUALS[index % THEME_VISUALS.length]!;
-    visuals.push({ answer, kind: "theme", ...visual });
+    const visual = THEME_VISUALS[answer.themeIndex % THEME_VISUALS.length]!;
+
+    return {
+      answer,
+      kind: "theme",
+      ...visual,
+    };
   });
-
-  if (found.has(puzzle.spangram.word)) {
-    visuals.push({
-      answer: puzzle.spangram,
-      kind: "spangram",
-      ...SPANGRAM_VISUAL,
-    });
-  }
-
-  return visuals;
 }
 
 function pathPoints(path: number[], columns: number): string {
