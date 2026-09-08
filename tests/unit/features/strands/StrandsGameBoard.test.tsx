@@ -201,7 +201,12 @@ describe("StrandsGameBoard", () => {
       "Your game was updated. Make a new selection.",
     );
     expect(screen.getByText("Found 1 of 7")).toBeTruthy();
-    expect(screen.getByText("Select adjacent letters.")).toBeTruthy();
+
+    for (const tileIndex of testStrandsPuzzle.themeWords[1]!.path) {
+      expect(getTile(container, tileIndex).getAttribute("aria-selected")).toBe(
+        "false",
+      );
+    }
   });
 
   it("starts a fresh authoritative Attempt from Play Again", async () => {
@@ -226,7 +231,10 @@ describe("StrandsGameBoard", () => {
     expect(mocks.requestAttempt).toHaveBeenLastCalledWith({
       puzzleId: publicPuzzle.id,
     });
-    expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
+    expect(
+      (screen.getByRole("button", { name: "Submit" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
   });
 });
 
