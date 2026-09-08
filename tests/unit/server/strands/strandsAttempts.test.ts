@@ -631,6 +631,38 @@ describe("submitStrandsPath", () => {
     expect(store.attempts[0]!.active_hint_word).toBeNull();
   });
 
+  it("keeps an active hint when a different answer is found", async () => {
+    const hintedAnswer = testStrandsPuzzle.themeWords[0]!;
+    const foundAnswer = testStrandsPuzzle.themeWords[1]!;
+    const store = installStore(
+      new FakeAttemptStore([
+        attemptRow({
+          active_hint_word: hintedAnswer.word,
+          version: 1,
+        }),
+      ]),
+    );
+
+    const result = await submitStrandsPath({
+      player,
+      attemptId,
+      path: foundAnswer.path,
+      version: 1,
+    });
+
+    expect(result).toMatchObject({
+      status: "submitted",
+      outcome: "found_theme",
+      attempt: {
+        version: 2,
+        hintedTileIndexes: [...hintedAnswer.path].sort(
+          (first, second) => first - second,
+        ),
+      },
+    });
+    expect(store.attempts[0]!.active_hint_word).toBe(hintedAnswer.word);
+  });
+
   it("persists a newly found theme answer and reveals only that answer", async () => {
     const answer = testStrandsPuzzle.themeWords[0]!;
     const store = installStore(new FakeAttemptStore([attemptRow()]));
