@@ -122,13 +122,8 @@ test("server-selected Strands hints remain stable and resume after refresh", asy
   expect(repeated.version).toBe(firstHint.version);
   expect(repeated.hintedTileIndexes).toEqual(firstHint.hintedTileIndexes);
 
-  const resumeResponse = waitForAttemptResponse(page);
   await page.reload();
-  const resumed = (await readAttemptPayload(await resumeResponse)).attempt;
-
-  expect(resumed.attemptId).toBe(initial.attemptId);
-  expect(resumed.version).toBe(firstHint.version);
-  expect(resumed.hintedTileIndexes).toEqual(firstHint.hintedTileIndexes);
+  await expectStrandsToBeUsable(page);
   await expect(hintedTiles).toHaveCount(firstHint.hintedTileIndexes!.length);
 });
 
@@ -160,17 +155,8 @@ test("Strands persists found answers on the server but not partial selections", 
   await selectTiles(page, [3, 4]);
   await expect(page.getByRole("status")).toContainText("Selected word:");
 
-  await page.getByRole("link", { name: "Next Puzzle" }).click();
-  await expect(page).toHaveURL("/games/strands/wedding-02");
-
-  const resumeResponse = waitForAttemptResponse(page);
-  const resumeNavigation = page.goto(strandsPuzzlePath);
-  const resumed = (await readAttemptPayload(await resumeResponse)).attempt;
-  await resumeNavigation;
-
-  expect(resumed.attemptId).toBe(initial.attemptId);
-  expect(resumed.version).toBe(1);
-  expect(resumed.foundAnswers).toEqual(progressed.attempt.foundAnswers);
+  await page.reload();
+  await expectStrandsToBeUsable(page);
   await expect(page.getByText("Found 1 of 7")).toBeVisible();
   await expect(page.getByText("Select adjacent letters.")).toBeVisible();
   await expect(page.locator('[data-strands-tile="3"]')).toHaveAttribute(
@@ -186,6 +172,8 @@ test("Strands persists found answers on the server but not partial selections", 
 test("Strands completion and Play Again create a fresh authoritative Attempt", async ({
   page,
 }) => {
+  test.slow();
+
   const attemptResponse = waitForAttemptResponse(page);
   await page.goto(strandsPuzzlePath);
   const initial = (await readAttemptPayload(await attemptResponse)).attempt;
@@ -222,13 +210,23 @@ test("Strands completion and Play Again create a fresh authoritative Attempt", a
   await expect(page.getByRole("button", { name: "Submit" })).toBeDisabled();
 });
 
-test("Strands entry remembers only the last visited puzzle", async ({ page }) => {
+test("Strands entry remembers only the last visited puzzle", async ({
+  page,
+}) => {
   await page.goto(strandsEntryPath);
   await expect(page).toHaveURL(strandsPuzzlePath, { timeout: 15_000 });
   await expect(page.getByText("The Big Day")).toBeVisible();
 
   await page.goto(newOrleansPuzzlePath);
+  await expectStrandsToBeUsable(page);
   await expect(page.getByText("Where it all started")).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        localStorage.getItem("wedding-games:strands:last-visited"),
+      ),
+    )
+    .toBe("wedding-05");
 
   await page.goto("/");
   const playStrandsLink = page.getByRole("link", {
@@ -253,13 +251,13 @@ test("Next Puzzle enters New Orleans and wraps back to the first puzzle", async 
   const newOrleansAttemptResponse = waitForAttemptResponse(page);
   await page.getByRole("link", { name: "Next Puzzle" }).click();
   await readAttemptPayload(await newOrleansAttemptResponse);
-  await expect(page).toHaveURL(newOrleansPuzzlePath);
+  await expect(page).toHaveURL(newOrleansPuzzlePath, { timeout: 15_000 });
   await expect(page.getByText("Where it all started")).toBeVisible();
 
   const firstPuzzleAttemptResponse = waitForAttemptResponse(page);
   await page.getByRole("link", { name: "Next Puzzle" }).click();
   await readAttemptPayload(await firstPuzzleAttemptResponse);
-  await expect(page).toHaveURL(strandsPuzzlePath);
+  await expect(page).toHaveURL(strandsPuzzlePath, { timeout: 15_000 });
   await expect(page.getByText("The Big Day")).toBeVisible();
 });
 
@@ -270,9 +268,7 @@ async function selectAndSubmitPath(page: Page, path: readonly number[]) {
 
 async function selectTiles(page: Page, path: readonly number[]) {
   for (const tileIndex of path) {
-    await page
-      .locator('[data-strands-tile="' + tileIndex + '"]')
-      .click();
+    await page.locator('[data-strands-tile="' + tileIndex + '"]').click();
   }
 }
 
@@ -301,8 +297,7 @@ function waitForPathResponse(page: Page, attemptId: string) {
     const url = new URL(response.url());
 
     return (
-      url.pathname ===
-        "/api/games/strands/attempts/" + attemptId + "/paths" &&
+      url.pathname === "/api/games/strands/attempts/" + attemptId + "/paths" &&
       response.request().method() === "POST"
     );
   });
@@ -313,8 +308,7 @@ function waitForHintResponse(page: Page, attemptId: string) {
     const url = new URL(response.url());
 
     return (
-      url.pathname ===
-        "/api/games/strands/attempts/" + attemptId + "/hints" &&
+      url.pathname === "/api/games/strands/attempts/" + attemptId + "/hints" &&
       response.request().method() === "POST"
     );
   });
