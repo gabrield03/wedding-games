@@ -500,11 +500,20 @@ function createSnapshot(
     },
     foundAnswers: getAnswers(puzzle)
       .filter(({ answer }) => foundWords.has(answer.word))
-      .map(({ answer, kind }) => ({
-        word: answer.word,
-        kind,
-        path: answer.path,
-      })),
+      .map(({ answer, kind, themeIndex }) =>
+        kind === "theme"
+          ? {
+              word: answer.word,
+              kind,
+              path: answer.path,
+              themeIndex,
+            }
+          : {
+              word: answer.word,
+              kind,
+              path: answer.path,
+            },
+      ),
     hintedTileIndexes:
       puzzle.themeWords
         .find(({ word }) => word === attempt.row.active_hint_word)
@@ -538,11 +547,23 @@ function getNextActiveHintWord(
 
 function getAnswers(
   puzzle: StrandsPuzzle,
-): Array<{ answer: StrandsAnswer; kind: RevealedStrandsAnswer["kind"] }> {
+): Array<
+  | {
+      answer: StrandsAnswer;
+      kind: "theme";
+      themeIndex: number;
+    }
+  | {
+      answer: StrandsAnswer;
+      kind: "spangram";
+      themeIndex?: never;
+    }
+> {
   return [
-    ...puzzle.themeWords.map((answer) => ({
+    ...puzzle.themeWords.map((answer, themeIndex) => ({
       answer,
       kind: "theme" as const,
+      themeIndex,
     })),
     { answer: puzzle.spangram, kind: "spangram" as const },
   ];
