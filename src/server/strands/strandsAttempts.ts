@@ -26,14 +26,15 @@ import { getPrivilegedSupabaseClient } from "@/server/supabase/privileged";
 import type { Tables } from "@/types/database.generated";
 
 const ATTEMPT_COLUMNS =
-  "id, event_id, player_id, puzzle_id, found_words, version, created_at, updated_at, completed_at";
+  "id, event_id, player_id, puzzle_id, found_words, active_hint_word, version, created_at, updated_at, completed_at";
 const ATTEMPT_WITH_PUZZLE_COLUMNS =
-  "id, event_id, player_id, puzzle_id, found_words, version, created_at, updated_at, completed_at, puzzle:strands_puzzles!strands_attempts_puzzle_fkey(id, event_id, public_id, theme_clue, grid_rows, grid_columns, grid_letters, theme_words, spangram)";
+  "id, event_id, player_id, puzzle_id, found_words, active_hint_word, version, created_at, updated_at, completed_at, puzzle:strands_puzzles!strands_attempts_puzzle_fkey(id, event_id, public_id, theme_clue, grid_rows, grid_columns, grid_letters, theme_words, spangram)";
 const ACTIVE_ATTEMPT_INDEX =
   "strands_attempts_one_active_per_player_puzzle_idx";
 
 type StrandsAttemptRow = Pick<
   Tables<"strands_attempts">,
+  | "active_hint_word"
   | "completed_at"
   | "created_at"
   | "event_id"
@@ -76,6 +77,18 @@ export type SubmitStrandsPathResult =
       outcome: StrandsPathOutcome;
       attempt: StrandsAttemptSnapshot;
     }
+  | { status: "not_found" }
+  | { status: "invalid_action"; attempt: StrandsAttemptSnapshot }
+  | { status: "stale"; attempt: StrandsAttemptSnapshot };
+
+type RequestStrandsHintInput = {
+  player: CurrentPlayer;
+  attemptId: string;
+  version: number;
+};
+
+export type RequestStrandsHintResult =
+  | { status: "ready"; attempt: StrandsAttemptSnapshot }
   | { status: "not_found" }
   | { status: "invalid_action"; attempt: StrandsAttemptSnapshot }
   | { status: "stale"; attempt: StrandsAttemptSnapshot };
@@ -165,6 +178,7 @@ export async function submitStrandsPath({
   const { data: updatedAttempt, error } = await getPrivilegedSupabaseClient()
     .from("strands_attempts")
     .update({
+      active_hint_word: getNextActiveHintWord(attempt, submission),
       completed_at: nextGameStatus === "complete" ? now : null,
       found_words: submission.state.foundWords,
       updated_at: now,
@@ -204,6 +218,96 @@ export async function submitStrandsPath({
   return {
     status: "submitted",
     outcome: submission.status,
+    attempt: createSnapshot(
+      decodeAttempt(updatedAttempt, storedPuzzle.puzzle),
+      storedPuzzle.puzzle,
+    ),
+  };
+}
+
+export async function requestStrandsHint({
+  player,
+  attemptId,
+  version,
+}: RequestStrandsHintInput): Promise<RequestStrandsHintResult> {
+  const loaded = await loadAttemptWithPuzzle({
+    attemptId,
+    eventId: player.eventId,
+    playerId: player.id,
+  });
+
+  if (!loaded) {
+    return { status: "not_found" };
+  }
+
+  const { attempt, storedPuzzle } = loaded;
+  const decodedAttempt = decodeAttempt(attempt, storedPuzzle.puzzle);
+  const currentSnapshot = createSnapshot(decodedAttempt, storedPuzzle.puzzle);
+
+  if (version !== attempt.version) {
+    return { status: "stale", attempt: currentSnapshot };
+  }
+
+  if (currentSnapshot.gameStatus === "complete") {
+    return { status: "invalid_action", attempt: currentSnapshot };
+  }
+
+  if (attempt.active_hint_word) {
+    return { status: "ready", attempt: currentSnapshot };
+  }
+
+  const foundWords = new Set(decodedAttempt.state.foundWords);
+  const eligibleAnswers = storedPuzzle.puzzle.themeWords.filter(
+    ({ word }) => !foundWords.has(word),
+  );
+
+  if (eligibleAnswers.length === 0) {
+    return { status: "invalid_action", attempt: currentSnapshot };
+  }
+
+  const hintedAnswer =
+    eligibleAnswers[Math.floor(Math.random() * eligibleAnswers.length)]!;
+  const now = new Date().toISOString();
+  const { data: updatedAttempt, error } = await getPrivilegedSupabaseClient()
+    .from("strands_attempts")
+    .update({
+      active_hint_word: hintedAnswer.word,
+      updated_at: now,
+      version: attempt.version + 1,
+    })
+    .eq("id", attempt.id)
+    .eq("event_id", player.eventId)
+    .eq("player_id", player.id)
+    .eq("version", attempt.version)
+    .select(ATTEMPT_COLUMNS)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error("Failed to update the Strands hint.");
+  }
+
+  if (!updatedAttempt) {
+    const winningAttempt = await loadAttempt({
+      attemptId: attempt.id,
+      eventId: player.eventId,
+      playerId: player.id,
+    });
+
+    if (!winningAttempt) {
+      throw new Error("Failed to reload the Strands Attempt.");
+    }
+
+    return {
+      status: "stale",
+      attempt: createSnapshot(
+        decodeAttempt(winningAttempt, storedPuzzle.puzzle),
+        storedPuzzle.puzzle,
+      ),
+    };
+  }
+
+  return {
+    status: "ready",
     attempt: createSnapshot(
       decodeAttempt(updatedAttempt, storedPuzzle.puzzle),
       storedPuzzle.puzzle,
@@ -348,12 +452,16 @@ function decodeAttempt(
   const answerWords = new Set(
     [...puzzle.themeWords, puzzle.spangram].map(({ word }) => word),
   );
+  const themeWords = new Set(puzzle.themeWords.map(({ word }) => word));
 
   if (
     !Array.isArray(row.found_words) ||
     row.found_words.some((word) => typeof word !== "string") ||
     new Set(row.found_words).size !== row.found_words.length ||
     row.found_words.some((word) => !answerWords.has(word)) ||
+    (row.active_hint_word !== null &&
+      (!themeWords.has(row.active_hint_word) ||
+        row.found_words.includes(row.active_hint_word))) ||
     !Number.isInteger(row.version) ||
     row.version < 0
   ) {
@@ -397,8 +505,35 @@ function createSnapshot(
         kind,
         path: answer.path,
       })),
+    hintedTileIndexes:
+      puzzle.themeWords
+        .find(({ word }) => word === attempt.row.active_hint_word)
+        ?.path.slice()
+        .sort((first, second) => first - second) ?? null,
     gameStatus: getStrandsGameStatus(puzzle, attempt.state),
   };
+}
+
+function getNextActiveHintWord(
+  attempt: StrandsAttemptRow,
+  submission: ReturnType<typeof submitDomainStrandsPath>,
+): string | null {
+  if (!attempt.active_hint_word) {
+    return null;
+  }
+
+  const resolvedWord =
+    submission.status === "found_theme" ||
+    submission.status === "found_spangram" ||
+    submission.status === "already_found"
+      ? submission.word
+      : submission.status === "game_complete"
+        ? submission.completedBy?.word
+        : undefined;
+
+  return resolvedWord === attempt.active_hint_word
+    ? null
+    : attempt.active_hint_word;
 }
 
 function getAnswers(
