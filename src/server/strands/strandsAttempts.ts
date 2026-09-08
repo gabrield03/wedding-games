@@ -26,14 +26,15 @@ import { getPrivilegedSupabaseClient } from "@/server/supabase/privileged";
 import type { Tables } from "@/types/database.generated";
 
 const ATTEMPT_COLUMNS =
-  "id, event_id, player_id, puzzle_id, found_words, version, created_at, updated_at, completed_at";
+  "id, event_id, player_id, puzzle_id, found_words, active_hint_word, version, created_at, updated_at, completed_at";
 const ATTEMPT_WITH_PUZZLE_COLUMNS =
-  "id, event_id, player_id, puzzle_id, found_words, version, created_at, updated_at, completed_at, puzzle:strands_puzzles!strands_attempts_puzzle_fkey(id, event_id, public_id, theme_clue, grid_rows, grid_columns, grid_letters, theme_words, spangram)";
+  "id, event_id, player_id, puzzle_id, found_words, active_hint_word, version, created_at, updated_at, completed_at, puzzle:strands_puzzles!strands_attempts_puzzle_fkey(id, event_id, public_id, theme_clue, grid_rows, grid_columns, grid_letters, theme_words, spangram)";
 const ACTIVE_ATTEMPT_INDEX =
   "strands_attempts_one_active_per_player_puzzle_idx";
 
 type StrandsAttemptRow = Pick<
   Tables<"strands_attempts">,
+  | "active_hint_word"
   | "completed_at"
   | "created_at"
   | "event_id"
