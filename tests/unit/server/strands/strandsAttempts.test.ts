@@ -372,7 +372,7 @@ describe("requestStrandsHint", () => {
       status: "ready",
       attempt: {
         version: 1,
-        hintedPath: answer.path,
+        hintedTileIndexes: answer.path,
         foundAnswers: [],
       },
     });
@@ -380,6 +380,7 @@ describe("requestStrandsHint", () => {
     expect(JSON.stringify(result)).not.toContain(
       `"word":"${answer.word}"`,
     );
+    expect(JSON.stringify(result)).not.toContain('"hintedPath"');
   });
 
   it("keeps the same active hint without incrementing version again", async () => {
@@ -404,7 +405,7 @@ describe("requestStrandsHint", () => {
       status: "ready",
       attempt: {
         version: 1,
-        hintedPath: answer.path,
+        hintedTileIndexes: answer.path,
       },
     });
     expect(store.updateCount).toBe(0);
@@ -433,7 +434,7 @@ describe("requestStrandsHint", () => {
     expect(result).toMatchObject({
       status: "ready",
       attempt: {
-        hintedPath: remaining.path,
+        hintedTileIndexes: remaining.path,
       },
     });
     expect(store.attempts[0]!.active_hint_word).toBe(remaining.word);
@@ -463,7 +464,7 @@ describe("requestStrandsHint", () => {
       status: "stale",
       attempt: {
         version: 2,
-        hintedPath: answer.path,
+        hintedTileIndexes: answer.path,
       },
     });
     expect(store.updateCount).toBe(0);
@@ -488,7 +489,7 @@ describe("requestStrandsHint", () => {
 
     expect(result).toMatchObject({
       status: "invalid_action",
-      attempt: { hintedPath: null },
+      attempt: { hintedTileIndexes: null },
     });
     expect(store.updateCount).toBe(0);
   });
@@ -537,7 +538,7 @@ describe("requestStrandsHint", () => {
       status: "stale",
       attempt: {
         version: 1,
-        hintedPath: answer.path,
+        hintedTileIndexes: answer.path,
       },
     });
   });
@@ -567,7 +568,7 @@ describe("submitStrandsPath", () => {
       outcome: "found_theme",
       attempt: {
         version: 2,
-        hintedPath: null,
+        hintedTileIndexes: null,
       },
     });
     expect(store.attempts[0]!.active_hint_word).toBeNull();
