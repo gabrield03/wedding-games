@@ -12,7 +12,10 @@ import type {
   StrandsPathResponse,
   SubmitStrandsPathRequest,
 } from "@/contracts/strands";
-import { STRANDS_TILE_COUNT } from "@/domain/strands/types";
+import {
+  STRANDS_MIN_WORD_LENGTH,
+  STRANDS_TILE_COUNT,
+} from "@/domain/strands/types";
 
 export type StartStrandsAttemptClientResult =
   | { status: "ready"; attempt: StrandsAttemptSnapshot }
@@ -245,6 +248,7 @@ function isHintedTileIndexes(value: unknown): value is number[] | null {
 function isTilePath(value: unknown): value is number[] {
   return (
     Array.isArray(value) &&
+    value.length >= STRANDS_MIN_WORD_LENGTH &&
     value.length <= STRANDS_TILE_COUNT &&
     value.every(
       (tileIndex) =>
