@@ -256,7 +256,7 @@ test("Next Puzzle enters New Orleans and wraps back to the first puzzle", async 
   await expect(page.getByText("The Big Day")).toBeVisible();
 });
 
-async function selectAndSubmitPath(page: Page, path: number[]) {
+async function selectAndSubmitPath(page: Page, path: readonly number[]) {
   await selectTiles(page, path);
   await page.getByRole("button", { name: "Submit" }).click();
 }
