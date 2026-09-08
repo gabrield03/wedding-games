@@ -4,6 +4,7 @@ vi.mock("server-only", () => ({}));
 
 import {
   isStrandsAttemptId,
+  parseRequestStrandsHintRequest,
   parseStartStrandsAttemptRequest,
   parseSubmitStrandsPathRequest,
 } from "@/server/strands/strandsRequestValidation";
@@ -51,6 +52,15 @@ describe("Strands request validation", () => {
         version: 0,
       }),
     ).toBeNull();
+  });
+
+  it("accepts nonnegative hint versions and rejects malformed values", () => {
+    expect(parseRequestStrandsHintRequest({ version: 2 })).toEqual({
+      version: 2,
+    });
+    expect(parseRequestStrandsHintRequest({ version: -1 })).toBeNull();
+    expect(parseRequestStrandsHintRequest({ version: 1.5 })).toBeNull();
+    expect(parseRequestStrandsHintRequest(null)).toBeNull();
   });
 
   it("recognizes only UUID Attempt selectors", () => {
