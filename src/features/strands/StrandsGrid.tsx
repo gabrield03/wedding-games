@@ -266,7 +266,8 @@ export function StrandsGrid({
       <p id="strands-grid-instructions" className="sr-only">
         Use the arrow keys to move between letters. Press Enter or Space to
         select a letter, Backspace to move back one selected letter, and Escape
-        to clear the current selection.
+        to clear the current selection. Use Submit after keyboard or tap
+        selection. Drag across letters and release to submit immediately.
       </p>
 
       <svg
