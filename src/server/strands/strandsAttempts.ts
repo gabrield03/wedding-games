@@ -178,6 +178,7 @@ export async function submitStrandsPath({
   const { data: updatedAttempt, error } = await getPrivilegedSupabaseClient()
     .from("strands_attempts")
     .update({
+      active_hint_word: getNextActiveHintWord(attempt, submission),
       completed_at: nextGameStatus === "complete" ? now : null,
       found_words: submission.state.foundWords,
       updated_at: now,
@@ -217,6 +218,96 @@ export async function submitStrandsPath({
   return {
     status: "submitted",
     outcome: submission.status,
+    attempt: createSnapshot(
+      decodeAttempt(updatedAttempt, storedPuzzle.puzzle),
+      storedPuzzle.puzzle,
+    ),
+  };
+}
+
+export async function requestStrandsHint({
+  player,
+  attemptId,
+  version,
+}: RequestStrandsHintInput): Promise<RequestStrandsHintResult> {
+  const loaded = await loadAttemptWithPuzzle({
+    attemptId,
+    eventId: player.eventId,
+    playerId: player.id,
+  });
+
+  if (!loaded) {
+    return { status: "not_found" };
+  }
+
+  const { attempt, storedPuzzle } = loaded;
+  const decodedAttempt = decodeAttempt(attempt, storedPuzzle.puzzle);
+  const currentSnapshot = createSnapshot(decodedAttempt, storedPuzzle.puzzle);
+
+  if (version !== attempt.version) {
+    return { status: "stale", attempt: currentSnapshot };
+  }
+
+  if (currentSnapshot.gameStatus === "complete") {
+    return { status: "invalid_action", attempt: currentSnapshot };
+  }
+
+  if (attempt.active_hint_word) {
+    return { status: "ready", attempt: currentSnapshot };
+  }
+
+  const foundWords = new Set(decodedAttempt.state.foundWords);
+  const eligibleAnswers = storedPuzzle.puzzle.themeWords.filter(
+    ({ word }) => !foundWords.has(word),
+  );
+
+  if (eligibleAnswers.length === 0) {
+    return { status: "invalid_action", attempt: currentSnapshot };
+  }
+
+  const hintedAnswer =
+    eligibleAnswers[Math.floor(Math.random() * eligibleAnswers.length)]!;
+  const now = new Date().toISOString();
+  const { data: updatedAttempt, error } = await getPrivilegedSupabaseClient()
+    .from("strands_attempts")
+    .update({
+      active_hint_word: hintedAnswer.word,
+      updated_at: now,
+      version: attempt.version + 1,
+    })
+    .eq("id", attempt.id)
+    .eq("event_id", player.eventId)
+    .eq("player_id", player.id)
+    .eq("version", attempt.version)
+    .select(ATTEMPT_COLUMNS)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error("Failed to update the Strands hint.");
+  }
+
+  if (!updatedAttempt) {
+    const winningAttempt = await loadAttempt({
+      attemptId: attempt.id,
+      eventId: player.eventId,
+      playerId: player.id,
+    });
+
+    if (!winningAttempt) {
+      throw new Error("Failed to reload the Strands Attempt.");
+    }
+
+    return {
+      status: "stale",
+      attempt: createSnapshot(
+        decodeAttempt(winningAttempt, storedPuzzle.puzzle),
+        storedPuzzle.puzzle,
+      ),
+    };
+  }
+
+  return {
+    status: "ready",
     attempt: createSnapshot(
       decodeAttempt(updatedAttempt, storedPuzzle.puzzle),
       storedPuzzle.puzzle,
