@@ -24,7 +24,6 @@ export type Database = {
           version: number;
         };
         Insert: {
-          active_hint_word?: string | null;
           completed_at?: string | null;
           created_at?: string;
           event_id: string;
@@ -38,7 +37,6 @@ export type Database = {
           version?: number;
         };
         Update: {
-          active_hint_word?: string | null;
           completed_at?: string | null;
           created_at?: string;
           event_id?: string;
@@ -164,6 +162,7 @@ export type Database = {
           version: number;
         };
         Insert: {
+          active_hint_word?: string | null;
           completed_at?: string | null;
           created_at?: string;
           event_id: string;
@@ -175,6 +174,7 @@ export type Database = {
           version?: number;
         };
         Update: {
+          active_hint_word?: string | null;
           completed_at?: string | null;
           created_at?: string;
           event_id?: string;
