@@ -1,6 +1,7 @@
 import "server-only";
 
 import type {
+  RequestStrandsHintRequest,
   StartStrandsAttemptRequest,
   SubmitStrandsPathRequest,
 } from "@/contracts/strands";
@@ -40,9 +41,7 @@ export function parseSubmitStrandsPathRequest(
         tileIndex < 0 ||
         tileIndex >= STRANDS_TILE_COUNT,
     ) ||
-    typeof value.version !== "number" ||
-    !Number.isInteger(value.version) ||
-    value.version < 0
+    !isVersion(value.version)
   ) {
     return null;
   }
@@ -53,8 +52,26 @@ export function parseSubmitStrandsPathRequest(
   };
 }
 
+export function parseRequestStrandsHintRequest(
+  value: unknown,
+): RequestStrandsHintRequest | null {
+  if (!isRecord(value) || !isVersion(value.version)) {
+    return null;
+  }
+
+  return { version: value.version };
+}
+
 export function isStrandsAttemptId(value: unknown): value is string {
   return typeof value === "string" && UUID_PATTERN.test(value);
+}
+
+function isVersion(value: unknown): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isInteger(value) &&
+    value >= 0
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
