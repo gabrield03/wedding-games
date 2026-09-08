@@ -81,6 +81,18 @@ export type SubmitStrandsPathResult =
   | { status: "invalid_action"; attempt: StrandsAttemptSnapshot }
   | { status: "stale"; attempt: StrandsAttemptSnapshot };
 
+type RequestStrandsHintInput = {
+  player: CurrentPlayer;
+  attemptId: string;
+  version: number;
+};
+
+export type RequestStrandsHintResult =
+  | { status: "ready"; attempt: StrandsAttemptSnapshot }
+  | { status: "not_found" }
+  | { status: "invalid_action"; attempt: StrandsAttemptSnapshot }
+  | { status: "stale"; attempt: StrandsAttemptSnapshot };
+
 export async function startStrandsAttempt({
   player,
   puzzleId,
