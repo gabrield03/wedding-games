@@ -11,11 +11,18 @@ export type PublicStrandsPuzzle = {
   answerCount: number;
 };
 
-export type RevealedStrandsAnswer = {
-  word: string;
-  kind: "theme" | "spangram";
-  path: StrandsPath;
-};
+export type RevealedStrandsAnswer =
+  | {
+      word: string;
+      kind: "theme";
+      path: StrandsPath;
+      themeIndex: number;
+    }
+  | {
+      word: string;
+      kind: "spangram";
+      path: StrandsPath;
+    };
 
 export type StrandsAttemptSnapshot = {
   attemptId: string;
