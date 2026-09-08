@@ -81,7 +81,10 @@ describe("POST /api/games/strands/attempts/[attemptId]/paths", () => {
       .mockResolvedValueOnce({ status: "unauthenticated" })
       .mockResolvedValueOnce({ status: "player_missing" });
 
-    const unauthenticated = await POST(request({ path, version: 0 }), context());
+    const unauthenticated = await POST(
+      request({ path, version: 0 }),
+      context(),
+    );
     const missing = await POST(request({ path, version: 0 }), context());
 
     expect(unauthenticated.status).toBe(401);
