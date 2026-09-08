@@ -164,8 +164,9 @@ test("Strands persists found answers on the server but not partial selections", 
   await expect(page).toHaveURL("/games/strands/wedding-02");
 
   const resumeResponse = waitForAttemptResponse(page);
-  await page.goto(strandsPuzzlePath);
+  const resumeNavigation = page.goto(strandsPuzzlePath);
   const resumed = (await readAttemptPayload(await resumeResponse)).attempt;
+  await resumeNavigation;
 
   expect(resumed.attemptId).toBe(initial.attemptId);
   expect(resumed.version).toBe(1);
