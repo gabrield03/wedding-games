@@ -1,7 +1,6 @@
 import "server-only";
 
 import type {
-  RevealedStrandsAnswer,
   StrandsAttemptSnapshot,
   StrandsPathOutcome,
 } from "@/contracts/strands";
