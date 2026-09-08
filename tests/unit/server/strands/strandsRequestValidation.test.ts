@@ -54,9 +54,9 @@ describe("Strands request validation", () => {
   });
 
   it("recognizes only UUID Attempt selectors", () => {
-    expect(
-      isStrandsAttemptId("60000000-0000-4000-8000-000000000301"),
-    ).toBe(true);
+    expect(isStrandsAttemptId("60000000-0000-4000-8000-000000000301")).toBe(
+      true,
+    );
     expect(isStrandsAttemptId("not-an-attempt")).toBe(false);
   });
 });
