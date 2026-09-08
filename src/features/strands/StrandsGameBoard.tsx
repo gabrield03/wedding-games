@@ -129,7 +129,7 @@ export function StrandsGameBoard({
             )}
 
             <Link
-              href={\`/games/strands/\${nextPuzzleId}\`}
+              href={`/games/strands/${nextPuzzleId}`}
               className="rounded-full border px-5 py-2 font-semibold transition hover:bg-neutral-100 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2 dark:hover:bg-neutral-900"
             >
               Next Puzzle
