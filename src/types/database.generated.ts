@@ -148,6 +148,104 @@ export type Database = {
           },
         ];
       };
+      strands_attempts: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          event_id: string;
+          found_words: string[];
+          id: string;
+          player_id: string;
+          puzzle_id: string;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          event_id: string;
+          found_words?: string[];
+          id?: string;
+          player_id: string;
+          puzzle_id: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          event_id?: string;
+          found_words?: string[];
+          id?: string;
+          player_id?: string;
+          puzzle_id?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "strands_attempts_player_fkey";
+            columns: ["event_id", "player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["event_id", "id"];
+          },
+          {
+            foreignKeyName: "strands_attempts_puzzle_fkey";
+            columns: ["event_id", "puzzle_id"];
+            isOneToOne: false;
+            referencedRelation: "strands_puzzles";
+            referencedColumns: ["event_id", "id"];
+          },
+        ];
+      };
+      strands_puzzles: {
+        Row: {
+          created_at: string;
+          event_id: string;
+          grid_columns: number;
+          grid_letters: string;
+          grid_rows: number;
+          id: string;
+          public_id: string;
+          spangram: Json;
+          theme_clue: string;
+          theme_words: Json;
+        };
+        Insert: {
+          created_at?: string;
+          event_id: string;
+          grid_columns: number;
+          grid_letters: string;
+          grid_rows: number;
+          id?: string;
+          public_id: string;
+          spangram: Json;
+          theme_clue: string;
+          theme_words: Json;
+        };
+        Update: {
+          created_at?: string;
+          event_id?: string;
+          grid_columns?: number;
+          grid_letters?: string;
+          grid_rows?: number;
+          id?: string;
+          public_id?: string;
+          spangram?: Json;
+          theme_clue?: string;
+          theme_words?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "strands_puzzles_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       wordle_attempts: {
         Row: {
           completed_at: string | null;
