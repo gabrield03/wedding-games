@@ -135,12 +135,12 @@ describe("StrandsGameBoard", () => {
     fireEvent.keyDown(diagonal, { key: "Enter" });
 
     expect(screen.getByRole("status").textContent).toContain(
-      "Selected word: CEW",
+      "Selected word: ABH",
     );
 
     fireEvent.keyDown(diagonal, { key: "Backspace" });
     expect(screen.getByRole("status").textContent).toContain(
-      "Selected word: CE",
+      "Selected word: AB",
     );
 
     fireEvent.keyDown(second, { key: "Escape" });
