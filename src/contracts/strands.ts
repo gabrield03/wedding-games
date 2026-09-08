@@ -22,6 +22,7 @@ export type StrandsAttemptSnapshot = {
   version: number;
   puzzle: PublicStrandsPuzzle;
   foundAnswers: RevealedStrandsAnswer[];
+  hintedPath: StrandsPath | null;
   gameStatus: StrandsGameStatus;
 };
 
@@ -31,6 +32,10 @@ export type StartStrandsAttemptRequest = {
 
 export type SubmitStrandsPathRequest = {
   path: StrandsPath;
+  version: number;
+};
+
+export type RequestStrandsHintRequest = {
   version: number;
 };
 
@@ -48,6 +53,10 @@ export type StrandsAttemptResponse = {
 
 export type StrandsPathResponse = {
   outcome: StrandsPathOutcome;
+  attempt: StrandsAttemptSnapshot;
+};
+
+export type StrandsHintResponse = {
   attempt: StrandsAttemptSnapshot;
 };
 
