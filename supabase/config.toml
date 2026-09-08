@@ -72,6 +72,7 @@ sql_paths = [
   "./seed.sql",
   "./data/current-wedding-connections.sql",
   "./data/current-wedding-wordle.sql",
+  "./data/current-wedding-strands.sql",
 ]
 
 [db.network_restrictions]
