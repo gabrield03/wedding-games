@@ -544,9 +544,7 @@ function getNextActiveHintWord(
     : attempt.active_hint_word;
 }
 
-function getAnswers(
-  puzzle: StrandsPuzzle,
-): Array<
+function getAnswers(puzzle: StrandsPuzzle): Array<
   | {
       answer: StrandsAnswer;
       kind: "theme";

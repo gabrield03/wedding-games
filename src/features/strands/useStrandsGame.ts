@@ -70,7 +70,9 @@ export function useStrandsGame(puzzle: PublicStrandsPuzzle) {
     (nextAttempt: StrandsAttemptSnapshot) => {
       if (nextAttempt.puzzle.id !== puzzle.id) {
         setInitializationStatus("error");
-        setInitializationError("We couldn’t load the requested Strands puzzle.");
+        setInitializationError(
+          "We couldn’t load the requested Strands puzzle.",
+        );
         return;
       }
 
@@ -297,11 +299,7 @@ export function useStrandsGame(puzzle: PublicStrandsPuzzle) {
       commitSelectedPath([]);
       setRequestError(null);
       setFeedback(
-        getSubmissionFeedback(
-          result.outcome,
-          submittedWord,
-          newlyFoundAnswer,
-        ),
+        getSubmissionFeedback(result.outcome, submittedWord, newlyFoundAnswer),
       );
     } catch {
       if (lifecycleGeneration.current === generation) {
@@ -315,13 +313,7 @@ export function useStrandsGame(puzzle: PublicStrandsPuzzle) {
         setIsSubmitting(false);
       }
     }
-  }, [
-    attempt,
-    canInteract,
-    commitSelectedPath,
-    handleActionError,
-    puzzle,
-  ]);
+  }, [attempt, canInteract, commitSelectedPath, handleActionError, puzzle]);
 
   const showHint = useCallback(async () => {
     if (!attempt || !canHint || hintInFlight.current) {

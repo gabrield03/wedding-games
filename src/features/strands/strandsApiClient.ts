@@ -18,8 +18,7 @@ import {
 } from "@/domain/strands/types";
 
 export type StartStrandsAttemptClientResult =
-  | { status: "ready"; attempt: StrandsAttemptSnapshot }
-  | ClientErrorResult;
+  { status: "ready"; attempt: StrandsAttemptSnapshot } | ClientErrorResult;
 
 export type SubmitStrandsPathClientResult =
   | {
@@ -30,8 +29,7 @@ export type SubmitStrandsPathClientResult =
   | ClientErrorResult;
 
 export type RequestStrandsHintClientResult =
-  | { status: "ready"; attempt: StrandsAttemptSnapshot }
-  | ClientErrorResult;
+  { status: "ready"; attempt: StrandsAttemptSnapshot } | ClientErrorResult;
 
 type ClientErrorResult = {
   status: "error";

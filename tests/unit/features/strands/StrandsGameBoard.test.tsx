@@ -149,7 +149,9 @@ describe("StrandsGameBoard", () => {
 
   it("renders a server-selected hint without exposing or solving its answer", async () => {
     const answer = testStrandsPuzzle.themeWords[0]!;
-    const unorderedHint = [...answer.path].sort((first, second) => first - second);
+    const unorderedHint = [...answer.path].sort(
+      (first, second) => first - second,
+    );
     mocks.requestHint.mockResolvedValue({
       status: "ready",
       attempt: snapshot({
@@ -197,9 +199,7 @@ describe("StrandsGameBoard", () => {
     selectPathWithKeyboard(container, testStrandsPuzzle.themeWords[1]!.path);
     fireEvent.click(screen.getByRole("button", { name: "Submit" }));
 
-    await screen.findByText(
-      "Your game was updated. Make a new selection.",
-    );
+    await screen.findByText("Your game was updated. Make a new selection.");
     expect(screen.getByText("Found 1 of 7")).toBeTruthy();
 
     for (const tileIndex of testStrandsPuzzle.themeWords[1]!.path) {

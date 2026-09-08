@@ -36,7 +36,9 @@ describe("strandsProgressStorage", () => {
     saveLastVisitedStrandsPuzzleId("wedding-01");
 
     expect(loadLastVisitedStrandsPuzzleId()).toBe("wedding-01");
-    expect(localStorage.getItem("wedding-games:strands:progress:wedding-01")).toBe(
+    expect(
+      localStorage.getItem("wedding-games:strands:progress:wedding-01"),
+    ).toBe(
       JSON.stringify({
         version: 1,
         foundWords: ["CEREMONY"],

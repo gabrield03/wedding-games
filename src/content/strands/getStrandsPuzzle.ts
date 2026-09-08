@@ -41,7 +41,9 @@ export async function getStrandsPuzzlePreview(
   const event = await getCurrentEvent();
   const { data, error } = await getPrivilegedSupabaseClient()
     .from("strands_puzzles")
-    .select("public_id, theme_clue, grid_rows, grid_columns, grid_letters, theme_words")
+    .select(
+      "public_id, theme_clue, grid_rows, grid_columns, grid_letters, theme_words",
+    )
     .eq("event_id", event.id)
     .eq("public_id", puzzleId)
     .maybeSingle();
