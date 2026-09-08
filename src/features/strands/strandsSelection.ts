@@ -1,5 +1,4 @@
 import type { PublicStrandsPuzzle } from "@/contracts/strands";
-import { areStrandsTilesAdjacent } from "@/domain/strands/gameplay";
 
 export function updateStrandsSelection(
   puzzle: PublicStrandsPuzzle,
@@ -7,10 +6,12 @@ export function updateStrandsSelection(
   claimedTileIndexes: ReadonlySet<number>,
   tileIndex: number,
 ): number[] {
+  const tileCount = puzzle.grid.rows * puzzle.grid.columns;
+
   if (
     !Number.isInteger(tileIndex) ||
     tileIndex < 0 ||
-    tileIndex >= puzzle.grid.rows * puzzle.grid.columns ||
+    tileIndex >= tileCount ||
     claimedTileIndexes.has(tileIndex)
   ) {
     return selectedPath;
@@ -33,7 +34,12 @@ export function updateStrandsSelection(
   }
 
   if (
-    !areStrandsTilesAdjacent(finalTileIndex, tileIndex, puzzle.grid.columns)
+    !areTilesAdjacent(
+      finalTileIndex,
+      tileIndex,
+      puzzle.grid.rows,
+      puzzle.grid.columns,
+    )
   ) {
     return selectedPath;
   }
@@ -48,4 +54,33 @@ export function getSelectedStrandsWord(
   return selectedPath
     .map((tileIndex) => puzzle.grid.letters[tileIndex] ?? "")
     .join("");
+}
+
+function areTilesAdjacent(
+  firstIndex: number,
+  secondIndex: number,
+  rows: number,
+  columns: number,
+) {
+  const tileCount = rows * columns;
+
+  if (
+    firstIndex < 0 ||
+    secondIndex < 0 ||
+    firstIndex >= tileCount ||
+    secondIndex >= tileCount ||
+    firstIndex === secondIndex
+  ) {
+    return false;
+  }
+
+  const firstRow = Math.floor(firstIndex / columns);
+  const firstColumn = firstIndex % columns;
+  const secondRow = Math.floor(secondIndex / columns);
+  const secondColumn = secondIndex % columns;
+
+  return (
+    Math.abs(firstRow - secondRow) <= 1 &&
+    Math.abs(firstColumn - secondColumn) <= 1
+  );
 }
