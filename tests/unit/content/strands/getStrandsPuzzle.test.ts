@@ -4,6 +4,7 @@ import {
   decodeStoredStrandsPuzzle,
   getStrandsPuzzle,
   getStrandsPuzzleForEvent,
+  getStrandsPuzzlePreview,
   type StoredStrandsPuzzleRow,
 } from "@/content/strands/getStrandsPuzzle";
 import type { Json } from "@/types/database.generated";
@@ -77,6 +78,24 @@ describe("Strands puzzle persistence", () => {
       "public_id",
       testStrandsPuzzle.id,
     );
+  });
+
+  it("loads a sanitized public preview without returning hidden answers", async () => {
+    mocks.maybeSingle.mockResolvedValue({
+      data: storedPuzzleRow(),
+      error: null,
+    });
+
+    const preview = await getStrandsPuzzlePreview(testStrandsPuzzle.id);
+
+    expect(preview).toEqual({
+      id: testStrandsPuzzle.id,
+      themeClue: testStrandsPuzzle.themeClue,
+      grid: testStrandsPuzzle.grid,
+      answerCount: testStrandsPuzzle.themeWords.length + 1,
+    });
+    expect(preview).not.toHaveProperty("themeWords");
+    expect(preview).not.toHaveProperty("spangram");
   });
 
   it("supports explicit Event-scoped loading for authoritative gameplay", async () => {
