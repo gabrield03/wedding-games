@@ -245,14 +245,20 @@ test("Strands entry remembers only the last visited puzzle", async ({ page }) =>
 test("Next Puzzle enters New Orleans and wraps back to the first puzzle", async ({
   page,
 }) => {
+  const sushiAttemptResponse = waitForAttemptResponse(page);
   await page.goto(sushiPuzzlePath);
-  await expect(page.getByRole("button", { name: "Submit" })).toBeVisible();
+  await readAttemptPayload(await sushiAttemptResponse);
+  await expectStrandsToBeUsable(page);
 
+  const newOrleansAttemptResponse = waitForAttemptResponse(page);
   await page.getByRole("link", { name: "Next Puzzle" }).click();
+  await readAttemptPayload(await newOrleansAttemptResponse);
   await expect(page).toHaveURL(newOrleansPuzzlePath);
   await expect(page.getByText("Where it all started")).toBeVisible();
 
+  const firstPuzzleAttemptResponse = waitForAttemptResponse(page);
   await page.getByRole("link", { name: "Next Puzzle" }).click();
+  await readAttemptPayload(await firstPuzzleAttemptResponse);
   await expect(page).toHaveURL(strandsPuzzlePath);
   await expect(page.getByText("The Big Day")).toBeVisible();
 });
