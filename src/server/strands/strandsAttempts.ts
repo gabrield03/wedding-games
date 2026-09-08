@@ -508,7 +508,8 @@ function createSnapshot(
     hintedTileIndexes:
       puzzle.themeWords
         .find(({ word }) => word === attempt.row.active_hint_word)
-        ?.path.toSorted((first, second) => first - second) ?? null,
+        ?.path.slice()
+        .sort((first, second) => first - second) ?? null,
     gameStatus: getStrandsGameStatus(puzzle, attempt.state),
   };
 }
