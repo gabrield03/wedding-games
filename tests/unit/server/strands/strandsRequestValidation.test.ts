@@ -6,9 +6,9 @@ import { parseStartStrandsAttemptRequest } from "@/server/strands/strandsRequest
 
 describe("Strands request validation", () => {
   it("accepts a canonical puzzle ID", () => {
-    expect(
-      parseStartStrandsAttemptRequest({ puzzleId: "wedding-01" }),
-    ).toEqual({ puzzleId: "wedding-01" });
+    expect(parseStartStrandsAttemptRequest({ puzzleId: "wedding-01" })).toEqual(
+      { puzzleId: "wedding-01" },
+    );
   });
 
   it("rejects malformed puzzle selectors", () => {
