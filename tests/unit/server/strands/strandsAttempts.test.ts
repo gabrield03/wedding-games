@@ -264,6 +264,7 @@ describe("startStrandsAttempt", () => {
       attempt: {
         attemptId: store.nextAttemptId,
         foundAnswers: [],
+        hintedTileIndexes: null,
         gameStatus: "playing",
         version: 0,
         puzzle: {
@@ -357,7 +358,7 @@ describe("startStrandsAttempt", () => {
 });
 
 describe("requestStrandsHint", () => {
-  it("persists one eligible theme hint and returns only its tile path", async () => {
+  it("persists one eligible theme hint and returns only its tile indexes", async () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     const answer = testStrandsPuzzle.themeWords[0]!;
     const store = installStore(new FakeAttemptStore([attemptRow()]));
@@ -377,10 +378,38 @@ describe("requestStrandsHint", () => {
       },
     });
     expect(store.attempts[0]!.active_hint_word).toBe(answer.word);
-    expect(JSON.stringify(result)).not.toContain(
-      `"word":"${answer.word}"`,
-    );
+    expect(JSON.stringify(result)).not.toContain(`"word":"${answer.word}"`);
     expect(JSON.stringify(result)).not.toContain('"hintedPath"');
+  });
+
+  it("does not expose the authoritative hint path order", async () => {
+    const puzzle = structuredClone(testStrandsPuzzle);
+    const orderedPath = [5, 4, 3, 2, 1, 0];
+
+    puzzle.themeWords[0]!.path = orderedPath;
+    contentMocks.decodeStored.mockReturnValue({
+      databaseId: puzzleDatabaseId,
+      eventId,
+      puzzle,
+    });
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    installStore(new FakeAttemptStore([attemptRow()]));
+
+    const result = await requestStrandsHint({
+      player,
+      attemptId,
+      version: 0,
+    });
+
+    expect(result).toMatchObject({
+      status: "ready",
+      attempt: {
+        hintedTileIndexes: [0, 1, 2, 3, 4, 5],
+      },
+    });
+    if (result.status === "ready") {
+      expect(result.attempt.hintedTileIndexes).not.toEqual(orderedPath);
+    }
   });
 
   it("keeps the same active hint without incrementing version again", async () => {
