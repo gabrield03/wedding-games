@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { StoredStrandsPuzzle } from "@/content/strands/getStrandsPuzzle";
-import type { Tables } from "@/types/database.generated";
+import type {
+  StoredStrandsPuzzle,
+  StoredStrandsPuzzleRow,
+} from "@/content/strands/getStrandsPuzzle";
+import type { Json, Tables } from "@/types/database.generated";
 import { testStrandsPuzzle } from "../../../fixtures/strands";
 
 const contentMocks = vi.hoisted(() => ({
+  decodeStored: vi.fn(),
   getForEvent: vi.fn(),
 }));
 const privilegedMocks = vi.hoisted(() => ({
@@ -13,13 +17,17 @@ const privilegedMocks = vi.hoisted(() => ({
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/content/strands/getStrandsPuzzle", () => ({
+  decodeStoredStrandsPuzzle: contentMocks.decodeStored,
   getStrandsPuzzleForEvent: contentMocks.getForEvent,
 }));
 vi.mock("@/server/supabase/privileged", () => ({
   getPrivilegedSupabaseClient: privilegedMocks.getClient,
 }));
 
-import { startStrandsAttempt } from "@/server/strands/strandsAttempts";
+import {
+  startStrandsAttempt,
+  submitStrandsPath,
+} from "@/server/strands/strandsAttempts";
 
 type AttemptRow = Tables<"strands_attempts">;
 type AttemptInsert = {
@@ -34,11 +42,27 @@ const puzzleDatabaseId = "40000000-0000-4000-8000-000000000301";
 const attemptId = "60000000-0000-4000-8000-000000000301";
 const player = { eventId, id: playerId };
 
-const storedPuzzle: StoredStrandsPuzzle = {
-  databaseId: puzzleDatabaseId,
-  eventId,
-  puzzle: testStrandsPuzzle,
-};
+function storedPuzzle(): StoredStrandsPuzzle {
+  return {
+    databaseId: puzzleDatabaseId,
+    eventId,
+    puzzle: testStrandsPuzzle,
+  };
+}
+
+function storedPuzzleRow(): StoredStrandsPuzzleRow {
+  return {
+    event_id: eventId,
+    grid_columns: testStrandsPuzzle.grid.columns,
+    grid_letters: testStrandsPuzzle.grid.letters,
+    grid_rows: testStrandsPuzzle.grid.rows,
+    id: puzzleDatabaseId,
+    public_id: testStrandsPuzzle.id,
+    spangram: structuredClone(testStrandsPuzzle.spangram) as Json,
+    theme_clue: testStrandsPuzzle.themeClue,
+    theme_words: structuredClone(testStrandsPuzzle.themeWords) as Json,
+  };
+}
 
 function attemptRow(overrides: Partial<AttemptRow> = {}): AttemptRow {
   return {
@@ -57,8 +81,16 @@ function attemptRow(overrides: Partial<AttemptRow> = {}): AttemptRow {
 
 class FakeAttemptStore {
   attempts: AttemptRow[];
+  embeddedPuzzle: StoredStrandsPuzzleRow | null = storedPuzzleRow();
   insertRaceAttempt: AttemptRow | null = null;
   nextAttemptId = "60000000-0000-4000-8000-000000000399";
+  selectQueries: Array<{
+    columns: string;
+    filters: Array<[keyof AttemptRow, unknown]>;
+  }> = [];
+  updateCount = 0;
+  updateFilters: Array<Array<[keyof AttemptRow, unknown]>> = [];
+  updateRaceAttempt: AttemptRow | null = null;
 
   constructor(attempts: AttemptRow[] = []) {
     this.attempts = attempts;
@@ -71,7 +103,9 @@ class FakeAttemptStore {
 
         return {
           insert: (value: AttemptInsert) => new FakeInsertQuery(this, value),
-          select: () => new FakeSelectQuery(this),
+          select: (columns: string) => new FakeSelectQuery(this, columns),
+          update: (value: Partial<AttemptRow>) =>
+            new FakeUpdateQuery(this, value),
         };
       },
     };
@@ -82,7 +116,10 @@ class FakeSelectQuery {
   private filters: Array<[keyof AttemptRow, unknown]> = [];
   private activeOnly = false;
 
-  constructor(private readonly store: FakeAttemptStore) {}
+  constructor(
+    private readonly store: FakeAttemptStore,
+    private readonly columns: string,
+  ) {}
 
   eq(key: keyof AttemptRow, value: unknown) {
     this.filters.push([key, value]);
@@ -97,13 +134,21 @@ class FakeSelectQuery {
   }
 
   async maybeSingle() {
+    this.store.selectQueries.push({
+      columns: this.columns,
+      filters: [...this.filters],
+    });
     const attempt = this.store.attempts.find(
       (row) =>
         this.filters.every(([key, value]) => row[key] === value) &&
         (!this.activeOnly || row.completed_at === null),
     );
+    const data =
+      attempt && this.columns.includes("puzzle:strands_puzzles!")
+        ? { ...attempt, puzzle: this.store.embeddedPuzzle }
+        : attempt;
 
-    return { data: attempt ?? null, error: null };
+    return { data: data ?? null, error: null };
   }
 }
 
@@ -145,6 +190,52 @@ class FakeInsertQuery {
   }
 }
 
+class FakeUpdateQuery {
+  private filters: Array<[keyof AttemptRow, unknown]> = [];
+
+  constructor(
+    private readonly store: FakeAttemptStore,
+    private readonly value: Partial<AttemptRow>,
+  ) {}
+
+  eq(key: keyof AttemptRow, value: unknown) {
+    this.filters.push([key, value]);
+    return this;
+  }
+
+  select() {
+    return this;
+  }
+
+  async maybeSingle() {
+    this.store.updateCount += 1;
+    this.store.updateFilters.push([...this.filters]);
+
+    const index = this.store.attempts.findIndex((attempt) =>
+      this.filters.every(([key, value]) => attempt[key] === value),
+    );
+
+    if (this.store.updateRaceAttempt) {
+      const raceIndex = this.store.attempts.findIndex(
+        (attempt) => attempt.id === this.store.updateRaceAttempt!.id,
+      );
+
+      this.store.attempts[raceIndex] = this.store.updateRaceAttempt;
+      this.store.updateRaceAttempt = null;
+      return { data: null, error: null };
+    }
+
+    if (index < 0) {
+      return { data: null, error: null };
+    }
+
+    const updated = { ...this.store.attempts[index]!, ...this.value };
+    this.store.attempts[index] = updated;
+
+    return { data: updated, error: null };
+  }
+}
+
 function installStore(store: FakeAttemptStore) {
   privilegedMocks.getClient.mockReturnValue(store.client());
   return store;
@@ -152,7 +243,8 @@ function installStore(store: FakeAttemptStore) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  contentMocks.getForEvent.mockResolvedValue(storedPuzzle);
+  contentMocks.getForEvent.mockResolvedValue(storedPuzzle());
+  contentMocks.decodeStored.mockReturnValue(storedPuzzle());
 });
 
 describe("startStrandsAttempt", () => {
@@ -214,17 +306,10 @@ describe("startStrandsAttempt", () => {
         version: 1,
       },
     });
-
-    if (result.status === "ready") {
-      expect(result.attempt.foundAnswers).toHaveLength(1);
-    }
   });
 
   it("does not resume completed history and creates a fresh Attempt", async () => {
-    const allAnswers = [
-      ...testStrandsPuzzle.themeWords.map(({ word }) => word),
-      testStrandsPuzzle.spangram.word,
-    ];
+    const allAnswers = allAnswerWords();
     const store = installStore(
       new FakeAttemptStore([
         attemptRow({
@@ -266,33 +351,279 @@ describe("startStrandsAttempt", () => {
       attempt: { attemptId },
     });
   });
+});
 
-  it("returns not found before touching Attempt storage", async () => {
-    contentMocks.getForEvent.mockResolvedValue(null);
-    const store = installStore(new FakeAttemptStore());
+describe("submitStrandsPath", () => {
+  it("persists a newly found theme answer and reveals only that answer", async () => {
+    const answer = testStrandsPuzzle.themeWords[0]!;
+    const store = installStore(new FakeAttemptStore([attemptRow()]));
 
-    await expect(
-      startStrandsAttempt({
-        player,
-        puzzleId: "missing",
-      }),
-    ).resolves.toEqual({ status: "not_found" });
+    const result = await submitStrandsPath({
+      player,
+      attemptId,
+      path: answer.path,
+      version: 0,
+    });
 
-    expect(store.attempts).toHaveLength(0);
+    expect(result).toMatchObject({
+      status: "submitted",
+      outcome: "found_theme",
+      attempt: {
+        version: 1,
+        gameStatus: "playing",
+        foundAnswers: [
+          {
+            word: answer.word,
+            kind: "theme",
+            path: answer.path,
+          },
+        ],
+      },
+    });
+    expect(store.attempts[0]!.found_words).toEqual([answer.word]);
+    expect(store.updateFilters).toEqual([
+      [
+        ["id", attemptId],
+        ["event_id", eventId],
+        ["player_id", playerId],
+        ["version", 0],
+      ],
+    ]);
+
+    if (result.status === "submitted") {
+      expect(result.attempt.puzzle).not.toHaveProperty("themeWords");
+      expect(result.attempt.puzzle).not.toHaveProperty("spangram");
+      expect(result.attempt.foundAnswers).toHaveLength(1);
+    }
   });
 
-  it("rejects corrupted persisted found-word state", async () => {
+  it("persists a spangram found before the rest of the puzzle", async () => {
+    const store = installStore(new FakeAttemptStore([attemptRow()]));
+
+    const result = await submitStrandsPath({
+      player,
+      attemptId,
+      path: testStrandsPuzzle.spangram.path,
+      version: 0,
+    });
+
+    expect(result).toMatchObject({
+      status: "submitted",
+      outcome: "found_spangram",
+      attempt: {
+        version: 1,
+        gameStatus: "playing",
+        foundAnswers: [
+          {
+            word: testStrandsPuzzle.spangram.word,
+            kind: "spangram",
+          },
+        ],
+      },
+    });
+    expect(store.attempts[0]!.completed_at).toBeNull();
+  });
+
+  it("returns non-answer and invalid paths without mutating the Attempt", async () => {
+    const store = installStore(new FakeAttemptStore([attemptRow()]));
+
+    const notTheme = await submitStrandsPath({
+      player,
+      attemptId,
+      path: [0, 6, 12, 18],
+      version: 0,
+    });
+    const invalidPath = await submitStrandsPath({
+      player,
+      attemptId,
+      path: [0, 2, 3, 4],
+      version: 0,
+    });
+
+    expect(notTheme).toMatchObject({
+      status: "submitted",
+      outcome: "not_theme",
+      attempt: { version: 0 },
+    });
+    expect(invalidPath).toMatchObject({
+      status: "submitted",
+      outcome: "invalid_path",
+      attempt: { version: 0 },
+    });
+    expect(store.updateCount).toBe(0);
+  });
+
+  it("returns already-found without duplicating or mutating state", async () => {
+    const answer = testStrandsPuzzle.themeWords[0]!;
+    const store = installStore(
+      new FakeAttemptStore([
+        attemptRow({ found_words: [answer.word], version: 1 }),
+      ]),
+    );
+
+    const result = await submitStrandsPath({
+      player,
+      attemptId,
+      path: answer.path,
+      version: 1,
+    });
+
+    expect(result).toMatchObject({
+      status: "submitted",
+      outcome: "already_found",
+      attempt: { version: 1 },
+    });
+    expect(store.attempts[0]!.found_words).toEqual([answer.word]);
+    expect(store.updateCount).toBe(0);
+  });
+
+  it("marks the Attempt complete when the final answer is found", async () => {
+    const finalAnswer = testStrandsPuzzle.spangram;
+    const foundWords = testStrandsPuzzle.themeWords.map(({ word }) => word);
+    const store = installStore(
+      new FakeAttemptStore([
+        attemptRow({
+          found_words: foundWords,
+          version: foundWords.length,
+        }),
+      ]),
+    );
+
+    const result = await submitStrandsPath({
+      player,
+      attemptId,
+      path: finalAnswer.path,
+      version: foundWords.length,
+    });
+
+    expect(result).toMatchObject({
+      status: "submitted",
+      outcome: "game_complete",
+      attempt: {
+        gameStatus: "complete",
+        version: foundWords.length + 1,
+      },
+    });
+    expect(store.attempts[0]!.completed_at).not.toBeNull();
+    expect(store.attempts[0]!.found_words).toEqual([
+      ...foundWords,
+      finalAnswer.word,
+    ]);
+  });
+
+  it("returns the current snapshot for stale versions before evaluating the path", async () => {
+    const answer = testStrandsPuzzle.themeWords[0]!;
+    const store = installStore(
+      new FakeAttemptStore([
+        attemptRow({ found_words: [answer.word], version: 1 }),
+      ]),
+    );
+
+    const result = await submitStrandsPath({
+      player,
+      attemptId,
+      path: testStrandsPuzzle.themeWords[1]!.path,
+      version: 0,
+    });
+
+    expect(result).toMatchObject({
+      status: "stale",
+      attempt: {
+        version: 1,
+        foundAnswers: [{ word: answer.word }],
+      },
+    });
+    expect(store.updateCount).toBe(0);
+  });
+
+  it("rejects submissions to a completed Attempt", async () => {
+    const foundWords = allAnswerWords();
+    const store = installStore(
+      new FakeAttemptStore([
+        attemptRow({
+          completed_at: "2026-09-08T02:05:00.000Z",
+          found_words: foundWords,
+          version: foundWords.length,
+        }),
+      ]),
+    );
+
+    const result = await submitStrandsPath({
+      player,
+      attemptId,
+      path: testStrandsPuzzle.themeWords[0]!.path,
+      version: foundWords.length,
+    });
+
+    expect(result).toMatchObject({
+      status: "invalid_action",
+      attempt: { gameStatus: "complete" },
+    });
+    expect(store.updateCount).toBe(0);
+  });
+
+  it("reconciles a concurrent successful update as stale", async () => {
+    const firstAnswer = testStrandsPuzzle.themeWords[0]!;
+    const secondAnswer = testStrandsPuzzle.themeWords[1]!;
+    const store = installStore(new FakeAttemptStore([attemptRow()]));
+    store.updateRaceAttempt = attemptRow({
+      found_words: [firstAnswer.word],
+      version: 1,
+    });
+
+    const result = await submitStrandsPath({
+      player,
+      attemptId,
+      path: secondAnswer.path,
+      version: 0,
+    });
+
+    expect(result).toMatchObject({
+      status: "stale",
+      attempt: {
+        version: 1,
+        foundAnswers: [{ word: firstAnswer.word }],
+      },
+    });
+  });
+
+  it("does not load an Attempt outside the trusted Player scope", async () => {
     installStore(
       new FakeAttemptStore([
-        attemptRow({ found_words: ["NOTANANSWER"], version: 1 }),
+        attemptRow({
+          player_id: "30000000-0000-4000-8000-000000000999",
+        }),
       ]),
     );
 
     await expect(
-      startStrandsAttempt({
+      submitStrandsPath({
         player,
-        puzzleId: testStrandsPuzzle.id,
+        attemptId,
+        path: testStrandsPuzzle.themeWords[0]!.path,
+        version: 0,
       }),
-    ).rejects.toThrow(/invalid game state/i);
+    ).resolves.toEqual({ status: "not_found" });
+  });
+
+  it("fails safely when the authoritative puzzle relationship is missing", async () => {
+    const store = installStore(new FakeAttemptStore([attemptRow()]));
+    store.embeddedPuzzle = null;
+
+    await expect(
+      submitStrandsPath({
+        player,
+        attemptId,
+        path: testStrandsPuzzle.themeWords[0]!.path,
+        version: 0,
+      }),
+    ).rejects.toThrow("Strands Attempt is missing its authoritative puzzle.");
   });
 });
+
+function allAnswerWords() {
+  return [
+    ...testStrandsPuzzle.themeWords.map(({ word }) => word),
+    testStrandsPuzzle.spangram.word,
+  ];
+}

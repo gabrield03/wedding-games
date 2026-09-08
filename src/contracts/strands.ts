@@ -29,7 +29,25 @@ export type StartStrandsAttemptRequest = {
   puzzleId: string;
 };
 
+export type SubmitStrandsPathRequest = {
+  path: StrandsPath;
+  version: number;
+};
+
+export type StrandsPathOutcome =
+  | "found_theme"
+  | "found_spangram"
+  | "already_found"
+  | "not_theme"
+  | "invalid_path"
+  | "game_complete";
+
 export type StrandsAttemptResponse = {
+  attempt: StrandsAttemptSnapshot;
+};
+
+export type StrandsPathResponse = {
+  outcome: StrandsPathOutcome;
   attempt: StrandsAttemptSnapshot;
 };
 
@@ -38,8 +56,11 @@ export type StrandsGameplayErrorCode =
   | "player_not_ready"
   | "strands_resource_not_found"
   | "invalid_request"
+  | "stale_attempt"
+  | "invalid_action"
   | "strands_gameplay_unavailable";
 
 export type StrandsGameplayErrorResponse = {
   error: StrandsGameplayErrorCode;
+  attempt?: StrandsAttemptSnapshot;
 };

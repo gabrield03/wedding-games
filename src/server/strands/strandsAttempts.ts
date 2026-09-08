@@ -3,15 +3,22 @@ import "server-only";
 import type {
   RevealedStrandsAnswer,
   StrandsAttemptSnapshot,
+  StrandsPathOutcome,
 } from "@/contracts/strands";
 import {
+  decodeStoredStrandsPuzzle,
   getStrandsPuzzleForEvent,
   type StoredStrandsPuzzle,
+  type StoredStrandsPuzzleRow,
 } from "@/content/strands/getStrandsPuzzle";
-import { getStrandsGameStatus } from "@/domain/strands/gameplay";
+import {
+  getStrandsGameStatus,
+  submitStrandsPath as submitDomainStrandsPath,
+} from "@/domain/strands/gameplay";
 import type {
   StrandsAnswer,
   StrandsGameState,
+  StrandsPath,
   StrandsPuzzle,
 } from "@/domain/strands/types";
 import type { CurrentPlayer } from "@/server/players/getCurrentPlayer";
@@ -20,6 +27,8 @@ import type { Tables } from "@/types/database.generated";
 
 const ATTEMPT_COLUMNS =
   "id, event_id, player_id, puzzle_id, found_words, version, created_at, updated_at, completed_at";
+const ATTEMPT_WITH_PUZZLE_COLUMNS =
+  "id, event_id, player_id, puzzle_id, found_words, version, created_at, updated_at, completed_at, puzzle:strands_puzzles!strands_attempts_puzzle_fkey(id, event_id, public_id, theme_clue, grid_rows, grid_columns, grid_letters, theme_words, spangram)";
 const ACTIVE_ATTEMPT_INDEX =
   "strands_attempts_one_active_per_player_puzzle_idx";
 
@@ -36,6 +45,10 @@ type StrandsAttemptRow = Pick<
   | "version"
 >;
 
+type StrandsAttemptWithPuzzleRow = StrandsAttemptRow & {
+  puzzle: StoredStrandsPuzzleRow | null;
+};
+
 type DecodedStrandsAttempt = {
   row: StrandsAttemptRow;
   state: StrandsGameState;
@@ -49,6 +62,23 @@ type StartStrandsAttemptInput = {
 export type StartStrandsAttemptResult =
   | { status: "ready"; attempt: StrandsAttemptSnapshot }
   | { status: "not_found" };
+
+type SubmitStrandsPathInput = {
+  player: CurrentPlayer;
+  attemptId: string;
+  path: StrandsPath;
+  version: number;
+};
+
+export type SubmitStrandsPathResult =
+  | {
+      status: "submitted";
+      outcome: StrandsPathOutcome;
+      attempt: StrandsAttemptSnapshot;
+    }
+  | { status: "not_found" }
+  | { status: "invalid_action"; attempt: StrandsAttemptSnapshot }
+  | { status: "stale"; attempt: StrandsAttemptSnapshot };
 
 export async function startStrandsAttempt({
   player,
@@ -70,6 +100,115 @@ export async function startStrandsAttempt({
   }
 
   return createAttemptOrRecoverRace(player, storedPuzzle);
+}
+
+export async function submitStrandsPath({
+  player,
+  attemptId,
+  path,
+  version,
+}: SubmitStrandsPathInput): Promise<SubmitStrandsPathResult> {
+  const loaded = await loadAttemptWithPuzzle({
+    attemptId,
+    eventId: player.eventId,
+    playerId: player.id,
+  });
+
+  if (!loaded) {
+    return { status: "not_found" };
+  }
+
+  const { attempt, storedPuzzle } = loaded;
+  const decodedAttempt = decodeAttempt(attempt, storedPuzzle.puzzle);
+  const currentSnapshot = createSnapshot(decodedAttempt, storedPuzzle.puzzle);
+
+  if (version !== attempt.version) {
+    return { status: "stale", attempt: currentSnapshot };
+  }
+
+  if (
+    getStrandsGameStatus(storedPuzzle.puzzle, decodedAttempt.state) ===
+    "complete"
+  ) {
+    return { status: "invalid_action", attempt: currentSnapshot };
+  }
+
+  const submission = submitDomainStrandsPath(storedPuzzle.puzzle, {
+    selectedPath: path,
+    foundWords: decodedAttempt.state.foundWords,
+  });
+
+  if (
+    submission.status === "already_found" ||
+    submission.status === "not_theme" ||
+    submission.status === "invalid_path"
+  ) {
+    return {
+      status: "submitted",
+      outcome: submission.status,
+      attempt: currentSnapshot,
+    };
+  }
+
+  if (
+    submission.status === "game_complete" &&
+    submission.completedBy === undefined
+  ) {
+    return { status: "invalid_action", attempt: currentSnapshot };
+  }
+
+  const nextGameStatus = getStrandsGameStatus(
+    storedPuzzle.puzzle,
+    submission.state,
+  );
+  const now = new Date().toISOString();
+  const { data: updatedAttempt, error } = await getPrivilegedSupabaseClient()
+    .from("strands_attempts")
+    .update({
+      completed_at: nextGameStatus === "complete" ? now : null,
+      found_words: submission.state.foundWords,
+      updated_at: now,
+      version: attempt.version + 1,
+    })
+    .eq("id", attempt.id)
+    .eq("event_id", player.eventId)
+    .eq("player_id", player.id)
+    .eq("version", attempt.version)
+    .select(ATTEMPT_COLUMNS)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error("Failed to update the Strands Attempt.");
+  }
+
+  if (!updatedAttempt) {
+    const winningAttempt = await loadAttempt({
+      attemptId: attempt.id,
+      eventId: player.eventId,
+      playerId: player.id,
+    });
+
+    if (!winningAttempt) {
+      throw new Error("Failed to reload the Strands Attempt.");
+    }
+
+    return {
+      status: "stale",
+      attempt: createSnapshot(
+        decodeAttempt(winningAttempt, storedPuzzle.puzzle),
+        storedPuzzle.puzzle,
+      ),
+    };
+  }
+
+  return {
+    status: "submitted",
+    outcome: submission.status,
+    attempt: createSnapshot(
+      decodeAttempt(updatedAttempt, storedPuzzle.puzzle),
+      storedPuzzle.puzzle,
+    ),
+  };
 }
 
 async function createAttemptOrRecoverRace(
@@ -124,6 +263,70 @@ async function loadActiveAttempt(
   }
 
   return data;
+}
+
+async function loadAttempt({
+  attemptId,
+  eventId,
+  playerId,
+}: {
+  attemptId: string;
+  eventId: string;
+  playerId: string;
+}): Promise<StrandsAttemptRow | null> {
+  const { data, error } = await getPrivilegedSupabaseClient()
+    .from("strands_attempts")
+    .select(ATTEMPT_COLUMNS)
+    .eq("id", attemptId)
+    .eq("event_id", eventId)
+    .eq("player_id", playerId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error("Failed to load the Strands Attempt.");
+  }
+
+  return data;
+}
+
+async function loadAttemptWithPuzzle({
+  attemptId,
+  eventId,
+  playerId,
+}: {
+  attemptId: string;
+  eventId: string;
+  playerId: string;
+}): Promise<{
+  attempt: StrandsAttemptRow;
+  storedPuzzle: StoredStrandsPuzzle;
+} | null> {
+  const { data, error } = await getPrivilegedSupabaseClient()
+    .from("strands_attempts")
+    .select(ATTEMPT_WITH_PUZZLE_COLUMNS)
+    .eq("id", attemptId)
+    .eq("event_id", eventId)
+    .eq("player_id", playerId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error("Failed to load the Strands Attempt and puzzle.");
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  const { puzzle, ...attempt } = data as StrandsAttemptWithPuzzleRow;
+
+  if (!puzzle) {
+    throw new Error("Strands Attempt is missing its authoritative puzzle.");
+  }
+
+  return {
+    attempt,
+    storedPuzzle: decodeStoredStrandsPuzzle(puzzle),
+  };
 }
 
 function readyResult(
