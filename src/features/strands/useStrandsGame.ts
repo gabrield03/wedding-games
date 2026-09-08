@@ -69,7 +69,9 @@ export function useStrandsGame(puzzle: PublicStrandsPuzzle) {
   const installAttempt = useCallback(
     (nextAttempt: StrandsAttemptSnapshot) => {
       if (nextAttempt.puzzle.id !== puzzle.id) {
-        throw new Error("Strands Attempt returned the wrong puzzle.");
+        setInitializationStatus("error");
+        setInitializationError("We couldn’t load the requested Strands puzzle.");
+        return;
       }
 
       setAttempt(nextAttempt);
