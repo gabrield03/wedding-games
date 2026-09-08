@@ -25,6 +25,7 @@ vi.mock("@/server/supabase/privileged", () => ({
 }));
 
 import {
+  requestStrandsHint,
   startStrandsAttempt,
   submitStrandsPath,
 } from "@/server/strands/strandsAttempts";
@@ -66,6 +67,7 @@ function storedPuzzleRow(): StoredStrandsPuzzleRow {
 
 function attemptRow(overrides: Partial<AttemptRow> = {}): AttemptRow {
   return {
+    active_hint_word: null,
     completed_at: null,
     created_at: "2026-09-08T02:00:00.000Z",
     event_id: eventId,
@@ -353,7 +355,221 @@ describe("startStrandsAttempt", () => {
   });
 });
 
+describe("requestStrandsHint", () => {
+  it("persists one eligible theme hint and returns only its tile path", async () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const answer = testStrandsPuzzle.themeWords[0]!;
+    const store = installStore(new FakeAttemptStore([attemptRow()]));
+
+    const result = await requestStrandsHint({
+      player,
+      attemptId,
+      version: 0,
+    });
+
+    expect(result).toMatchObject({
+      status: "ready",
+      attempt: {
+        version: 1,
+        hintedPath: answer.path,
+        foundAnswers: [],
+      },
+    });
+    expect(store.attempts[0]!.active_hint_word).toBe(answer.word);
+    expect(JSON.stringify(result)).not.toContain(answer.word);
+  });
+
+  it("keeps the same active hint without incrementing version again", async () => {
+    const answer = testStrandsPuzzle.themeWords[1]!;
+    const random = vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const store = installStore(
+      new FakeAttemptStore([
+        attemptRow({
+          active_hint_word: answer.word,
+          version: 1,
+        }),
+      ]),
+    );
+
+    const result = await requestStrandsHint({
+      player,
+      attemptId,
+      version: 1,
+    });
+
+    expect(result).toMatchObject({
+      status: "ready",
+      attempt: {
+        version: 1,
+        hintedPath: answer.path,
+      },
+    });
+    expect(store.updateCount).toBe(0);
+    expect(random).not.toHaveBeenCalled();
+  });
+
+  it("chooses only among unfound theme words and never the spangram", async () => {
+    const found = testStrandsPuzzle.themeWords[0]!;
+    const remaining = testStrandsPuzzle.themeWords[1]!;
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const store = installStore(
+      new FakeAttemptStore([
+        attemptRow({
+          found_words: [found.word],
+          version: 1,
+        }),
+      ]),
+    );
+
+    const result = await requestStrandsHint({
+      player,
+      attemptId,
+      version: 1,
+    });
+
+    expect(result).toMatchObject({
+      status: "ready",
+      attempt: {
+        hintedPath: remaining.path,
+      },
+    });
+    expect(store.attempts[0]!.active_hint_word).toBe(remaining.word);
+    expect(store.attempts[0]!.active_hint_word).not.toBe(
+      testStrandsPuzzle.spangram.word,
+    );
+  });
+
+  it("returns stale before changing an existing hint", async () => {
+    const answer = testStrandsPuzzle.themeWords[0]!;
+    const store = installStore(
+      new FakeAttemptStore([
+        attemptRow({
+          active_hint_word: answer.word,
+          version: 2,
+        }),
+      ]),
+    );
+
+    const result = await requestStrandsHint({
+      player,
+      attemptId,
+      version: 1,
+    });
+
+    expect(result).toMatchObject({
+      status: "stale",
+      attempt: {
+        version: 2,
+        hintedPath: answer.path,
+      },
+    });
+    expect(store.updateCount).toBe(0);
+  });
+
+  it("rejects hints when only the spangram remains", async () => {
+    const foundWords = testStrandsPuzzle.themeWords.map(({ word }) => word);
+    const store = installStore(
+      new FakeAttemptStore([
+        attemptRow({
+          found_words: foundWords,
+          version: foundWords.length,
+        }),
+      ]),
+    );
+
+    const result = await requestStrandsHint({
+      player,
+      attemptId,
+      version: foundWords.length,
+    });
+
+    expect(result).toMatchObject({
+      status: "invalid_action",
+      attempt: { hintedPath: null },
+    });
+    expect(store.updateCount).toBe(0);
+  });
+
+  it("rejects hints for completed Attempts", async () => {
+    const foundWords = allAnswerWords();
+    const store = installStore(
+      new FakeAttemptStore([
+        attemptRow({
+          completed_at: "2026-09-08T02:05:00.000Z",
+          found_words: foundWords,
+          version: foundWords.length,
+        }),
+      ]),
+    );
+
+    const result = await requestStrandsHint({
+      player,
+      attemptId,
+      version: foundWords.length,
+    });
+
+    expect(result).toMatchObject({
+      status: "invalid_action",
+      attempt: { gameStatus: "complete" },
+    });
+    expect(store.updateCount).toBe(0);
+  });
+
+  it("reconciles a concurrent hint update as stale", async () => {
+    const answer = testStrandsPuzzle.themeWords[0]!;
+    const store = installStore(new FakeAttemptStore([attemptRow()]));
+    store.updateRaceAttempt = attemptRow({
+      active_hint_word: answer.word,
+      version: 1,
+    });
+    vi.spyOn(Math, "random").mockReturnValue(0);
+
+    const result = await requestStrandsHint({
+      player,
+      attemptId,
+      version: 0,
+    });
+
+    expect(result).toMatchObject({
+      status: "stale",
+      attempt: {
+        version: 1,
+        hintedPath: answer.path,
+      },
+    });
+  });
+});
+
 describe("submitStrandsPath", () => {
+  it("clears the active hint when its answer is found", async () => {
+    const answer = testStrandsPuzzle.themeWords[0]!;
+    const store = installStore(
+      new FakeAttemptStore([
+        attemptRow({
+          active_hint_word: answer.word,
+          version: 1,
+        }),
+      ]),
+    );
+
+    const result = await submitStrandsPath({
+      player,
+      attemptId,
+      path: answer.path,
+      version: 1,
+    });
+
+    expect(result).toMatchObject({
+      status: "submitted",
+      outcome: "found_theme",
+      attempt: {
+        version: 2,
+        hintedPath: null,
+      },
+    });
+    expect(store.attempts[0]!.active_hint_word).toBeNull();
+  });
+
   it("persists a newly found theme answer and reveals only that answer", async () => {
     const answer = testStrandsPuzzle.themeWords[0]!;
     const store = installStore(new FakeAttemptStore([attemptRow()]));
